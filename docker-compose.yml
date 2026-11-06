@@ -1,0 +1,96 @@
+# RT-300 nuevo sistema — entorno de desarrollo con Docker
+# Servicios: db (SQL Server 2017) · db-init (restaura la BD) · backend (Flask) · frontend (React/Vite)
+# Uso:  docker compose up -d --build        (ver README / 03-puesta-en-marcha.md)
+
+name: rt300
+
+services:
+  # ───────────────────────────── Base de datos ─────────────────────────────
+  db:
+    image: mcr.microsoft.com/mssql/server:2017-latest
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "${MSSQL_SA_PASSWORD:-Rt300_Sa_2026!}"
+      MSSQL_PID: "Express"
+    ports:
+      - "${DB_PORT:-1433}:1433"
+    volumes:
+      - sqldata:/var/opt/mssql
+      # Backup de la BD (solo lectura). Ruta configurable en .env (BACKUP_FILE)
+      - "${BACKUP_FILE:-../tbpos_new_2026-07-24.bak}:/backup/tbpos_new.bak:ro"
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -Q 'SELECT 1' || /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -Q 'SELECT 1'"]
+      interval: 10s
+      retries: 20
+
+  # Restaura tbpos_new si no existe y crea el login de pruebas. Termina con Exited (0): es normal.
+  db-init:
+    image: mcr.microsoft.com/mssql/server:2017-latest
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      MSSQL_SA_PASSWORD: "${MSSQL_SA_PASSWORD:-Rt300_Sa_2026!}"
+    volumes:
+      - ./docker/db/init.sql:/init.sql:ro
+    entrypoint: ["/bin/bash", "-c", "/opt/mssql-tools18/bin/sqlcmd -C -S db -U sa -P \"$$MSSQL_SA_PASSWORD\" -i /init.sql || /opt/mssql-tools/bin/sqlcmd -S db -U sa -P \"$$MSSQL_SA_PASSWORD\" -i /init.sql"]
+    restart: "no"
+
+  # ───────────────────────────── Backend (Flask) ─────────────────────────────
+  backend:
+    build: ./rt300-backend
+    depends_on:
+      db:
+        condition: service_healthy
+      db-init:
+        condition: service_completed_successfully
+    environment:
+      FLASK_ENV: "development"
+      SECRET_KEY: "${SECRET_KEY:-dev-secret-cambiar}"
+      JWT_SECRET_KEY: "${JWT_SECRET_KEY:-dev-jwt-secret-cambiar-por-uno-largo-de-32-o-mas}"
+      JWT_ACCESS_MINUTES: "15"
+      CORS_ORIGINS: "${CORS_ORIGINS:-http://localhost:5173}"
+
+      DB_DRIVER: "ODBC Driver 18 for SQL Server"
+      DB_HOST: "${DB_HOST:-db}"
+      DB_PORT: "${DB_INTERNAL_PORT:-1433}"
+      DB_NAME: "tbpos_new"
+      DB_USER: "${DB_USER:-prueba}"
+      DB_PASSWORD: "${DB_PASSWORD:-prueba}"
+      DB_TRUST_CERT: "yes"
+
+      # fake | soap | dll | http  (ver 01-backend-flask.md §7)
+      GATEWAY_MODE: "${GATEWAY_MODE:-fake}"
+      GATEWAY_WSDL_URL: "${GATEWAY_WSDL_URL:-}"
+      GATEWAY_HTTP_URL: "${GATEWAY_HTTP_URL:-}"
+      GATEWAY_TIMEOUT_SECONDS: "30"
+
+      IMAGENES_DIR: "/data/imagenes"
+      IMAGENES_CACHE_DIR: "/data/cache"
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./rt300-backend:/app                       # recarga en caliente
+      - "${IMAGENES_DIR:-../RT-300WEB/img/Restaurantes}:/data/imagenes:ro"
+      - imgcache:/data/cache
+    # Desarrollo: servidor Flask con recarga. Producción: quitar esta línea y usar el CMD (waitress) del Dockerfile.
+    command: ["flask", "--app", "wsgi", "run", "--host=0.0.0.0", "--port=5000", "--debug"]
+
+  # ───────────────────────────── Frontend (React + Vite) ─────────────────────────────
+  frontend:
+    build: ./rt300-frontend
+    depends_on:
+      - backend
+    environment:
+      VITE_API_URL: "${VITE_API_URL:-http://localhost:5000/api/v1}"
+      CHOKIDAR_USEPOLLING: "true"                  # detectar cambios en carpetas montadas desde Windows
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./rt300-frontend:/app
+      - frontend_node_modules:/app/node_modules    # no pisar node_modules de la imagen
+
+volumes:
+  sqldata:
+  imgcache:
+  frontend_node_modules:
