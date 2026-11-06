@@ -1,0 +1,980 @@
+{
+  "info": {
+    "name": "RT-300 API v1",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Ejecuta primero 'auth > Login'. Folio de ejemplo en la variable {{folio}} (se llena con 'Ocupar mesa')."
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000/api/v1"
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "refresh",
+      "value": ""
+    },
+    {
+      "key": "folio",
+      "value": "252438"
+    }
+  ],
+  "item": [
+    {
+      "name": "auth",
+      "item": [
+        {
+          "name": "Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "health"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "Usuarios (login)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/usuarios",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "usuarios"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "Login (guarda token)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usuario\": \"GP1\",\n  \"clave\": \"123456\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = res.getBody();",
+                  "pm.collectionVariables.set('token', j.access_token);",
+                  "pm.collectionVariables.set('refresh', j.refresh_token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Me",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "me"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Refresh",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/refresh",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "refresh"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "logout"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "salon",
+      "item": [
+        {
+          "name": "Parametros iniciales",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/salon/parametros",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "salon",
+                "parametros"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Mesas de un area",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/salon/areas/1/mesas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "salon",
+                "areas",
+                "1",
+                "mesas"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Detalle de mesa",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/salon/mesas/HPB01",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "salon",
+                "mesas",
+                "HPB01"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Ocupar mesa",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/salon/mesas/HPB02/ocupar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "salon",
+                "mesas",
+                "HPB02",
+                "ocupar"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cven\": 12009,\n  \"caco\": 1,\n  \"ccom\": 2,\n  \"ncta\": 2\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = res.getBody();",
+                  "if (j.folio) pm.collectionVariables.set('folio', j.folio);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Habilitar mesa",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/salon/mesas/HPB02/habilitar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "salon",
+                "mesas",
+                "HPB02",
+                "habilitar"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Datos para modificar folio",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/salon/folios/{{folio}}/modificacion",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "salon",
+                "folios",
+                "{{folio}}",
+                "modificacion"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Modificar folio (mesero/comensales/cuentas)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/salon/folios/{{folio}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "salon",
+                "folios",
+                "{{folio}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cven\": 12009,\n  \"ccom\": 3,\n  \"ncta\": 3\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Resumen del folio",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/salon/folios/{{folio}}/resumen",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "salon",
+                "folios",
+                "{{folio}}",
+                "resumen"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Cuentas del folio",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/salon/folios/{{folio}}/cuentas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "salon",
+                "folios",
+                "{{folio}}",
+                "cuentas"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "clientes",
+      "item": [
+        {
+          "name": "Cuentas abiertas del folio",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/folios/{{folio}}/cuentas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "folios",
+                "{{folio}}",
+                "cuentas"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Buscar cliente por nombre",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/clientes?nombre=garcia",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "clientes"
+              ],
+              "query": [
+                {
+                  "key": "nombre",
+                  "value": "garcia"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Buscar cliente por codigo",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/clientes?codigo=17",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "clientes"
+              ],
+              "query": [
+                {
+                  "key": "codigo",
+                  "value": "17"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Actualizar cuenta",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/folios/{{folio}}/cuentas/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "folios",
+                "{{folio}}",
+                "cuentas",
+                "1"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mesa\": \"HPB02\",\n  \"cage\": 0,\n  \"nruc\": \"\",\n  \"nomb\": \"CLIENTE PRUEBA\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "menu",
+      "item": [
+        {
+          "name": "Secciones",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/menu/secciones",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "menu",
+                "secciones"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Platos de seccion/subseccion",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/menu/secciones/1/1/platos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "menu",
+                "secciones",
+                "1",
+                "1",
+                "platos"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Extras de seccion",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/menu/secciones/1/0/extras",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "menu",
+                "secciones",
+                "1",
+                "0",
+                "extras"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Datos de plato",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/menu/platos/5101004?tent=0&entg=0&lpre=0&cpxc=N",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "menu",
+                "platos",
+                "5101004"
+              ],
+              "query": [
+                {
+                  "key": "tent",
+                  "value": "0"
+                },
+                {
+                  "key": "entg",
+                  "value": "0"
+                },
+                {
+                  "key": "lpre",
+                  "value": "0"
+                },
+                {
+                  "key": "cpxc",
+                  "value": "N"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Datos de extra",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/menu/extras/5101004?pvta=5&cmop=1&cpxc=N",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "menu",
+                "extras",
+                "5101004"
+              ],
+              "query": [
+                {
+                  "key": "pvta",
+                  "value": "5"
+                },
+                {
+                  "key": "cmop",
+                  "value": "1"
+                },
+                {
+                  "key": "cpxc",
+                  "value": "N"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Alternativos de insumo",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/menu/insumos/5101004/alternativos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "menu",
+                "insumos",
+                "5101004",
+                "alternativos"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Textos de comanda",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/menu/textos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "menu",
+                "textos"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Subtextos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/menu/subtextos?pref=1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "menu",
+                "subtextos"
+              ],
+              "query": [
+                {
+                  "key": "pref",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Centros de produccion de plato",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/menu/platos/5101004/centros-produccion",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "menu",
+                "platos",
+                "5101004",
+                "centros-produccion"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Imagen de plato (publica)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/menu/platos/5101004/imagen?w=480",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "menu",
+                "platos",
+                "5101004",
+                "imagen"
+              ],
+              "query": [
+                {
+                  "key": "w",
+                  "value": "480"
+                }
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "comandas",
+      "item": [
+        {
+          "name": "Guardar comanda",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/comandas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "comandas"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nfol\": 0,\n  \"ncta\": 1,\n  \"glos\": \"prueba\",\n  \"rtcda\": [\n    {\n      \"cart\": \"5101004\",\n      \"desc\": \"AGUA\",\n      \"cant\": 1,\n      \"pvta\": 8,\n      \"item\": 1,\n      \"impt\": 8,\n      \"cmon\": 1,\n      \"ccpd\": 0\n    }\n  ],\n  \"rttac\": [],\n  \"rttco\": [],\n  \"rtcia\": [],\n  \"rtcic\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Reintentar envio al servicio",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/comandas/0/reintentar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "comandas",
+                "0",
+                "reintentar"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nfol\": 0,\n  \"ncta\": 1,\n  \"glos\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Comandas del folio (admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/folios/{{folio}}/comandas?mesa=HPB02",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "folios",
+                "{{folio}}",
+                "comandas"
+              ],
+              "query": [
+                {
+                  "key": "mesa",
+                  "value": "HPB02"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Motivos de eliminacion",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/comandas/motivos-eliminacion",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "comandas",
+                "motivos-eliminacion"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Eliminar comanda",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/comandas/eliminar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "comandas",
+                "eliminar"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nfol\": 0,\n  \"mesa\": \"HPB02\",\n  \"uaut\": \"GP1\",\n  \"cont\": \"123456\",\n  \"mtvo\": 1,\n  \"items\": [\n    {\n      \"ncom\": 0,\n      \"item\": 1\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Reimprimir comanda",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/comandas/reimprimir",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "comandas",
+                "reimprimir"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nfol\": 0,\n  \"mesa\": \"HPB02\",\n  \"uaut\": \"GP1\",\n  \"mtvo\": 1,\n  \"items\": [\n    {\n      \"ncom\": 0,\n      \"item\": 1\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "cuentas",
+      "item": [
+        {
+          "name": "Cuentas abiertas (estado)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/folios/{{folio}}/cuentas-abiertas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "folios",
+                "{{folio}}",
+                "cuentas-abiertas"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Estado de cuenta",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/folios/{{folio}}/cuentas/1/estado?mesa=HPB02",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "folios",
+                "{{folio}}",
+                "cuentas",
+                "1",
+                "estado"
+              ],
+              "query": [
+                {
+                  "key": "mesa",
+                  "value": "HPB02"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Imprimir estado de cuenta",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/folios/{{folio}}/cuentas/1/imprimir",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "folios",
+                "{{folio}}",
+                "cuentas",
+                "1",
+                "imprimir"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mesa\": \"HPB02\",\n  \"cven\": \"12009\",\n  \"caco\": \"1\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
