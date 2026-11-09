@@ -5,6 +5,7 @@ Mejora sobre el PHP: si el gateway falla, rttmp ya está guardada y el error tra
 """
 from __future__ import annotations
 
+from ...core.acceso import exigir_local
 from ...core.errors import DomainError, GatewayError, NotFound
 from ...domain.uow import UnitOfWork
 from ...domain.usuario import Usuario
@@ -32,6 +33,7 @@ class GuardarComandaService:
         self._repo, self._uow, self._gw = repo, uow, gateway
 
     def guardar(self, u: Usuario, b: GuardarComandaIn) -> dict:
+        exigir_local(u, self._repo.local_de_folio(b.nfol))
         if not self._repo.cuenta_abierta(b.nfol, b.ncta):
             raise NotFound(f"No se encontro la Cta.: {b.ncta} abierta en el Folio: {b.nfol}", "CUENTA_NO_ABIERTA")
         with self._uow:
@@ -42,6 +44,7 @@ class GuardarComandaService:
 
     def reintentar(self, u: Usuario, ntmp: int, nfol: int, ncta: int, glos: str) -> dict:
         """Reinvoca al servicio con el mismo ntmp (rttmp ya existe)."""
+        exigir_local(u, self._repo.local_de_folio(nfol))
         return self._enviar(u, ntmp, nfol, ncta, glos)
 
     def _enviar(self, u: Usuario, ntmp: int, nfol: int, ncta: int, glos: str) -> dict:

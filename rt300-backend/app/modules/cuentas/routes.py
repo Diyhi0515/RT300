@@ -18,7 +18,7 @@ class ImprimirIn(BaseModel):
 @bp.get("/folios/<int:nfol>/cuentas-abiertas")
 @autenticado
 def cuentas(nfol: int):
-    return jsonify({"cuentas": cuentas_service().cuentas(nfol)})
+    return jsonify({"cuentas": cuentas_service().cuentas(usuario_actual(), nfol)})
 
 
 @bp.get("/folios/<int:nfol>/cuentas/<int:ncta>/estado")

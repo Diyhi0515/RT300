@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from ...core.sql import SqlRepository
+from ...core.repos_compartidos import LocalQueries
 from ...core.text import clean, to_int
 from .ports import Autorizador
 
@@ -14,7 +14,7 @@ _INSERT_TMP = (
 )
 
 
-class SqlComandasRepository(SqlRepository):
+class SqlComandasRepository(LocalQueries):
     def siguiente_transaccion(self) -> int:
         return self._serial("rtsrl", "rtsrlntmp")
 

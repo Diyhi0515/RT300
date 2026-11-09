@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
+from ...core.acceso import exigir_local
 from ...core.errors import Conflict, DomainError, NotFound
 from ...domain.mesa import ESTC_LIQUIDADA, Mesa
 from ...domain.uow import UnitOfWork
@@ -77,11 +78,13 @@ class SalonService:
             "config": {"gbpmt": p.gbpmt, "gbrne": p.gbrne, "inctl": p.inctl, "rtctl": p.rtctl},
         }
 
-    def mesas_de_area(self, caco: int) -> list[dict]:
+    def mesas_de_area(self, u: Usuario, caco: int) -> list[dict]:
+        exigir_local(u, self._repo.local_de_area(caco))
         return self._repo.mesas_por_area(caco)
 
-    def detalle_mesa(self, codigo: str) -> dict:
+    def detalle_mesa(self, u: Usuario, codigo: str) -> dict:
         """Click en mesa: mesa, folio, mesero, horas, resumen de consumo y cuentas."""
+        exigir_local(u, self._repo.local_de_mesa(codigo))
         raw = self._repo.mesa_detalle(codigo)
         m = self._repo.mesa(codigo)
         if raw is None or m is None:
@@ -100,20 +103,24 @@ class SalonService:
         out["cuentas"] = self._repo.cuentas_folio(m.folio)
         return out
 
-    def datos_modificacion(self, nfol: int) -> dict:
+    def datos_modificacion(self, u: Usuario, nfol: int) -> dict:
+        exigir_local(u, self._repo.local_de_folio(nfol))
         f = self._repo.folio_abierto_tipo1(nfol)
         if f is None:
             raise NotFound(f"NO EXISTE FOLIO: {nfol}", "FOLIO_NO_EXISTE")
         return {"folio": f, "cuentas": self._repo.contar_cuentas(nfol)}
 
-    def resumen_folio(self, nfol: int) -> list[dict]:
+    def resumen_folio(self, u: Usuario, nfol: int) -> list[dict]:
+        exigir_local(u, self._repo.local_de_folio(nfol))
         return self._repo.resumen(nfol)
 
-    def cuentas_folio(self, nfol: int) -> list[dict]:
+    def cuentas_folio(self, u: Usuario, nfol: int) -> list[dict]:
+        exigir_local(u, self._repo.local_de_folio(nfol))
         return self._repo.cuentas_folio(nfol)
 
     # ───────────── Escrituras (una unidad de trabajo cada una) ─────────────
     def ocupar_mesa(self, u: Usuario, codigo: str, cven: int, caco: int, ccom: int, ncta: int) -> dict:
+        exigir_local(u, self._repo.local_de_mesa(codigo))
         with self._uow:
             self._mesa_operable(codigo)
             cli = self._cliente_varios()
@@ -134,6 +141,7 @@ class SalonService:
         return {"folio": nfol, "cuentas": ncta}
 
     def habilitar_mesa(self, u: Usuario, codigo: str) -> dict:
+        exigir_local(u, self._repo.local_de_mesa(codigo))
         with self._uow:
             m = self._mesa_operable(codigo)
             if m.folio and self._repo.contar_comandas(m.folio) > 0:
@@ -149,6 +157,7 @@ class SalonService:
         return {"mesa": codigo, "folio_anulado": m.folio or None}
 
     def modificar_mesa(self, u: Usuario, nfol: int, cven: int, ccom: int, ncta_nueva: int) -> list[dict]:
+        exigir_local(u, self._repo.local_de_folio(nfol))
         with self._uow:
             ncta_vieja = self._repo.contar_cuentas(nfol)
             if ncta_nueva < ncta_vieja and self._repo.contar_comandas(nfol, solo_vigentes=False) > 0:

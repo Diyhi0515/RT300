@@ -31,9 +31,10 @@ services:
         condition: service_healthy
     environment:
       MSSQL_SA_PASSWORD: "${MSSQL_SA_PASSWORD:-Rt300_Sa_2026!}"
+      APP_DB_PASSWORD: "${DB_PASSWORD:-Rt300App2026x}"
     volumes:
       - ./docker/db/init.sql:/init.sql:ro
-    entrypoint: ["/bin/bash", "-c", "/opt/mssql-tools18/bin/sqlcmd -C -S db -U sa -P \"$$MSSQL_SA_PASSWORD\" -i /init.sql || /opt/mssql-tools/bin/sqlcmd -S db -U sa -P \"$$MSSQL_SA_PASSWORD\" -i /init.sql"]
+    entrypoint: ["/bin/bash", "-c", "/opt/mssql-tools18/bin/sqlcmd -C -S db -U sa -P \"$$MSSQL_SA_PASSWORD\" -v APP_PASSWORD=\"$$APP_DB_PASSWORD\" -i /init.sql || /opt/mssql-tools/bin/sqlcmd -S db -U sa -P \"$$MSSQL_SA_PASSWORD\" -v APP_PASSWORD=\"$$APP_DB_PASSWORD\" -i /init.sql"]
     restart: "no"
 
   # ───────────────────────────── Backend (Flask) ─────────────────────────────
@@ -55,14 +56,18 @@ services:
       DB_HOST: "${DB_HOST:-db}"
       DB_PORT: "${DB_INTERNAL_PORT:-1433}"
       DB_NAME: "tbpos_new"
-      DB_USER: "${DB_USER:-prueba}"
-      DB_PASSWORD: "${DB_PASSWORD:-prueba}"
+      DB_USER: "${DB_USER:-rt300_app}"
+      DB_PASSWORD: "${DB_PASSWORD:-Rt300App2026x}"
       DB_TRUST_CERT: "yes"
 
       # fake | soap | dll | http  (ver 01-backend-flask.md §7)
       GATEWAY_MODE: "${GATEWAY_MODE:-fake}"
       GATEWAY_WSDL_URL: "${GATEWAY_WSDL_URL:-}"
       GATEWAY_HTTP_URL: "${GATEWAY_HTTP_URL:-}"
+      GATEWAY_DLL_PATH: "${GATEWAY_DLL_PATH:-}"
+      GATEWAY_PASSWORD: "${GATEWAY_PASSWORD:-}"
+      ADMIN_USERS: "${ADMIN_USERS:-}"
+      CAJERO_USERS: "${CAJERO_USERS:-}"
       GATEWAY_TIMEOUT_SECONDS: "30"
 
       IMAGENES_DIR: "/data/imagenes"
@@ -71,7 +76,7 @@ services:
       - "127.0.0.1:5000:5000"
     volumes:
       - ./rt300-backend:/app                       # recarga en caliente
-      - "${IMAGENES_DIR:-../RT-300WEB/img/Restaurantes}:/data/imagenes:ro"
+      - "${IMAGENES_DIR:-./img/Restaurantes}:/data/imagenes:ro"
       - imgcache:/data/cache
     # Desarrollo: servidor Flask con recarga, SIN depurador interactivo (la consola de Werkzeug permite ejecutar código). Producción: quitar esta línea y usar el CMD (waitress) del Dockerfile.
     command: ["flask", "--app", "wsgi", "run", "--host=0.0.0.0", "--port=5000", "--reload", "--no-debugger"]

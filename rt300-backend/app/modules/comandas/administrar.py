@@ -1,6 +1,7 @@
 """Casos de uso del panel ADMIN: listar, eliminar y reimprimir comandas (con autorización de un supervisor)."""
 from __future__ import annotations
 
+from ...core.acceso import exigir_local
 from ...core.errors import DomainError, Forbidden, NotFound
 from ...core.legacy_password import verificar
 from ...domain.uow import UnitOfWork
@@ -24,7 +25,8 @@ class AdministrarComandasService:
         self._repo, self._uow, self._gw = repo, uow, gateway
 
     # ───────────── Consulta ─────────────
-    def listar(self, nfol: int, mesa: str) -> dict:
+    def listar(self, u: Usuario, nfol: int, mesa: str) -> dict:
+        exigir_local(u, self._repo.local_de_folio(nfol))
         mesa_folio = self._repo.mesa_del_folio_abierto(nfol)
         if mesa_folio is None:
             raise NotFound(f"NO EXISTE FOLIO: {nfol}", "FOLIO_NO_EXISTE")
@@ -43,6 +45,7 @@ class AdministrarComandasService:
 
     # ───────────── Acciones ─────────────
     def eliminar(self, u: Usuario, b: EliminarComandaIn) -> dict:
+        exigir_local(u, self._repo.local_de_folio(b.nfol))
         self._validar_autorizador(b.uaut, b.cont)
         ntmp = self._registrar(TIPO_ELIMINAR, b.items)
         r = invocar(self._gw.eliminar_comanda, EliminarComandaReq(ntra=ntmp, nfol=b.nfol, mesa=b.mesa, uaut=b.uaut,
@@ -50,6 +53,7 @@ class AdministrarComandasService:
         return self._resultado(r, ntmp, "eliminar la comanda")
 
     def reimprimir(self, u: Usuario, b: ReimprimirComandaIn) -> dict:
+        exigir_local(u, self._repo.local_de_folio(b.nfol))
         self._validar_autorizador(b.uaut, None)
         ntmp = self._registrar(TIPO_REIMPRIMIR, b.items)
         r = invocar(self._gw.reimprimir_comanda, ReimprimirComandaReq(ntra=ntmp, nfol=b.nfol, mesa=b.mesa, uaut=b.uaut,

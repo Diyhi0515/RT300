@@ -11,3 +11,15 @@ IF SUSER_ID('prueba') IS NULL
     CREATE LOGIN prueba WITH PASSWORD = 'prueba', CHECK_POLICY = OFF, CHECK_EXPIRATION = OFF, DEFAULT_DATABASE = tbpos_new;
 ALTER SERVER ROLE sysadmin ADD MEMBER prueba;
 GO
+-- Usuario de la aplicación con permisos mínimos: solo lee y escribe datos (sin DDL, sin sysadmin).
+-- Contraseña por variable de sqlcmd (-v APP_PASSWORD=...), nunca fija en el repositorio.
+IF SUSER_ID('rt300_app') IS NULL
+    CREATE LOGIN rt300_app WITH PASSWORD = '$(APP_PASSWORD)', CHECK_POLICY = OFF, CHECK_EXPIRATION = OFF, DEFAULT_DATABASE = tbpos_new;
+GO
+USE tbpos_new;
+GO
+IF USER_ID('rt300_app') IS NULL
+    CREATE USER rt300_app FOR LOGIN rt300_app;
+ALTER ROLE db_datareader ADD MEMBER rt300_app;
+ALTER ROLE db_datawriter ADD MEMBER rt300_app;
+GO

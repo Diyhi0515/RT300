@@ -27,7 +27,7 @@ def reintentar(ntmp: int):
 @bp.get("/folios/<int:nfol>/comandas")
 @autenticado
 def administrar(nfol: int):
-    return jsonify(administrar_comandas_service().listar(nfol, request.args.get("mesa", "")))
+    return jsonify(administrar_comandas_service().listar(usuario_actual(), nfol, request.args.get("mesa", "")))
 
 
 @bp.get("/comandas/motivos-eliminacion")

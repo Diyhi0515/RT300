@@ -14,6 +14,9 @@ class RepoComandas:
         self._abierta, self._aut = cuenta_abierta, autorizador
         self.tmp: list[tuple[int, int, list]] = []
 
+    local = 2   # mismo local que GARZON
+
+    def local_de_folio(self, n): return self.local
     def cuenta_abierta(self, f, c): return self._abierta
     def siguiente_transaccion(self): return 9001
     def insertar_rttmp(self, ntra, tipo, filas): self.tmp.append((ntra, tipo, filas))

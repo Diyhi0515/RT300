@@ -181,11 +181,13 @@ Hoy, si el servicio falla **después** del `COMMIT`, las filas de `rttmp` quedan
 
 | # | Tema | Estado |
 |---|---|---|
-| 1 | **Forma del servicio de comandas**: hoy es un `.asmx` (SOAP/WSDL). Se mencionó que será una **DLL**. Si es .NET, Python no la carga directamente: opciones en [01-backend-flask.md §7](01-backend-flask.md). El gateway permite cambiar sin tocar el negocio. | **Abierto — confirmar tipo de DLL** (.NET Framework / .NET, 32/64 bits) |
+| 1 | **Forma del servicio de comandas**: el PHP lo consume como `.asmx` SOAP en `http://192.168.0.2/RT300WS/RT300.asmx` (red del club, ver [01 §7.3](01-backend-flask.md)). Si detrás hay una DLL .NET la carga IIS, no nosotros. Desde el entorno de desarrollo no es alcanzable. | **Abierto — probar `?WSDL` desde la red del club**; modo `soap` listo y probado con cliente falso |
 | 2 | **Credenciales hacia el servicio**: hoy se envía `usrn` + `pass` del garzón. Con JWT la clave no debe guardarse. ¿El servicio valida la clave o solo el usuario? | **Abierto** |
-| 3 | Imágenes de platos: ruta real de producción de `img/Restaurantes` | Abierto |
+| 3 | Imágenes de platos: ruta real de producción de `img/Restaurantes` | Carpeta copiada al repo (`img/Restaurantes`, 163 archivos); falta confirmar la de producción |
 | 4 | Entorno de despliegue (¿Windows + IIS o Linux/Docker?). Condiciona el uso de DLL .NET | Abierto |
-| 5 | Roles/permisos: mapear `rturt` y niveles de `adusr` a roles | Por analizar |
+| 5 | Roles/permisos: mapear `rturt` y niveles de `adusr` a roles | Por analizar (hoy `ADMIN_USERS` / `CAJERO_USERS` en `.env`) |
+| 6 | Seguridad: usuario de BD con permisos mínimos (`rt300_app`: solo lectura/escritura de datos, sin DDL) y separación por local | **Hecho** |
+| 7 | Seguridad pendiente: `GET /auth/usuarios` público, quién puede autorizar eliminar comandas, hash fuerte de claves en tabla propia, TLS con certificado validado, Redis para límites y revocaciones | Abierto (necesita decisión) |
 
 ---
 
@@ -193,10 +195,10 @@ Hoy, si el servicio falla **después** del `COMMIT`, las filas de `rttmp` quedan
 
 | Fase | Entregable | Riesgo |
 |---|---|---|
-| 0 | Repos, Docker, CI, esqueleto back y front, tema claro/oscuro | Bajo |
-| 1 | **Solo lectura**: Login, Mesas, Menú (con imágenes y placeholder) | Bajo |
-| 2 | Ocupar/habilitar mesa, Cuentas y clientes | Medio (escribe en BD) |
-| 3 | Comanda completa con `FakeGateway` | Medio |
+| 0 | Repos, Docker, CI, esqueleto back y front, tema claro/oscuro | Bajo — **backend y Docker hechos**; front lo desarrolla otro equipo |
+| 1 | **Solo lectura**: Login, Mesas, Menú (con imágenes y placeholder) | Bajo — **API hecha** |
+| 2 | Ocupar/habilitar mesa, Cuentas y clientes | Medio — **API hecha y probada** |
+| 3 | Comanda completa con `FakeGateway` | Medio — **API hecha y probada** |
 | 4 | Gateway real (SOAP/DLL), Admin (eliminar/reimprimir), Estado de cuenta e impresión | **Alto** (depende del servicio) |
 | 5 | Endurecimiento: tests de carga, logs, PWA offline básico, migración de claves | Medio |
 

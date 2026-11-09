@@ -1,10 +1,11 @@
 """SQL de estado de cuenta. Tablas legacy: rtfol/rtfoc, rtcoh/rtcda, inart, gbcon."""
 from __future__ import annotations
 
-from ...core.sql import SqlRepository, blank_to_none
+from ...core.repos_compartidos import LocalQueries
+from ...core.sql import blank_to_none
 
 
-class SqlCuentasRepository(SqlRepository):
+class SqlCuentasRepository(LocalQueries):
     def folio_abierto(self, nfol: int) -> bool:
         return self._one("SELECT 1 AS x FROM rtfol WHERE rtfolnfol = :n AND rtfolestf = 1 AND rtfolmrcb = 0", n=nfol) is not None
 

@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+from ...core.acceso import exigir_local
 from ...core.errors import Conflict, NotFound
 from ...core.sql import blank_to_none
 from ...domain.uow import UnitOfWork
+from ...domain.usuario import Usuario
 from .ports import ClientesRepo
 
 
@@ -10,7 +12,8 @@ class ClientesService:
     def __init__(self, repo: ClientesRepo, uow: UnitOfWork):
         self._repo, self._uow = repo, uow
 
-    def cuentas_del_folio(self, nfol: int) -> list[dict]:
+    def cuentas_del_folio(self, u: Usuario, nfol: int) -> list[dict]:
+        exigir_local(u, self._repo.local_de_folio(nfol))
         return self._repo.cuentas_abiertas(nfol)
 
     def obtener_cliente(self, cage: int) -> dict:
@@ -22,7 +25,8 @@ class ClientesService:
     def buscar(self, nombre: str | None, cage: int | None) -> list[dict]:
         return self._repo.buscar_clientes((nombre or "").strip().upper() or None, cage or None)
 
-    def actualizar_cuenta(self, nfol: int, ncta: int, mesa: str, cage: int, nruc: str, nomb: str) -> str:
+    def actualizar_cuenta(self, u: Usuario, nfol: int, ncta: int, mesa: str, cage: int, nruc: str, nomb: str) -> str:
+        exigir_local(u, self._repo.local_de_folio(nfol))
         with self._uow:
             m = self._repo.mesa(mesa)
             if m is None:

@@ -23,10 +23,19 @@ log = logging.getLogger(__name__)
 
 
 class SoapGateway:
-    def __init__(self, wsdl_url: str, timeout: int, service_password: str = ""):
-        if not wsdl_url:
+    def __init__(self, wsdl_url: str, timeout: int, service_password: str = "", client=None):
+        """`client` permite inyectar un cliente zeep falso en las pruebas; en producción se crea al primer uso."""
+        if not wsdl_url and client is None:
             raise GatewayError("GATEWAY_WSDL_URL no está configurado.")
-        self._wsdl, self._timeout, self._pass = wsdl_url, timeout, service_password
+        self._wsdl, self._timeout, self._pass = self.normalizar_url(wsdl_url), timeout, service_password
+        if client is not None:
+            self.__dict__["_client"] = client
+
+    @staticmethod
+    def normalizar_url(url: str) -> str:
+        """Acepta la misma URL que el PHP (`SYS_WEBSERVICE_DIR`, sin `?WSDL`) o la ya completa."""
+        url = (url or "").strip()
+        return url if not url or "?wsdl" in url.lower() else f"{url}?WSDL"
 
     @cached_property
     def _client(self):

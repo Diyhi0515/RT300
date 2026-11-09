@@ -18,13 +18,13 @@ def parametros():
 @bp.get("/areas/<int:caco>/mesas")
 @autenticado
 def mesas(caco: int):
-    return jsonify({"mesas": salon_service().mesas_de_area(caco)})
+    return jsonify({"mesas": salon_service().mesas_de_area(usuario_actual(), caco)})
 
 
 @bp.get("/mesas/<path:mesa>")
 @autenticado
 def detalle(mesa: str):
-    return jsonify(salon_service().detalle_mesa(mesa))
+    return jsonify(salon_service().detalle_mesa(usuario_actual(), mesa))
 
 
 @bp.post("/mesas/<path:mesa>/ocupar")
@@ -43,7 +43,7 @@ def habilitar(mesa: str):
 @bp.get("/folios/<int:nfol>/modificacion")
 @autenticado
 def datos_modificacion(nfol: int):
-    return jsonify(salon_service().datos_modificacion(nfol))
+    return jsonify(salon_service().datos_modificacion(usuario_actual(), nfol))
 
 
 @bp.patch("/folios/<int:nfol>")
@@ -56,10 +56,10 @@ def modificar(nfol: int):
 @bp.get("/folios/<int:nfol>/resumen")
 @autenticado
 def resumen(nfol: int):
-    return jsonify({"resumen": salon_service().resumen_folio(nfol)})
+    return jsonify({"resumen": salon_service().resumen_folio(usuario_actual(), nfol)})
 
 
 @bp.get("/folios/<int:nfol>/cuentas")
 @autenticado
 def cuentas(nfol: int):
-    return jsonify({"cuentas": salon_service().cuentas_folio(nfol)})
+    return jsonify({"cuentas": salon_service().cuentas_folio(usuario_actual(), nfol)})

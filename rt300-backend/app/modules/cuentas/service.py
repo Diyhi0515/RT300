@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from ...core.acceso import exigir_local
 from ...core.errors import DomainError, NotFound
 from ...domain.usuario import Usuario
 from ...integrations.comandas.base import EstadoCuentaGateway, EstadoCuentaReq
@@ -11,10 +12,12 @@ class CuentasService:
     def __init__(self, repo: CuentasRepo, printer: EstadoCuentaGateway):
         self._repo, self._printer = repo, printer
 
-    def cuentas(self, nfol: int) -> list[dict]:
+    def cuentas(self, u: Usuario, nfol: int) -> list[dict]:
+        exigir_local(u, self._repo.local_de_folio(nfol))
         return self._repo.cuentas_abiertas(nfol)
 
     def estado(self, u: Usuario, nfol: int, ncta: int, mesa: str, cmon: int | None) -> dict:
+        exigir_local(u, self._repo.local_de_folio(nfol))
         moneda = self._repo.moneda(cmon or u.cmon)
         if moneda is None:
             raise DomainError("Falta definir parametros de control para restaurant.", "SIN_MONEDA")
@@ -25,6 +28,7 @@ class CuentasService:
         }
 
     def imprimir(self, u: Usuario, nfol: int, ncta: int, mesa: str, cven: str, caco: str) -> dict:
+        exigir_local(u, self._repo.local_de_folio(nfol))
         if not self._repo.folio_abierto(nfol):
             raise NotFound(f"NO EXISTE FOLIO: {nfol}", "FOLIO_NO_EXISTE")
         r = invocar(self._printer.estado_cuenta, EstadoCuentaReq(

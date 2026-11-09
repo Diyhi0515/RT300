@@ -1,154 +1,87 @@
-# Puesta en marcha — crear los proyectos
+# Puesta en marcha
 
-Monorepo con una sola carpeta y un solo Git. Comandos para **PowerShell** (Windows).
-Versiones detectadas en esta máquina: Python 3.13, Node 20.20, npm 10.8, Git 2.45.
+Monorepo con un solo Git. Comandos para **PowerShell** o Git Bash (Windows). Requisito: **Docker Desktop**.
 
 ```
 D:\Proyectos\RT300\
-├── api\                # Flask
-├── web\                # React
-├── docs\               # estos documentos
-└── docker-compose.yml  # api + web + SQL Server (fase posterior)
+├── rt300-backend\        # API Flask (arquitectura limpia, ver 01-backend-flask.md)
+├── rt300-frontend\       # React (lo desarrolla otro equipo; ver 02-frontend-react.md)
+├── docker\               # init.sql de la BD y (ignorado por git) backup\ con el .bak
+├── img\Restaurantes\     # imágenes de platos copiadas del proyecto antiguo
+├── docs\                 # estos documentos + docs\bruno\ (colección de endpoints)
+├── docker-compose.yml    # db + db-init + backend (+ frontend)
+└── .env                  # configuración local (NO se sube a git; plantilla: .env.example)
 ```
 
-## 0. Requisito para conectar a SQL Server desde Windows
-
-Verifica que esté instalado el driver ODBC 18 (el contenedor de pruebas expone `localhost:1433`):
+## 1. Configuración
 
 ```powershell
-Get-OdbcDriver | Where-Object Name -like "*SQL Server*" | Select-Object Name
+Copy-Item .env.example .env
 ```
 
-Si no aparece `ODBC Driver 18 for SQL Server`, instálalo desde Microsoft.
+Variables que conviene revisar en `.env`:
 
-## 1. Carpeta raíz y Git
+| Variable | Para qué |
+|---|---|
+| `BACKUP_FILE` | Ruta del `.bak` de `tbpos_new`. **Docker Desktop no siempre ve otras unidades (p. ej. `F:`)**: si el montaje falla crea una *carpeta* en lugar de mapear el archivo. Copia el `.bak` a `docker\backup\tbpos_new.bak` y usa `./docker/backup/tbpos_new.bak`. |
+| `FLASK_ENV` | `development` en local. Por defecto es `production`, que **rechaza** las claves de desarrollo. |
+| `GATEWAY_MODE` | `fake` (por defecto, no imprime nada) · `soap` · `http` · `dll`. Ver 01 §7. |
+| `IMAGENES_DIR` | `./img/Restaurantes`. |
 
-```powershell
-mkdir D:\Proyectos\RT300
-cd D:\Proyectos\RT300
-git init
-mkdir docs
-Copy-Item D:\Proyectos\RT-300WEB\docs\nuevo-sistema\*.md .\docs\
+## 2. Levantar la base de datos y restaurar el backup
+
+```bash
+docker compose up -d db
+docker compose up db-init        # restaura tbpos_new si no existe; sale con código 0
 ```
 
-## 2. Backend (Flask)
+- Imagen: SQL Server 2017 **Developer** (Express limita la BD a 10 GB y esta pesa ~7 GB de datos + log de ~26 GB al restaurar).
+- La restauración tardó ~28 min (7,4 GB). Mientras corre, `sys.dm_exec_requests` muestra el porcentaje.
+- Se crean dos logins: `rt300_app` (**el que usa el backend**: `db_datareader` + `db_datawriter`, sin DDL ni sysadmin; contraseña en `DB_PASSWORD`) y `prueba` / `prueba` (sysadmin, **solo para que tú explores con un cliente SQL en desarrollo**; no usarlo en producción).
+- Los datos viven en el volumen `rt300_sqldata`. **No uses `docker compose down -v`**: obliga a restaurar de nuevo.
+- Los puertos se publican solo en `127.0.0.1` (SQL Server `1433`, API `5000`, front `5173`).
 
-```powershell
-mkdir api
-cd api
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install --upgrade pip
+Conectar con un cliente SQL (Azure Data Studio, DBeaver, SSMS): servidor `localhost,1433`, usuario `prueba` (o `rt300_app` para ver lo mismo que ve la API), base `tbpos_new`, activar *Trust server certificate*.
 
-pip install flask flask-openapi3 pydantic flask-jwt-extended flask-cors flask-limiter `
-            sqlalchemy pyodbc zeep pillow python-dotenv waitress `
-            pytest pytest-cov ruff
+## 3. Levantar el backend
 
-pip freeze > requirements.txt
+```bash
+docker compose up -d --build backend
+curl http://localhost:5000/api/v1/health      # {"db": true, "status": "ok"}
 ```
 
-Estructura inicial de carpetas:
+El código se monta en caliente (`--reload`), sin depurador interactivo. Logs: `docker compose logs -f backend`.
 
-```powershell
-$mods = "auth","salon","clientes","menu","comandas","cuentas"
-New-Item -ItemType Directory -Force app\core, app\integrations\comandas, tests\unit, tests\integration | Out-Null
-foreach ($m in $mods) {
-  New-Item -ItemType Directory -Force "app\modules\$m" | Out-Null
-  foreach ($f in "__init__.py","routes.py","schemas.py","service.py","repository.py") {
-    New-Item -ItemType File -Force "app\modules\$m\$f" | Out-Null
-  }
-}
-foreach ($f in "base.py","soap_gateway.py","dll_gateway.py","http_gateway.py","fake_gateway.py","factory.py","__init__.py") {
-  New-Item -ItemType File -Force "app\integrations\comandas\$f" | Out-Null
-}
-foreach ($f in "db.py","errors.py","error_handlers.py","security.py","legacy_password.py","text.py","logging.py","__init__.py") {
-  New-Item -ItemType File -Force "app\core\$f" | Out-Null
-}
-foreach ($f in "app\__init__.py","app\config.py","app\extensions.py","wsgi.py",".env.example") {
-  New-Item -ItemType File -Force $f | Out-Null
-}
-New-Item -ItemType File -Force .gitignore | Out-Null
-Add-Content .gitignore ".venv/`n__pycache__/`n.env`n.cache/`n.pytest_cache/"
+Usuario de prueba (clave que dejó el proyecto antiguo en la copia): **`GP1` / `123456`**.
+
+## 4. Probar los endpoints
+
+Importa `docs\bruno\RT300.postman_collection.json` en Bruno (Collections → Import → Postman). Ejecuta primero *auth › Login*.
+
+## 5. Pruebas
+
+```bash
+docker compose exec backend python -m pytest tests/unit
 ```
 
-`.env.example` (copiar a `.env` y ajustar): ver [01-backend-flask.md §9](01-backend-flask.md).
+## 6. Servicio de comandas real
 
-Arranque (cuando exista `wsgi.py`):
+Con `GATEWAY_MODE=fake` guardar/eliminar/reimprimir comandas e imprimir estado de cuenta **no llegan a ninguna impresora**.
+Para el servicio real (SOAP en la red del club) verificar primero desde esa red:
 
-```powershell
-$env:FLASK_APP = "wsgi:app"
-flask run --debug --port 5000
+```bash
+curl -i "http://192.168.0.2/RT300WS/RT300.asmx?WSDL"
 ```
 
-## 3. Frontend (React + Vite + TypeScript)
+y arrancar con `GATEWAY_MODE=soap` y `GATEWAY_WSDL_URL=<esa URL>`. Se acepta **la misma URL que usaba el PHP** (`SYS_WEBSERVICE_DIR`, sin `?WSDL`) o con él; basta cambiar esas dos variables en `.env`, sin tocar código. Ver [01-backend-flask.md §7](01-backend-flask.md).
 
-```powershell
-cd D:\Proyectos\RT300
-npm create vite@latest web -- --template react-ts
-cd web
-npm install
+## 7. Frontend
 
-# Navegación, datos, estado, formularios y validación
-npm install react-router-dom @tanstack/react-query axios zustand zod react-hook-form @hookform/resolvers
+El frontend lo desarrolla otro equipo. Cuando esté listo: `VITE_API_URL=http://localhost:5000/api/v1`, `CORS_ORIGINS` con su origen,
+y el cliente TypeScript puede generarse a partir de la colección de endpoints o del OpenAPI (pendiente de exponer). Consumo del token:
+guardar `access_token` (15 min) y renovar con `/auth/refresh`; al cerrar sesión llamar `/auth/logout` enviando también el `refresh_token`.
 
-# Estilos (Tailwind v4) e iconos
-npm install tailwindcss @tailwindcss/vite lucide-react
+## 8. Reglas de trabajo con la base de datos
 
-# Pruebas y calidad
-npm install -D vitest jsdom @testing-library/react @testing-library/jest-dom @testing-library/user-event msw prettier
-
-# Tipos desde OpenAPI del backend (opcional, fase 1)
-npm install -D openapi-typescript
-```
-
-Estructura de carpetas:
-
-```powershell
-$dirs = "app\layouts","features\auth","features\salon","features\clientes","features\menu","features\comanda","features\cuentas","shared\ui","shared\hooks","shared\utils","lib","api-types","styles"
-foreach ($d in $dirs) { New-Item -ItemType Directory -Force "src\$d" | Out-Null }
-```
-
-Configuración mínima de Tailwind v4 (`vite.config.ts`):
-
-```ts
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-import tailwindcss from '@tailwindcss/vite'
-
-export default defineConfig({
-  plugins: [react(), tailwindcss()],
-  server: { port: 5173, proxy: { '/api': 'http://localhost:5000' } },
-})
-```
-
-En `src/styles/index.css` (tokens del tema, ver [02-frontend-react.md §7](02-frontend-react.md)):
-
-```css
-@import "tailwindcss";
-@custom-variant dark (&:where(.dark, .dark *));
-```
-
-Scripts útiles en `package.json`: `"gen:api": "openapi-typescript http://localhost:5000/api/openapi.json -o src/api-types/api.d.ts"`, `"test": "vitest"`.
-
-Arranque:
-
-```powershell
-npm run dev
-```
-
-## 4. Primer commit
-
-```powershell
-cd D:\Proyectos\RT300
-git add .
-git commit -m "chore: esqueleto inicial api + web + docs"
-```
-
-## 5. Orden de trabajo recomendado (Fase 0 y 1)
-
-1. `create_app()`, config, errores, logging.
-2. Conexión SQL Server (`core/db.py`) y prueba de `SELECT 1`.
-3. `auth`: login con `clave_calcular` portada + JWT.
-4. `salon` y `menu` en **solo lectura**.
-5. Frontend: tema + AppLayout + Login + Mesas + Comanda (solo lectura de menú).
-6. `FakeGateway` y guardar comanda (Fase 3).
+- **No se altera el esquema** de `tbpos_new`. Las pruebas que escriben (ocupar/habilitar mesa, guardar comanda) dejan folios anulados y avanzan los contadores `rtsrl`: usar solo la BD de Docker, y borrar a mano las filas de `rttmp` creadas por pruebas.
+- El backup es **una copia de producción**: trátala con cuidado (`rttmp` tiene ~2,5 millones de filas).

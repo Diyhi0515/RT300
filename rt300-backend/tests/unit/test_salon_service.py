@@ -20,6 +20,11 @@ class RepoSalon:
     def parametros(self):
         return Parametros({}, {}, {}, {}, datetime(2026, 7, 24, 8, 30), 1, True)
 
+    local = 2   # mismo local que GARZON
+
+    def local_de_mesa(self, c): return self.local
+    def local_de_folio(self, n): return self.local
+    def local_de_area(self, a): return self.local
     def mesa(self, c): return self._mesa
     def cliente(self, c): return VARIOS
     def tomar_mesa(self, c): return self.toma
