@@ -77,6 +77,21 @@ flowchart LR
 
 El botón **ADMIN** (eliminar/reimprimir) solo se muestra con rol `admin`/`cajero` y siempre pide autorización en el backend.
 
+### Estado de la conexión con el backend
+
+| Pantalla | Estado |
+|---|---|
+| `/login` (auth) | **Conectada** a `rt300-backend` (`APP_MODE = 'production'`; el mockup se conserva en `src/simulados`). Contrato, errores y cambios: [`features/auth/README.md`](../rt300-frontend/src/features/auth/README.md) |
+| `/mesas`, `/comanda`, `/cuentas`, `/estado` | Pendientes. El backend ya expone sus endpoints ([01 §5](01-backend-flask.md)) y una colección de prueba en `docs/bruno/` |
+
+Reglas para conectar las siguientes pantallas:
+
+- Las listas del backend vienen **envueltas** (`{ "mesas": [...] }`, `{ "platos": [...] }`…), nunca como arreglo suelto.
+- Los errores son `{ error: { code, message, request_id } }`; `lib/http.ts` ya los convierte en `ErrorApi`.
+- Las rutas por mesa o folio responden `403 OTRO_LOCAL` si pertenecen a otro local; el front no necesita filtrarlas.
+- Al cerrar sesión enviar el `refresh_token` en el cuerpo de `/auth/logout` (el backend revoca ambos tokens).
+- Cada cambio relevante se registra en [`docs/CAMBIOS.md`](CAMBIOS.md) y en el README de la feature.
+
 ---
 
 ## 4. Flujo de datos

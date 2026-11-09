@@ -1,4 +1,4 @@
-import { http } from '@/lib/http'
+import { http, tokens } from '@/lib/http'
 import {
   esquemaRespuestaInicio,
   esquemaRespuestaUsuarios,
@@ -12,9 +12,15 @@ export const iniciarSesion = async (form: DatosFormularioInicio) => {
 
 export const listarUsuarios = async () => {
   const { data } = await http.get('/auth/usuarios')
-  return esquemaRespuestaUsuarios.parse(data)
+  return esquemaRespuestaUsuarios.parse(data).usuarios
 }
 
 export const cerrarSesion = async () => {
-  await http.post('/auth/logout')
+  const acceso = tokens.obtenerAcceso()
+  const renovacion = tokens.obtenerRenovacion()
+  await http.post(
+    '/auth/logout',
+    { refresh_token: renovacion },
+    { headers: acceso ? { Authorization: `Bearer ${acceso}` } : undefined },
+  )
 }

@@ -2,10 +2,18 @@
 qué usuarios existen (un solo mensaje para usuario/clave inválidos)."""
 from __future__ import annotations
 
+from dataclasses import dataclass
+
 from ...core.errors import Unauthorized
 from ...core.legacy_password import verificar
 from ...domain.usuario import Usuario
 from .ports import AuthRepo
+
+
+@dataclass(frozen=True)
+class ResultadoLogin:
+    usuario: Usuario
+    local: str   # nombre del local (vtloc), para mostrar en pantalla
 
 
 class PoliticaRoles:
@@ -30,7 +38,7 @@ class AuthService:
     def listar_usuarios(self) -> list[dict]:
         return self._repo.usuarios_de_pedidos()
 
-    def login(self, usuario: str, clave: str) -> Usuario:
+    def login(self, usuario: str, clave: str) -> ResultadoLogin:
         usuario = usuario.strip().upper()
         cred = self._repo.credencial(usuario)
         acceso = self._repo.acceso_pedidos(usuario)
@@ -61,5 +69,6 @@ class AuthService:
         if not acceso.tipo_pedido_inicial:
             raise Unauthorized("Falta Definir tipo de pedido inicial.", "SIN_TIPO_PEDIDO")
 
-        return Usuario(usuario=usuario, nombre=cred.nombre, cloc=cred.cloc, calm=cred.calm, cmon=cmon,
-                       nreg=acceso.nreg, rol=self._roles.rol_de(usuario))
+        sesion = Usuario(usuario=usuario, nombre=cred.nombre, cloc=cred.cloc, calm=cred.calm, cmon=cmon,
+                         nreg=acceso.nreg, rol=self._roles.rol_de(usuario))
+        return ResultadoLogin(sesion, self._repo.nombre_local(cred.cloc))

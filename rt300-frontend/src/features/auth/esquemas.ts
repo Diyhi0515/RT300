@@ -20,6 +20,6 @@ export const esquemaRespuestaInicio = z.object({
   perfil: esquemaPerfil,
 })
 
-export const esquemaRespuestaUsuarios = z.array(
-  z.object({ usuario: z.string(), nombre: z.string() }),
-)
+export const esquemaRespuestaUsuarios = z.object({
+  usuarios: z.array(z.object({ usuario: z.string(), nombre: z.string() })),
+})

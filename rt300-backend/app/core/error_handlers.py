@@ -8,6 +8,14 @@ from .errors import DomainError
 
 log = logging.getLogger(__name__)
 
+_MENSAJES_HTTP = {
+    400: ("SOLICITUD_INVALIDA", "La solicitud no es válida."),
+    404: ("NO_ENCONTRADO", "No se encontró lo que buscas."),
+    405: ("METODO_NO_PERMITIDO", "Método no permitido."),
+    413: ("CUERPO_DEMASIADO_GRANDE", "El envío es demasiado grande."),
+    429: ("DEMASIADOS_INTENTOS", "Demasiados intentos. Espera un momento e intenta de nuevo."),
+}
+
 
 def _body(code: str, message: str, extra: dict | None = None) -> dict:
     err = {"code": code, "message": message, "request_id": getattr(g, "request_id", None)}
@@ -28,7 +36,8 @@ def register_error_handlers(app: Flask) -> None:
 
     @app.errorhandler(HTTPException)
     def _http(e: HTTPException):
-        return jsonify(_body(e.name.upper().replace(" ", "_"), e.description or e.name)), e.code
+        code, msg = _MENSAJES_HTTP.get(e.code or 0, (e.name.upper().replace(" ", "_"), e.description or e.name))
+        return jsonify(_body(code, msg)), e.code
 
     @app.errorhandler(Exception)
     def _unexpected(e: Exception):

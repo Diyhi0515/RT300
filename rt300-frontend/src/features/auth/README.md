@@ -11,7 +11,7 @@ La feature sigue la arquitectura de `docs/02-frontend-react.md`: carpeta propia 
 - Bloquea el ingreso de un usuario tras 5 contraseñas incorrectas, con cuenta regresiva en vivo.
 - Permite buscar usuarios en tiempo real, recordar el último usuario y cambiar entre tema claro y oscuro.
 - Es responsiva (móvil, tablet, escritorio y pantallas bajas) y funciona como PWA.
-- Tiene un modo `mockup` que simula la API para ver el diseño sin backend.
+- Está conectada al backend real (`APP_MODE = 'production'`). El modo `mockup` se conserva para ver el diseño sin backend.
 
 ## Estructura
 
@@ -77,14 +77,27 @@ Un `401` fuera del login intenta renovar el token una vez; si no se puede, se ci
 
 Prefijo `/api/v1` (configurable con `VITE_API_URL`).
 
-| Método y ruta | Respuesta esperada |
-|---|---|
-| `GET /auth/usuarios` | `[{ "usuario": "GP4", "nombre": "Piscina" }]` |
-| `POST /auth/login` con `{ usuario, clave }` | `{ access_token, refresh_token, perfil: { usuario, nombre, local, rol } }` |
-| `POST /auth/refresh` | `{ access_token }` |
-| `POST /auth/logout` | cualquier cuerpo |
+Es el contrato real del backend (`rt300-backend`, ver `docs/01-backend-flask.md` §4 y §5).
 
-Roles válidos: `garzon`, `cajero`, `admin`. Los errores deben venir como `{ error: { code, message } }`. El código `CREDENCIALES_INVALIDAS` es el que cuenta como intento fallido (un `401` en el login sin código se trata igual).
+| Método y ruta | Respuesta |
+|---|---|
+| `GET /auth/usuarios` | `{ "usuarios": [{ "usuario": "GP1", "nombre": "GARZON 1 HOYO 19" }] }` (el front toma la propiedad `usuarios`) |
+| `POST /auth/login` con `{ usuario, clave }` | `{ access_token, refresh_token, perfil }` |
+| `POST /auth/refresh` con `Authorization: Bearer <refresh_token>` | `{ access_token }` |
+| `POST /auth/logout` con `Authorization: Bearer <access_token>` y cuerpo `{ refresh_token }` | `{ ok: true }` |
+
+`perfil` trae `usuario`, `nombre`, `local` (nombre del local, por ejemplo "RESTAURANTE HOYO 19"), `rol` y también `cloc`, `calm`, `cmon` y `nreg` (los usará el resto del sistema; el esquema de zod de esta feature los ignora).
+
+Roles válidos: `garzon`, `cajero`, `admin`. Los errores vienen como `{ error: { code, message, request_id } }`.
+
+| Código | Cuándo | Cómo lo trata el front |
+|---|---|---|
+| `CREDENCIALES_INVALIDAS` (401) | usuario inexistente, sin acceso a pedidos o clave errónea (el backend usa el mismo mensaje para los tres, a propósito) | cuenta como intento fallido |
+| `DEMASIADOS_INTENTOS` (429) | más de 10 logins por minuto desde la misma IP | aviso con el mensaje del servidor; no cuenta como intento |
+| `USUARIO_DESHABILITADO`, `SIN_LOCAL`, `SIN_MESERO`, `SIN_ALMACEN`... (401) | usuario válido pero mal configurado en la base de datos; solo se informa tras una clave correcta | aviso con el mensaje del servidor; no cuenta como intento |
+| `TOKEN_EXPIRADO`, `TOKEN_REVOCADO` (401) | token vencido o sesión cerrada | intenta renovar una vez; si no se puede, cierra la sesión |
+
+El access token dura 15 minutos y el de renovación 1 día. Al cerrar sesión, el backend revoca ambos.
 
 ## Bloqueo por intentos fallidos
 
@@ -140,15 +153,15 @@ La casilla "Recordar Credenciales" guarda el último usuario en `localStorage` (
 La variable está en `lib/env.ts`:
 
 ```ts
-export const APP_MODE: AppMode = 'mockup'
+export const APP_MODE: AppMode = 'production'
 ```
 
-- `'mockup'`: no se llama a la API. `simulados/adaptador.ts` responde `/auth/usuarios`, `/auth/login`, `/auth/refresh` y `/auth/logout` con 700 ms de espera.
-- `'production'`: se llama a la API real.
+- `'production'` (valor actual): se llama a la API real del backend.
+- `'mockup'`: no se llama a la API. `simulados/adaptador.ts` responde `/auth/usuarios`, `/auth/login`, `/auth/refresh` y `/auth/logout` con 700 ms de espera, con el mismo formato que el backend real. Sirve para ver el diseño sin levantar nada: basta con cambiar el valor a `'mockup'`.
 - Al cambiar el valor, el servidor de desarrollo se reinicia solo. Para publicar, hay que volver a compilar.
 - En producción no se incluye ningún código ni dato de prueba (se verificó en el resultado de la compilación).
 
-Datos de prueba (`simulados/datos.ts`):
+Datos de prueba del modo mockup (`simulados/datos.ts`). Con el backend real los usuarios salen de la base de datos y no se usan estos:
 
 | Usuario | Contraseña |
 |---|---|
@@ -175,6 +188,20 @@ En mockup, el modal de bloqueo muestra el botón "Reiniciar bloqueos (solo mocku
 - Sin comentarios en el código.
 - Sin puntos decorativos en la interfaz.
 
+## Conexión con el backend
+
+1. Levantar la base de datos y el backend (desde la raíz del repositorio):
+
+```bash
+docker compose up -d db backend
+```
+
+2. Comprobar que responde: `http://localhost:5000/api/v1/health` debe devolver `{"db": true, "status": "ok"}`.
+3. Levantar el front (`npm run dev`). En desarrollo el cliente llama a `/api/v1` y el proxy de Vite (`vite.config.ts`) lo reenvía a `http://localhost:5000`, así que no hace falta configurar CORS.
+4. Variables opcionales: `VITE_API_URL` cambia la dirección del backend (por ejemplo `http://localhost:5000/api/v1`, como hace `docker-compose.yml`). En ese caso el origen del front debe estar en `CORS_ORIGINS` del backend.
+
+Usuarios reales de prueba (copia de la base del club): `GP1`, `GP2`, `GP5` y `GP6`, todos con contraseña `123456`. La lista del panel muestra los usuarios habilitados para pedidos (hoy 89).
+
 ## Cómo probar
 
 ```bash
@@ -182,9 +209,9 @@ npm install
 npm run dev
 ```
 
-Abrir `http://localhost:5173/login` y probar:
+Abrir `http://localhost:5173/login` y probar. Con el backend real, usar `GP1` en lugar de `GP4` (que solo existe en el mockup):
 
-1. Entrar con `GP4` y `123456`: debe llegar a `/mesas`.
+1. Entrar con `GP1` y `123456`: debe llegar a `/mesas` y mostrar "GARZON 1 HOYO 19" en la cabecera.
 2. Fallar 5 veces con otro usuario: el aviso cambia de celeste a rojo y al quinto se abre el modal de bloqueo.
 3. Con ese usuario bloqueado, cambiar a otro y comprobar que puede entrar.
 4. Esperar 60 segundos entre fallos y ver que el contador se reinicia.
@@ -202,6 +229,24 @@ npm run build
 
 ## Pendientes y observaciones
 
-- El bloqueo por intentos debe reforzarse en el servidor.
+- El bloqueo por intentos del navegador no basta: el backend ya limita 10 logins por minuto por IP (respuesta 429), pero no bloquea por usuario.
 - Del diseño de Stitch no se incluyeron el selector de turno, el panel de estadísticas ni el teclado numérico, porque no hay datos reales detrás.
 - Los componentes `FichaUsuario` y `UsuarioPanel` conservan una propiedad `disabled` que el login ya no usa.
+
+## Cambios al conectar con el backend
+
+Archivos tocados y por qué:
+
+| Archivo | Cambio |
+|---|---|
+| `lib/env.ts` | `APP_MODE` pasa de `'mockup'` a `'production'`. El mockup no se borró. |
+| `features/auth/esquemas.ts` | `esquemaRespuestaUsuarios` espera `{ usuarios: [...] }`, que es lo que devuelve el backend (todas sus listas vienen envueltas en un objeto). |
+| `features/auth/api.ts` | `listarUsuarios` devuelve la propiedad `usuarios`. `cerrarSesion` ahora lee los tokens antes de limpiar la sesión y los envía de forma explícita: el token de acceso en `Authorization` y el de renovación en el cuerpo (`refresh_token`). Antes la petición salía sin token porque el interceptor corre después de `cerrar()`, y el backend no podía revocar la sesión. |
+| `simulados/adaptador.ts` | `/auth/usuarios` responde `{ usuarios }` para que el mockup siga el mismo contrato que el backend real. |
+
+Cambios que se hicieron en el backend para esta pantalla:
+
+- `POST /auth/login` devuelve `perfil.local` con el nombre del local (antes solo `cloc`, el código).
+- Los errores HTTP genéricos (404, 405, 413, 429) ahora llevan mensajes en español, porque el front muestra el mensaje del servidor cuando no tiene uno propio para el código.
+
+Verificado con el navegador: la lista carga los 89 usuarios reales, una clave incorrecta da 401 y cuenta el intento, `GP1` / `123456` entra a `/mesas`, y "Salir" responde 200 y vuelve al login. `npx tsc -b` y `npm run lint` pasan sin errores.

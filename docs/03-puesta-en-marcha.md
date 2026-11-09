@@ -77,9 +77,18 @@ y arrancar con `GATEWAY_MODE=soap` y `GATEWAY_WSDL_URL=<esa URL>`. Se acepta **l
 
 ## 7. Frontend
 
-El frontend lo desarrolla otro equipo. Cuando esté listo: `VITE_API_URL=http://localhost:5000/api/v1`, `CORS_ORIGINS` con su origen,
-y el cliente TypeScript puede generarse a partir de la colección de endpoints o del OpenAPI (pendiente de exponer). Consumo del token:
-guardar `access_token` (15 min) y renovar con `/auth/refresh`; al cerrar sesión llamar `/auth/logout` enviando también el `refresh_token`.
+El login del frontend **ya está conectado** a este backend (`rt300-frontend/src/lib/env.ts` → `APP_MODE = 'production'`; el mockup se conserva).
+Detalles, contrato y cambios: [`rt300-frontend/src/features/auth/README.md`](../rt300-frontend/src/features/auth/README.md).
+
+```bash
+docker compose up -d db backend      # base de datos + API
+cd rt300-frontend && npm install && npm run dev
+```
+
+En desarrollo el front llama a `/api/v1` y el proxy de Vite lo reenvía a `http://localhost:5000` (no hace falta CORS).
+Si usa `VITE_API_URL` con otro origen, ese origen debe estar en `CORS_ORIGINS` del backend.
+Para las siguientes pantallas: guardar `access_token` (15 min), renovar con `/auth/refresh`, y al cerrar sesión llamar `/auth/logout`
+enviando el `refresh_token` en el cuerpo (el backend revoca ambos tokens).
 
 ## 8. Reglas de trabajo con la base de datos
 

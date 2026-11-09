@@ -38,5 +38,9 @@ class SqlAuthRepository(SqlRepository):
         r = self._one("SELECT gbagestat FROM gbage WHERE gbagecage = :c", c=cven)
         return None if r is None else to_int(r["gbagestat"]) == 2
 
+    def nombre_local(self, cloc: int) -> str:
+        r = self._one("SELECT vtlocdesc FROM vtloc WHERE vtloccloc = :c", c=cloc)
+        return clean((r or {}).get("vtlocdesc"))
+
     def hay_parametros_restaurant(self) -> bool:
         return self._one("SELECT TOP 1 1 AS x FROM rtctl") is not None

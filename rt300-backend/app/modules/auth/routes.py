@@ -26,12 +26,12 @@ def usuarios():
 @limiter.limit("10/minute")
 def login():
     body = LoginIn.model_validate(request.get_json(silent=True) or {})
-    ses = auth_service().login(body.usuario, body.clave)
-    claims = ses.claims()
+    resultado = auth_service().login(body.usuario, body.clave)
+    ses, claims = resultado.usuario, resultado.usuario.claims()
     return jsonify({
         "access_token": create_access_token(ses.usuario, additional_claims=claims),
         "refresh_token": create_refresh_token(ses.usuario, additional_claims=claims),
-        "perfil": claims,
+        "perfil": {**claims, "local": resultado.local},
     })
 
 

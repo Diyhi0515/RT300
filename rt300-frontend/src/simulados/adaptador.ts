@@ -42,7 +42,7 @@ export const adaptadorSimulado = async (
   await esperar(RETARDO_MS)
   const route = `${config.method?.toLowerCase()} ${config.url}`
 
-  if (route === 'get /auth/usuarios') return respuestaOk(config, usuarios)
+  if (route === 'get /auth/usuarios') return respuestaOk(config, { usuarios })
 
   if (route === 'post /auth/login') {
     const { usuario, clave } = cuerpoDe(config) as { usuario?: string; clave?: string }

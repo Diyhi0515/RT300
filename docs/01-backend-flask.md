@@ -129,6 +129,7 @@ sequenceDiagram
 - Usuario inexistente, sin acceso a pedidos, sin clave o clave errónea devuelven **el mismo mensaje** (no se revela qué usuarios existen). Los motivos de configuración (deshabilitado, sin local…) solo se informan tras una clave correcta.
 - `POST /auth/logout` **revoca** el token de acceso y, si se envía `refresh_token`, también el de refresco (lista en memoria; con varias instancias mover a Redis).
 - **Acceso por local:** un usuario solo opera mesas, folios y comandas de **su** local (`cloc` del token). Mesa → local por su área (`rtmsa.rtmsacaco → rtaco.rtacocloc`); folio → `rtfol.rtfolcloc`. Lo de otro local responde `403 OTRO_LOCAL`. La regla vive en `core/acceso.py` y la aplican los services, no las rutas.
+- Códigos de error de auth que consume el front: `CREDENCIALES_INVALIDAS` (401), `DEMASIADOS_INTENTOS` (429), `TOKEN_EXPIRADO` y `TOKEN_REVOCADO` (401), más los de configuración del usuario (`USUARIO_DESHABILITADO`, `SIN_LOCAL`, `SIN_MESERO`, `SIN_ALMACEN`…), que solo se informan tras una clave correcta. Los errores HTTP genéricos (400, 404, 405, 413, 429) llevan mensaje en español.
 - Rate limiting: `/auth/login` 10/min, `/auth/usuarios` 30/min, `/comandas/eliminar` 20/min. Cuerpo máximo 1 MB.
 
 ---
@@ -142,7 +143,7 @@ Hay una colección lista para importar en Bruno/Postman: [`docs/bruno/RT300.post
 | Método y ruta | Reemplaza |
 |---|---|
 | `GET  /auth/usuarios` | lista de la pantalla de login (30/min) |
-| `POST /auth/login` | `f5000_iniciar_session` (10/min por IP) |
+| `POST /auth/login` | `f5000_iniciar_session` (10/min por IP). Responde `{ access_token, refresh_token, perfil }`; `perfil` = `usuario, nombre, local` (nombre del local, texto), `rol`, y `cloc, calm, cmon, nreg` |
 | `POST /auth/refresh` · `POST /auth/logout` · `GET /auth/me` | `inc/logout.php` (el logout revoca el token) |
 
 ### salon (RT300a)

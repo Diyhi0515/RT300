@@ -21,6 +21,7 @@ class RepoAuth:
     def moneda_de_venta(self): return self.moneda
     def mesero_deshabilitado(self, c): return self.mesero_deshab
     def hay_parametros_restaurant(self): return self.rtctl
+    def nombre_local(self, c): return "RESTAURANTE HOYO 19"
     def usuarios_de_pedidos(self): return []
 
 
@@ -29,8 +30,10 @@ def svc(**over):
 
 
 def test_login_ok_devuelve_usuario_de_dominio():
-    u = svc().login("gp1", "123456")
+    r = svc().login("gp1", "123456")
+    u = r.usuario
     assert (u.usuario, u.cloc, u.calm, u.cmon, u.rol) == ("GP1", 2, 2, 1, "garzon")
+    assert r.local == "RESTAURANTE HOYO 19"
 
 
 def test_usuario_inexistente_y_clave_mala_dan_el_mismo_mensaje():
@@ -59,4 +62,4 @@ def test_deshabilitado_solo_se_informa_tras_clave_correcta():
 
 def test_rol_admin_por_politica():
     s = AuthService(RepoAuth(), PoliticaRoles(admins=("GP1",)))
-    assert s.login("GP1", "123456").rol == "admin"
+    assert s.login("GP1", "123456").usuario.rol == "admin"
