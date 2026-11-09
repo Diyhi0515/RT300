@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ...core.respuesta import Salida
+
 Escalar = str | int | float | None
 
 
@@ -112,3 +114,47 @@ class ReimprimirComandaIn(_Base):
     uaut: str = Field(min_length=1, max_length=30)
     mtvo: int
     items: list[ItemComandaRef] = Field(min_length=1, max_length=300)
+
+
+# ───────────── Salida ─────────────
+class ComandaGuardadaOut(Salida):
+    ntmp: int
+    comanda: int | str | None = None
+
+
+class ComandaCabeceraOut(Salida):
+    ncom: int
+    ncta: int | None = None
+    cven: int | str | None = None
+    nomb: str | None = None
+    impt: float | None = None
+
+
+class ComandaDetalleOut(Salida):
+    ncom: int
+    item: int
+    ncta: int | None = None
+    cart: str
+    descripcion: str | None = None
+    cant: float | None = None
+    pvta: float | None = None
+
+
+class MotivoOut(Salida):
+    codigo: int
+    descripcion: str | None = None
+
+
+class MotivosOut(Salida):
+    motivos: list[MotivoOut]
+
+
+class AdministrarComandasOut(Salida):
+    comandas: list[ComandaCabeceraOut]
+    detalle: list[ComandaDetalleOut]
+    motivos: list[MotivoOut]
+
+
+class AccionComandaOut(Salida):
+    ntmp: int
+    resultado: int | str | None = None

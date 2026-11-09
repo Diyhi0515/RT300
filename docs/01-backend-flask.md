@@ -33,6 +33,9 @@ rt300-backend/
 │   │   ├── db.py                # engine, UNA conexión por request, SqlUnitOfWork
 │   │   ├── sql.py               # helpers parametrizados, SqlRepository base, serial atómico
 │   │   ├── repos_compartidos.py # consultas usadas por varios módulos (MesaQueries)
+│   │   ├── respuesta.py         # Salida (base de los modelos de salida) y responder(modelo, datos)
+│   │   ├── salidas_comunes.py   # modelos de salida compartidos (ConsumoOut, MensajeOut, SaludOut)
+│   │   ├── acceso.py            # exigir_local(): control de acceso por local
 │   │   ├── errors.py · error_handlers.py · logging.py (JSON + request_id)
 │   │   ├── security.py          # @autenticado / @requiere_rol, usuario_actual()
 │   │   ├── legacy_password.py   # clave_calcular() portada (SOLO verificación)
@@ -42,7 +45,8 @@ rt300-backend/
 │   │       ├── ports.py         # dataclasses de dominio + Protocol del repositorio (el contrato)
 │   │       ├── repository.py    # implementación SQL (único sitio con SQL)
 │   │       ├── service.py       # casos de uso: reciben puertos por constructor
-│   │       ├── schemas.py       # Pydantic de entrada
+│   │       ├── schemas.py       # Pydantic: modelos de ENTRADA (…In) y de SALIDA (…Out, el contrato con el front)
+│   │       ├── tokens.py        # (solo auth) emisión, renovación y revocación de JWT
 │   │       └── routes.py        # Blueprint: parsea, pide el servicio a composition, responde
 │   │       (comandas/ se divide en guardar.py y administrar.py)
 │   └── integrations/comandas/
@@ -58,11 +62,16 @@ Molde de cada módulo:
 
 | Archivo | Responsabilidad | Prohibido |
 |---|---|---|
-| `routes.py` | Blueprint, parsea request, llama al service, devuelve JSON | SQL, reglas de negocio |
-| `schemas.py` | Modelos Pydantic de entrada | Lógica |
+| `routes.py` | Blueprint: valida la entrada, llama al service y responde con `responder(ModeloOut, datos)` | SQL, reglas de negocio, armar tokens o diccionarios de respuesta |
+| `schemas.py` | Modelos Pydantic de **entrada** (`…In`) y de **salida** (`…Out`) | Lógica |
 | `service.py` | Casos de uso; transacciones con `with self._uow:` | Flask, SQL, importar repositorios concretos |
 | `ports.py` | Contratos (Protocol) y dataclasses de dominio | Implementación |
 | `repository.py` | SQL parametrizado → dataclasses/dicts | Reglas de negocio |
+
+**Respuestas tipadas.** Cada endpoint declara un modelo de salida y responde con `responder(ModeloOut, datos)` (`core/respuesta.py`):
+solo salen los campos declarados (una columna nueva o personal de la base legacy no se filtra por accidente), se conservan exactamente las
+claves que entrega el servicio (sin `null` inventados) y un dato con tipo inválido falla en el servidor en vez de llegar mal al front.
+Los bloques que son filas legacy completas a propósito (`gbpmt`, `gbrne`, `local`, `moneda`…) se declaran `dict[str, Any]`.
 
 **Dependencias (SOLID):** `routes → composition → services → ports ← repositories`. Los servicios dependen de
 *abstracciones* (`SalonRepo`, `UnitOfWork`, `AltaComandaGateway`…); `composition.py` decide qué implementación
@@ -161,7 +170,7 @@ Hay una colección lista para importar en Bruno/Postman: [`docs/bruno/RT300.post
 | Método y ruta | Reemplaza |
 |---|---|
 | `GET  /folios/{nfol}/cuentas` | `f5000_buscar_cuentas_rt300b` |
-| `GET  /clientes?codigo=&nombre=` | `f4100_buscar_cliente`, `f5000_buscar_avanzada_cliente` |
+| `GET  /clientes?codigo=&nombre=` | `f4100_buscar_cliente`, `f5000_buscar_avanzada_cliente`. Por `nombre`: `{ clientes: [{ codigo, nombre }] }`. Por `codigo`: `{ clientes: [{ codigo, nombre, nruc, ndid, lpre }] }` (`lpre` = lista de precio del cliente; antes devolvía la fila completa de `gbage`, con datos personales) |
 | `PUT  /folios/{nfol}/cuentas/{ncta}` | `f1000_actualizar_cuenta_rt300b` |
 
 ### menu (RT300c — carga)
@@ -348,7 +357,7 @@ Las credenciales `prueba/prueba` son solo para el contenedor de pruebas local.
 
 | Nivel | Qué prueba | Cómo | Estado |
 |---|---|---|---|
-| Unitarias | `services` con repositorios, gateway y UoW falsos | `docker compose exec backend python -m pytest tests/unit` | **50 pruebas** (auth, salon, clientes, comandas, acceso por local, gateway SOAP, helpers SQL, imágenes) |
+| Unitarias | `services` con repositorios, gateway y UoW falsos | `docker compose exec backend python -m pytest tests/unit` | **60 pruebas** (auth, tokens, respuestas tipadas, salon, clientes, comandas, acceso por local, gateway SOAP, helpers SQL, imágenes) |
 | Integración | `repositories` contra la BD de Docker | `pytest -m integration` | pendiente |
 | API | Rutas, permisos, errores | colección Bruno + `flask test client` | colección lista; tests pendientes |
 | Regresión vs PHP | Mismas entradas → mismo resultado que el sistema actual | comparar menú, mesas y resúmenes | pendiente |

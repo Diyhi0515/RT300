@@ -241,12 +241,14 @@ Archivos tocados y por qué:
 |---|---|
 | `lib/env.ts` | `APP_MODE` pasa de `'mockup'` a `'production'`. El mockup no se borró. |
 | `features/auth/esquemas.ts` | `esquemaRespuestaUsuarios` espera `{ usuarios: [...] }`, que es lo que devuelve el backend (todas sus listas vienen envueltas en un objeto). |
-| `features/auth/api.ts` | `listarUsuarios` devuelve la propiedad `usuarios`. `cerrarSesion` ahora lee los tokens antes de limpiar la sesión y los envía de forma explícita: el token de acceso en `Authorization` y el de renovación en el cuerpo (`refresh_token`). Antes la petición salía sin token porque el interceptor corre después de `cerrar()`, y el backend no podía revocar la sesión. |
+| `features/auth/api.ts` | `listarUsuarios` devuelve la propiedad `usuarios`. `cerrarSesion` delega en `revocarSesion()` de `lib/http.ts`. |
+| `lib/http.ts` | Nuevo `revocarSesion()`: lee los tokens antes de que se limpie la sesión y los envía de forma explícita (acceso en `Authorization`, renovación en el cuerpo como `refresh_token`) con el cliente sin interceptores. Antes la petición salía sin token porque el interceptor corre después de `cerrar()`, y el backend no podía revocar la sesión. El manejo de tokens queda en `lib/http.ts`, como define la arquitectura. |
 | `simulados/adaptador.ts` | `/auth/usuarios` responde `{ usuarios }` para que el mockup siga el mismo contrato que el backend real. |
 
 Cambios que se hicieron en el backend para esta pantalla:
 
 - `POST /auth/login` devuelve `perfil.local` con el nombre del local (antes solo `cloc`, el código).
+- Las respuestas del backend ahora son **modelos de salida tipados** (solo salen los campos del contrato) y los tokens los emite `modules/auth/tokens.py`; el contrato de esta pantalla no cambió.
 - Los errores HTTP genéricos (404, 405, 413, 429) ahora llevan mensajes en español, porque el front muestra el mensaje del servidor cuando no tiene uno propio para el código.
 
 Verificado con el navegador: la lista carga los 89 usuarios reales, una clave incorrecta da 401 y cuenta el intento, `GP1` / `123456` entra a `/mesas`, y "Salir" responde 200 y vuelve al login. `npx tsc -b` y `npm run lint` pasan sin errores.

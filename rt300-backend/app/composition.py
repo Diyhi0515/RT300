@@ -11,6 +11,7 @@ from .domain.uow import UnitOfWork
 from .integrations.comandas.base import ComandasGateway
 from .modules.auth.repository import SqlAuthRepository
 from .modules.auth.service import AuthService, PoliticaRoles
+from .modules.auth.tokens import EmisorTokens
 from .modules.clientes.repository import SqlClientesRepository
 from .modules.clientes.service import ClientesService
 from .modules.comandas.administrar import AdministrarComandasService
@@ -35,6 +36,10 @@ def _gateway() -> ComandasGateway:
 def auth_service() -> AuthService:
     cfg = current_app.config["APP_CONFIG"]
     return AuthService(SqlAuthRepository(get_db()), PoliticaRoles(cfg.admin_users, cfg.cajero_users))
+
+
+def emisor_tokens() -> EmisorTokens:
+    return EmisorTokens()
 
 
 def salon_service() -> SalonService:

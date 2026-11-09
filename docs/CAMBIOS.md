@@ -19,7 +19,32 @@ Documentos relacionados: [00 arquitectura](00-arquitectura-general.md) · [01 ba
 
 ---
 
-## 2026-11-09 · Login del frontend conectado al backend *(sin commit al escribir esto)*
+## 2026-11-09 · Corrección de arquitectura: respuestas tipadas y tokens *(sin commit al escribir esto)*
+
+Se detectaron tres desviaciones respecto a la arquitectura documentada y se corrigieron.
+
+| Desviación | Corrección |
+|---|---|
+| Los `schemas.py` solo tenían modelos de **entrada**; las rutas hacían `jsonify` de diccionarios con columnas legacy. | **Modelo de salida (`…Out`) por endpoint** en los 6 módulos y `core/respuesta.py` con `responder()`. Solo salen los campos declarados. |
+| La ruta de login armaba los tokens y el perfil. | Nuevo `modules/auth/tokens.py` (`EmisorTokens`: emitir, renovar, cerrar sesión). Las rutas de auth quedan en 3 líneas. |
+| El front manejaba tokens dentro de la feature (`features/auth/api.ts`). | Nuevo `revocarSesion()` en `lib/http.ts`, donde la arquitectura del front ubica los tokens. |
+
+Otros cambios derivados:
+
+- **Cierre de una fuga de datos:** `GET /clientes?codigo=` devolvía la fila completa de `gbage` (fecha de nacimiento, datos personales…). Ahora devuelve `{ codigo, nombre, nruc, ndid, lpre }`; `lpre` es la lista de precio, que la toma de pedido necesita. **Es el único cambio de contrato** de esta corrección.
+- **Orden determinista:** las alternativas de un insumo (`rtial`) se devolvían sin `ORDER BY`, así que el orden dependía de SQL Server. Ahora van por `rtialcins, rtialitem`.
+- `/health` y los demás endpoints usan el mismo mecanismo de respuesta.
+- Nuevos archivos: `core/respuesta.py`, `core/salidas_comunes.py`, `modules/auth/tokens.py`. Los esquemas de entrada de `cuentas` pasaron de `routes.py` a `schemas.py`.
+
+**Cómo se verificó que no se rompió el contrato:** se guardaron 35 respuestas reales (lecturas, errores y login) antes del cambio y se compararon
+después: 33 idénticas byte a byte; las otras dos son las cambiadas a propósito (cliente por código y el orden de alternativas, con el mismo contenido).
+Además se probó en vivo el flujo de escritura (ocupar, modificar, editar cuenta, guardar, reintentar, reimprimir, habilitar, rechazo de clave de
+supervisor) y la sesión: antes de «Salir» el refresh token da 200 y después da `401 TOKEN_REVOCADO`. Pruebas unitarias: de 50 a **60**
+(`test_respuesta.py` y `test_tokens.py`).
+
+---
+
+## 2026-11-09 · Login del frontend conectado al backend
 
 ### Frontend (`rt300-frontend`)
 
@@ -27,7 +52,8 @@ Documentos relacionados: [00 arquitectura](00-arquitectura-general.md) · [01 ba
 |---|---|
 | `src/lib/env.ts` | `APP_MODE` pasa de `'mockup'` a `'production'`: el front usa la API real. **El mockup no se borró**; vuelve con `'mockup'`. |
 | `src/features/auth/esquemas.ts` | `esquemaRespuestaUsuarios` espera `{ usuarios: [...] }`, el formato real (las listas del backend siempre vienen envueltas). |
-| `src/features/auth/api.ts` | `listarUsuarios` devuelve la propiedad `usuarios`. `cerrarSesion` lee los tokens **antes** de limpiar la sesión y los envía explícitos (access en `Authorization`, refresh en el cuerpo). Antes salía sin token, porque el interceptor corre después de `cerrar()`, y el backend no podía revocar la sesión. |
+| `src/features/auth/api.ts` | `listarUsuarios` devuelve la propiedad `usuarios`. `cerrarSesion` delega en `revocarSesion()`. |
+| `src/lib/http.ts` | Nuevo `revocarSesion()`: lee los tokens **antes** de que se limpie la sesión y los envía explícitos (access en `Authorization`, refresh en el cuerpo) con el cliente sin interceptores. Antes el cierre de sesión salía sin token (el interceptor corre después de `cerrar()`) y el backend no podía revocarla. |
 | `src/simulados/adaptador.ts` | El mockup responde `/auth/usuarios` con `{ usuarios }` para seguir el mismo contrato. |
 | `src/features/auth/README.md` | Contrato real, tabla de códigos de error, pasos para conectar, usuarios de prueba reales y esta lista de cambios. |
 
@@ -147,4 +173,4 @@ creadas en `rttmp` se borraron. La base de Docker es una **copia de producción*
 | `3d366ab` | 11-06 | Backend completo: API, arquitectura limpia, seguridad base, pruebas |
 | `e19d920` | 11-09 | Imágenes de platos, usuario de BD mínimo, acceso por local, SOAP configurable, refactor SOLID y documentación |
 | `3074a55` | 11-09 | Login del frontend (equipo de front) |
-| *(pendiente)* | 11-09 | Conexión del login con el backend y esta documentación |
+| *(pendiente)* | 11-09 | Conexión del login con el backend, corrección de arquitectura (respuestas tipadas, tokens) y documentación |

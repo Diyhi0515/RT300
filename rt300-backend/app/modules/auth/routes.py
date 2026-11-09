@@ -1,25 +1,21 @@
 from __future__ import annotations
 
-from flask import Blueprint, jsonify, request
-from flask_jwt_extended import (
-    create_access_token,
-    create_refresh_token,
-    decode_token,
-    get_jwt,
-    get_jwt_identity,
-    jwt_required,
-)
+from flask import Blueprint, request
+from flask_jwt_extended import get_jwt, jwt_required
 
-from ...composition import auth_service
-from ...extensions import limiter, revocar
-from .schemas import LoginIn
+from ...composition import auth_service, emisor_tokens
+from ...core.respuesta import responder
+from ...core.security import usuario_actual
+from ...extensions import limiter
+from .schemas import LoginIn, LoginOut, MeOut, OkOut, TokenOut, UsuariosOut
 
 bp = Blueprint("auth", __name__)
+
 
 @bp.get("/usuarios")
 @limiter.limit("30/minute")
 def usuarios():
-    return jsonify({"usuarios": auth_service().listar_usuarios()})
+    return responder(UsuariosOut, {"usuarios": auth_service().listar_usuarios()})
 
 
 @bp.post("/login")
@@ -27,38 +23,24 @@ def usuarios():
 def login():
     body = LoginIn.model_validate(request.get_json(silent=True) or {})
     resultado = auth_service().login(body.usuario, body.clave)
-    ses, claims = resultado.usuario, resultado.usuario.claims()
-    return jsonify({
-        "access_token": create_access_token(ses.usuario, additional_claims=claims),
-        "refresh_token": create_refresh_token(ses.usuario, additional_claims=claims),
-        "perfil": {**claims, "local": resultado.local},
-    })
+    return responder(LoginOut, emisor_tokens().emitir(resultado.usuario, resultado.local))
 
 
 @bp.post("/refresh")
 @jwt_required(refresh=True)
 def refresh():
-    claims = {k: v for k, v in get_jwt().items() if k in ("usuario", "nombre", "cloc", "calm", "cmon", "nreg", "rol")}
-    return jsonify({"access_token": create_access_token(get_jwt_identity(), additional_claims=claims)})
+    return responder(TokenOut, emisor_tokens().renovar(get_jwt()))
 
 
 @bp.post("/logout")
 @jwt_required(verify_type=False)
 def logout():
-    """Revoca el token presentado y, si se envía en el cuerpo, también el refresh_token."""
-    revocar(get_jwt()["jti"], get_jwt()["exp"])
-    rt = (request.get_json(silent=True) or {}).get("refresh_token")
-    if rt:
-        try:
-            d = decode_token(rt)
-            if d.get("sub") == get_jwt_identity():
-                revocar(d["jti"], d["exp"])
-        except Exception:  # noqa: BLE001 - un refresh inválido no impide cerrar sesión
-            pass
-    return jsonify({"ok": True})
+    refresh_token = (request.get_json(silent=True) or {}).get("refresh_token")
+    emisor_tokens().cerrar_sesion(get_jwt(), refresh_token)
+    return responder(OkOut, {"ok": True})
 
 
 @bp.get("/me")
 @jwt_required()
 def me():
-    return jsonify({"perfil": {k: get_jwt().get(k) for k in ("usuario", "nombre", "cloc", "calm", "cmon", "nreg", "rol")}})
+    return responder(MeOut, {"perfil": usuario_actual().claims()})

@@ -86,6 +86,17 @@ const renovarAcceso = async () => {
   }
 }
 
+export const revocarSesion = async () => {
+  const acceso = tokenAcceso
+  const renovacion = tokens.obtenerRenovacion()
+  if (!acceso) return
+  await clienteSimple.post(
+    '/auth/logout',
+    { refresh_token: renovacion },
+    { headers: { Authorization: `Bearer ${acceso}` } },
+  )
+}
+
 type ConfigReintento = InternalAxiosRequestConfig & { _retry?: boolean }
 
 type CuerpoError = { error?: { code?: string; message?: string; request_id?: string } }

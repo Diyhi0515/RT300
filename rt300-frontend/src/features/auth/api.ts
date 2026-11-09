@@ -1,4 +1,4 @@
-import { http, tokens } from '@/lib/http'
+import { http, revocarSesion } from '@/lib/http'
 import {
   esquemaRespuestaInicio,
   esquemaRespuestaUsuarios,
@@ -15,12 +15,4 @@ export const listarUsuarios = async () => {
   return esquemaRespuestaUsuarios.parse(data).usuarios
 }
 
-export const cerrarSesion = async () => {
-  const acceso = tokens.obtenerAcceso()
-  const renovacion = tokens.obtenerRenovacion()
-  await http.post(
-    '/auth/logout',
-    { refresh_token: renovacion },
-    { headers: acceso ? { Authorization: `Bearer ${acceso}` } : undefined },
-  )
-}
+export const cerrarSesion = () => revocarSesion()

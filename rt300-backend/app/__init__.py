@@ -8,6 +8,8 @@ from .config import Config
 from .core.db import get_db, init_db
 from .core.error_handlers import register_error_handlers
 from .core.logging import init_logging
+from .core.respuesta import responder
+from .core.salidas_comunes import SaludOut
 from .extensions import cors, esta_revocado, jwt, limiter
 
 
@@ -60,7 +62,7 @@ def create_app(config: Config | None = None) -> Flask:
         except Exception:  # noqa: BLE001 - se reporta como estado, el detalle va al log
             app.logger.exception("health: fallo de BD")
             db_ok = False
-        return jsonify({"status": "ok" if db_ok else "degraded", "db": db_ok}), (200 if db_ok else 503)
+        return responder(SaludOut, {"status": "ok" if db_ok else "degraded", "db": db_ok}, 200 if db_ok else 503)
 
     return app
 

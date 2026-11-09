@@ -30,7 +30,7 @@ curl http://localhost:5000/api/v1/health      # {"db": true, "status": "ok"}
 Usuario de prueba: `GP1` / `123456` (también `GP2`, `GP5`, `GP6`). Pruebas unitarias:
 
 ```bash
-docker compose exec backend python -m pytest tests/unit      # 50 pruebas, sin base de datos
+docker compose exec backend python -m pytest tests/unit      # 60 pruebas, sin base de datos
 ```
 
 ## Arquitectura en una mirada
@@ -45,7 +45,10 @@ routes ──► composition ──► services ──► ports (Protocol) ◄�
 - `app/modules/<dominio>/`: `auth`, `salon`, `clientes`, `menu`, `comandas`, `cuentas`. Cada uno con `ports.py`, `repository.py`, `service.py`, `schemas.py`, `routes.py`.
 - `app/integrations/comandas/`: gateway al servicio de comandas, intercambiable por `GATEWAY_MODE` (`fake`, `soap`, `http`, `dll`).
 - `app/composition.py`: único sitio donde se eligen las implementaciones concretas.
-- `app/core/`: conexión, SQL parametrizado, errores, seguridad, logs.
+- `app/core/`: conexión, SQL parametrizado, errores, seguridad, logs, `respuesta.py` (respuestas tipadas) y `acceso.py` (acceso por local).
+
+Cada endpoint responde con un **modelo de salida** Pydantic (`…Out` en `schemas.py`) mediante `responder(ModeloOut, datos)`: solo salen los campos
+declarados, así que una columna nueva o personal de la base legacy no se filtra. Los tokens JWT los emite `modules/auth/tokens.py`, no la ruta.
 
 Los servicios dependen de **abstracciones** (puertos), no de SQLAlchemy ni de Flask, por eso se prueban sin base de datos. Detalle en
 [01-backend-flask.md §2](../docs/01-backend-flask.md).
@@ -112,8 +115,8 @@ la migración a un hash fuerte requiere una tabla propia y está pendiente de ap
 
 ## Pruebas
 
-`tests/unit/`: servicios con repositorios, gateway y unit of work **falsos** (auth, salón, clientes, comandas, acceso por local, gateway SOAP,
-helpers SQL, imágenes). Sin pruebas de integración contra la BD todavía; la verificación en vivo se hace con la colección de Bruno.
+`tests/unit/` (60): servicios con repositorios, gateway y unit of work **falsos** (auth, tokens, respuestas tipadas, salón, clientes, comandas,
+acceso por local, gateway SOAP, helpers SQL, imágenes). Sin pruebas de integración contra la BD todavía; la verificación en vivo se hace con la colección de Bruno.
 
 ## Agregar una función nueva
 

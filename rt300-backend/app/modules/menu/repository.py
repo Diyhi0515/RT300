@@ -86,7 +86,7 @@ class SqlMenuRepository(SqlRepository):
 
     def alternativos_de(self, cins: list[str]) -> list[dict]:
         return self._rows_in("""SELECT r.*, a.inartdesc FROM rtial r JOIN inart a ON r.rtialcina = a.inartcart
-                                 WHERE r.rtialcins IN :cs""", "cs", cins)
+                                 WHERE r.rtialcins IN :cs ORDER BY r.rtialcins, r.rtialitem""", "cs", cins)
 
     # ───────────── Extras / textos / centros ─────────────
     def extras(self, csme: int, cssm: int) -> list[dict]:
