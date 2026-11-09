@@ -1,10 +1,29 @@
 <!doctype html>
-<html lang="en">
+<html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>rt300-frontend</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/icono-pestana-32.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icono-192.png" />
+    <link rel="apple-touch-icon" href="/icono-apple-180.png" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#0a1a3d" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="apple-mobile-web-app-title" content="RT - AXON" />
+    <title>RT - AXON</title>
+    <script>
+      try {
+        var t = localStorage.getItem('rt300-theme')
+        var dark = t ? t === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches
+        document.documentElement.classList.toggle('dark', dark)
+        document.querySelector('meta[name="theme-color"]').setAttribute('content', dark ? '#050a14' : '#0a1a3d')
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>
