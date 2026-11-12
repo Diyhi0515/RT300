@@ -54,12 +54,26 @@ export function ModalInstalacion({ open, onClose }: ModalInstalacionProps) {
 
   const Icono = modo === 'instalada' ? CircleCheck : modo === 'instalable' ? Download : Info
 
+  const dosColumnas = modo === 'instalada' && !enApp
+
   return (
-    <Modal open={open} onClose={onClose} title="Instalar la aplicación" tone="club">
-      <div className="flex flex-col items-center gap-4 px-6 pb-6 pt-8 text-center">
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="Instalar la aplicación"
+      tone="club"
+      className={dosColumnas ? 'short:max-w-2xl' : ''}
+    >
+      <div
+        className={`flex flex-col items-center gap-4 px-6 pb-6 pt-8 text-center short:gap-2.5 short:px-5 short:pb-4 short:pt-4 ${
+          dosColumnas
+            ? 'short:grid short:grid-cols-2 short:justify-items-start short:gap-x-6 short:text-left'
+            : ''
+        }`}
+      >
         {modo !== 'ios' && (
-          <div className="grid size-16 place-items-center rounded-2xl bg-club-container text-club-primary">
-            <Icono className="size-9" strokeWidth={1.75} aria-hidden />
+          <div className="grid size-16 place-items-center rounded-2xl bg-club-container text-club-primary short:size-11">
+            <Icono className="size-9 short:size-6" strokeWidth={1.75} aria-hidden />
           </div>
         )}
 
@@ -98,9 +112,9 @@ export function ModalInstalacion({ open, onClose }: ModalInstalacionProps) {
               </p>
             </div>
             {!enApp && (
-              <div className="w-full space-y-3 rounded-xl bg-club-container p-4 text-left">
+              <div className="w-full space-y-3 rounded-xl bg-club-container p-4 text-left short:col-start-2 short:row-span-4 short:row-start-1 short:space-y-2 short:p-3">
                 <p className="text-sm font-bold text-club-text">Cómo abrirla</p>
-                <ul className="space-y-2.5">
+                <ul className="space-y-2.5 short:space-y-1.5">
                   {formasDeAbrir.map(({ icono: FormaIcono, texto }) => (
                     <li
                       key={texto}

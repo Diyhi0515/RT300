@@ -2,6 +2,8 @@ import { useMutation, useQuery } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { ERROR_POR_DEFECTO } from '@/lib/mensajesError'
 import { ErrorApi } from '@/lib/http'
+import { queryClient } from '@/lib/queryClient'
+import { vibrar } from '@/lib/vibrar'
 import { notificar, useAvisos } from '@/shared/avisos/almacen'
 import { listarUsuarios, iniciarSesion, cerrarSesion } from './api'
 import { MAX_INTENTOS, useAlmacenBloqueo } from './almacenBloqueo'
@@ -15,10 +17,12 @@ export const useIniciarSesion = () => {
     meta: { silentError: true },
     onSuccess: (data, variables) => {
       useAlmacenBloqueo.getState().reiniciar(variables.usuario)
+      vibrar('exito')
       iniciar(data.perfil, data.access_token, data.refresh_token)
-      navigate('/mesas', { replace: true })
+      navigate('/inicio', { replace: true })
     },
     onError: (error, variables) => {
+      vibrar('error')
       if (!(error instanceof ErrorApi)) {
         notificar.error(ERROR_POR_DEFECTO)
         return
@@ -59,6 +63,8 @@ export const useCerrarSesion = () => {
   return () => {
     cerrarSesion().catch(() => undefined)
     cerrar()
+    queryClient.clear()
     navigate('/login', { replace: true })
+    notificar.informacion('Cerraste sesión correctamente.', 'Sesión cerrada')
   }
 }

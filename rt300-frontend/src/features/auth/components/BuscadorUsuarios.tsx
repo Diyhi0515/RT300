@@ -39,7 +39,7 @@ export function BuscadorUsuarios({
         autoComplete="off"
         autoCapitalize="characters"
         enterKeyHint="search"
-        className={`h-11 w-full rounded-xl pl-11 pr-11 text-[15px] font-medium uppercase text-club-text placeholder:normal-case outline-none ring-1 ring-club-text/10 transition placeholder:font-normal placeholder:text-club-variant/80 focus:ring-2 focus:ring-club-pc dark:ring-white/10 short:h-10 2xl:h-12 ${fondos[fondo]}`}
+        className={`h-11 w-full rounded-xl pl-11 pr-11 text-base font-medium uppercase text-club-text placeholder:normal-case outline-none ring-1 ring-club-text/10 transition placeholder:font-normal placeholder:text-club-variant/80 focus:ring-2 focus:ring-club-pc dark:ring-white/10 short:h-10 2xl:h-12 ${fondos[fondo]}`}
       />
       {!!valor && (
         <button

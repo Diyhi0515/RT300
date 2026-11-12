@@ -41,7 +41,7 @@ export function Cargador({ tone = 'info', label, size = 'md' }: CargadorProps) {
 
 export function CargadorPantalla({ tone, label = 'Cargando…' }: { tone?: Tono; label?: string }) {
   return (
-    <div className="grid min-h-dvh place-items-center bg-bg">
+    <div className="grid min-h-[var(--alto-app,100dvh)] place-items-center bg-bg">
       <Cargador tone={tone} label={label} size="lg" />
     </div>
   )

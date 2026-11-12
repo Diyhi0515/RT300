@@ -20,7 +20,9 @@ export function CampoUsuario({ registro, valor, error, onLimpiar }: CampoUsuario
         <input
           id="usuario"
           placeholder="Ej. GP4 o MCB"
-          autoComplete="username"
+          autoComplete="off"
+          data-lpignore="true"
+          data-1p-ignore="true"
           autoCapitalize="characters"
           maxLength={20}
           enterKeyHint="next"

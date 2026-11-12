@@ -33,7 +33,7 @@ export function UsuarioPanel({ seleccionado, onSelect, disabled = false }: Usuar
     <section className="@container hidden min-h-0 flex-col gap-6 overflow-hidden bg-club-low p-6 md:flex lg:p-8 short:gap-3 short:p-4">
       <div className="flex shrink-0 flex-col justify-between gap-3 @xl:flex-row @xl:items-center">
         <div>
-          <div className="flex items-center gap-2 text-base font-bold text-club-primary 2xl:text-lg">
+          <div className="flex items-center gap-2 text-base font-bold text-club-primary short:text-sm 2xl:text-lg">
             <Pointer className="size-5" aria-hidden />
             <h2>Acceso Rápido - Usuarios</h2>
           </div>
@@ -42,10 +42,10 @@ export function UsuarioPanel({ seleccionado, onSelect, disabled = false }: Usuar
           </p>
         </div>
         {!!data?.length && (
-          <span className="self-start rounded-full bg-club-container px-3 py-1 text-xs font-bold uppercase tracking-wider text-club-secondary @xl:self-center">
+          <span className="self-start rounded-full bg-club-container px-3 py-1 text-xs font-bold uppercase tracking-wider text-club-secondary short:py-0.5 short:text-[11px] @xl:self-center">
             {hayBusqueda
               ? `${visibles.length} de ${data.length}`
-              : `${data.length} ${data.length === 1 ? 'Mozo habilitado' : 'Mozos habilitados'}`}
+              : `${data.length} ${data.length === 1 ? 'Usuario habilitado' : 'Usuarios habilitados'}`}
           </span>
         )}
       </div>
@@ -72,8 +72,12 @@ export function UsuarioPanel({ seleccionado, onSelect, disabled = false }: Usuar
               <Receipt className="size-6" aria-hidden />
             </span>
             <span className="min-w-0">
-              <span className="block text-lg font-semibold">{supervisor.usuario}</span>
-              <span className="block truncate text-[13px] opacity-90">{supervisor.nombre}</span>
+              <span className="block text-lg font-semibold short:text-base">
+                {supervisor.usuario}
+              </span>
+              <span className="block truncate text-[13px] opacity-90 short:text-xs">
+                {supervisor.nombre}
+              </span>
             </span>
           </span>
           <LogIn

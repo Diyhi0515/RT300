@@ -10,12 +10,12 @@ export function RequerirSesion() {
 
 export function RequerirRol({ roles }: { roles: Rol[] }) {
   const perfil = useSesion((s) => s.perfil)
-  if (!perfil || !roles.includes(perfil.rol)) return <Navigate to="/mesas" replace />
+  if (!perfil || !roles.includes(perfil.rol)) return <Navigate to="/inicio" replace />
   return <Outlet />
 }
 
 export function SoloPublico() {
   const perfil = useSesion((s) => s.perfil)
-  if (perfil) return <Navigate to="/mesas" replace />
+  if (perfil) return <Navigate to="/inicio" replace />
   return <Outlet />
 }

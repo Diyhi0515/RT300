@@ -10,7 +10,7 @@ interface BotonIngresoProps {
 }
 
 const estiloBase =
-  'flex h-14 w-full cursor-pointer items-center justify-center gap-2 rounded-xl text-base font-bold shadow-lg transition duration-150 hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 short:h-11 2xl:h-16 2xl:text-lg'
+  'flex h-14 w-full cursor-pointer items-center justify-center gap-2 rounded-xl text-base font-bold shadow-lg short:text-sm transition duration-150 hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 short:h-10 2xl:h-16 2xl:text-lg'
 
 const estiloNormal =
   'bg-club-pc text-white shadow-club-pc/30 dark:shadow-[0_8px_28px_-6px_rgba(79,124,255,0.65)]'
@@ -26,7 +26,7 @@ export function BotonIngreso({
   onBloqueado,
 }: BotonIngresoProps) {
   return (
-    <div className="mt-4 space-y-4 short:mt-2.5 short:space-y-2.5">
+    <div className="mt-4 space-y-4 short:mt-2 short:space-y-2">
       {!enLinea && (
         <p
           role="alert"
@@ -49,18 +49,18 @@ export function BotonIngreso({
       >
         {cargando ? (
           <>
-            <Loader2 className="size-[22px] animate-spin" aria-hidden />
+            <Loader2 className="size-[22px] animate-spin short:size-5" aria-hidden />
             <span>Ingresando...</span>
           </>
         ) : bloqueado ? (
           <>
-            <LockKeyhole className="size-[22px]" aria-hidden />
+            <LockKeyhole className="size-[22px] short:size-5" aria-hidden />
             <span>Bloqueado · {formatoTiempo(restante)}</span>
           </>
         ) : (
           <>
             <span>Siguiente</span>
-            <ArrowRight className="size-[22px]" aria-hidden />
+            <ArrowRight className="size-[22px] short:size-5" aria-hidden />
           </>
         )}
       </button>

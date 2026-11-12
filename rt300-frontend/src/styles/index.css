@@ -111,14 +111,35 @@
     background: var(--bg);
     color: var(--text);
     font-family: var(--font-sans);
-    overscroll-behavior-y: none;
-    transition:
-      background-color 0.25s ease,
-      color 0.25s ease;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  html.tema-cambiando .fondo-animado > * {
+    animation-play-state: paused;
+  }
+
+  button,
+  label,
+  h1,
+  h2,
+  img {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+
+  img {
+    -webkit-user-drag: none;
   }
 
   #root {
     min-height: 100dvh;
+    min-height: var(--alto-app, 100dvh);
   }
 
   button,
@@ -150,21 +171,15 @@
     box-shadow: 0 0 0 1000px var(--club-low) inset;
     transition: background-color 9999s ease-out;
   }
-
-  html.theme-fade,
-  html.theme-fade *,
-  html.theme-fade *::before,
-  html.theme-fade *::after {
-    transition:
-      background-color 0.35s ease,
-      color 0.35s ease,
-      border-color 0.35s ease,
-      box-shadow 0.35s ease,
-      fill 0.35s ease !important;
-  }
 }
 
 @layer utilities {
+  .rejilla-fondo {
+    background-image:
+      linear-gradient(rgba(137, 179, 217, 0.12) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(137, 179, 217, 0.12) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
   .pt-safe {
     padding-top: env(safe-area-inset-top);
   }
@@ -250,6 +265,7 @@
 }
 
 @custom-variant short (@media (max-height: 520px));
+@custom-variant escritorio (@media (min-width: 1024px) and (hover: hover) and (pointer: fine));
 
 @keyframes chip-in {
   from {
@@ -280,5 +296,25 @@
   to {
     transform: scale(1.35);
     opacity: 0;
+  }
+}
+
+@keyframes subir {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes entrar-lado {
+  from {
+    opacity: 0;
+    transform: translateX(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
   }
 }

@@ -1,6 +1,6 @@
 # Feature `auth`: inicio de sesión de mozos
 
-Pantalla de ingreso del sistema RT-300 (ruta `/login`). Este documento resume todo lo que se construyó para el login, cómo funciona y cómo se prueba.
+Pantalla de ingreso del sistema RT - AXON (ruta `/login`). Este documento resume todo lo que se construyó para el login, cómo funciona y cómo se prueba.
 
 La feature sigue la arquitectura de `docs/02-frontend-react.md`: carpeta propia con `pages/`, `components/`, `api.ts`, `hooks.ts`, `store.ts`, `types.ts` e `index.ts`. Los archivos y nombres que no define el README están en español.
 
@@ -9,7 +9,7 @@ La feature sigue la arquitectura de `docs/02-frontend-react.md`: carpeta propia 
 - Muestra la tarjeta de ingreso con formulario (usuario y contraseña) y un panel de acceso rápido con los usuarios habilitados.
 - Valida el formulario, llama a la API, guarda la sesión y redirige a `/mesas`.
 - Bloquea el ingreso de un usuario tras 5 contraseñas incorrectas, con cuenta regresiva en vivo.
-- Permite buscar usuarios en tiempo real, recordar el último usuario y cambiar entre tema claro y oscuro.
+- Permite buscar usuarios en tiempo real y cambiar entre tema claro y oscuro.
 - Es responsiva (móvil, tablet, escritorio y pantallas bajas) y funciona como PWA.
 - Está conectada al backend real (`APP_MODE = 'production'`). El modo `mockup` se conserva para ver el diseño sin backend.
 
@@ -67,7 +67,6 @@ Piezas compartidas que usa el login y viven fuera de la feature:
 4. Si sale bien:
    - se reinician los intentos de ese usuario;
    - el perfil se guarda en `useSesion`, el token de acceso queda en memoria y el de renovación en `sessionStorage`;
-   - si la casilla "Recordar Credenciales" está marcada, se guarda el usuario;
    - se navega a `/mesas`.
 5. Si falla, se muestra un aviso en español y se cuenta el intento (ver siguiente sección).
 
@@ -144,9 +143,9 @@ Cómo sabe si está instalada: por el modo de visualización (`standalone`), por
 
 Requisitos del navegador: HTTPS (o `localhost`) y la versión compilada, porque el service worker está desactivado en `npm run dev`. El nombre de la app es "RT - AXON" (`vite.config.ts` e `index.html`).
 
-## Recordar usuario
+## Credenciales
 
-La casilla "Recordar Credenciales" guarda el último usuario en `localStorage` (clave `rt300-last-user`) solo si el ingreso fue correcto. La próxima visita lo trae escrito y con la casilla marcada. Al desmarcarla y volver a ingresar, se borra.
+La pantalla no guarda ni recuerda credenciales: no existe la casilla "Recordar Credenciales", el campo de contraseña evita que el navegador ofrezca guardarla y, al iniciar, se borra el usuario que alguna versión anterior hubiera dejado en `localStorage` (clave `rt300-last-user`).
 
 ## Modo mockup y producción
 

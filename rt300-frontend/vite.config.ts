@@ -57,7 +57,7 @@ export default defineConfig({
         scope: '/',
         display: 'standalone',
         orientation: 'any',
-        background_color: '#0a1a3d',
+        background_color: '#ffffff',
         theme_color: '#0a1a3d',
         icons: [
           { src: 'icono-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
@@ -88,5 +88,6 @@ export default defineConfig({
   },
   preview: {
     allowedHosts: dominiosNgrok,
+    proxy: { '/api': 'http://localhost:5000' },
   },
 })

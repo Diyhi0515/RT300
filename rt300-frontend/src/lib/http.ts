@@ -89,12 +89,20 @@ const renovarAcceso = async () => {
 export const revocarSesion = async () => {
   const acceso = tokenAcceso
   const renovacion = tokens.obtenerRenovacion()
-  if (!acceso) return
-  await clienteSimple.post(
-    '/auth/logout',
-    { refresh_token: renovacion },
-    { headers: { Authorization: `Bearer ${acceso}` } },
-  )
+  if (!acceso && !renovacion) return
+  const enviar = (credencial: string) =>
+    clienteSimple.post(
+      '/auth/logout',
+      { refresh_token: renovacion },
+      { headers: { Authorization: `Bearer ${credencial}` } },
+    )
+  try {
+    await enviar((acceso ?? renovacion) as string)
+  } catch (error) {
+    const expirado = error instanceof AxiosError && error.response?.status === 401
+    if (expirado && acceso && renovacion) await enviar(renovacion)
+    else throw error
+  }
 }
 
 type ConfigReintento = InternalAxiosRequestConfig & { _retry?: boolean }

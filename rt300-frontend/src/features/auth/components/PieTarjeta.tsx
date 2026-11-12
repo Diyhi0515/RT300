@@ -10,7 +10,7 @@ export function PieTarjeta() {
   const { modo } = useInstalarApp()
 
   return (
-    <footer className="col-span-full flex flex-wrap items-center justify-center gap-x-2 gap-y-2 whitespace-nowrap border-t border-club-text/10 px-6 py-3 text-xs font-semibold tracking-wide text-club-variant short:hidden">
+    <footer className="col-span-full flex flex-wrap items-center justify-center gap-x-2 gap-y-2 whitespace-nowrap border-t border-club-text/10 px-6 py-3 text-xs font-semibold tracking-wide text-club-variant short:gap-y-0 short:py-1 short:text-[11px]">
       <button
         type="button"
         onClick={() => setAbierto(true)}

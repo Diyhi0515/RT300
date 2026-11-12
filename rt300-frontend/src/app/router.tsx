@@ -21,6 +21,25 @@ export const router = createBrowserRouter([
         element: <AppLayout />,
         children: [
           {
+            path: '/inicio',
+            lazy: async () => ({
+              Component: (await import('@/features/inicio/pages/InicioPage')).InicioPage,
+            }),
+          },
+          {
+            path: '/pedidos',
+            lazy: async () => ({
+              Component: (await import('@/features/pedidos/pages/PedidosPage')).PedidosPage,
+            }),
+          },
+          {
+            path: '/pedidos/cuentas/:codigo',
+            lazy: async () => ({
+              Component: (await import('@/features/pedidos/pages/DatosCuentasPage'))
+                .DatosCuentasPage,
+            }),
+          },
+          {
             path: '/mesas',
             lazy: async () => ({
               Component: (await import('@/features/salon/pages/MesasPage')).MesasPage,
@@ -30,5 +49,5 @@ export const router = createBrowserRouter([
       },
     ],
   },
-  { path: '*', element: <Navigate to="/mesas" replace /> },
+  { path: '*', element: <Navigate to="/inicio" replace /> },
 ])

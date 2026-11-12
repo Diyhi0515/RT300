@@ -20,10 +20,10 @@ export function FichaUsuario({
 }: FichaUsuarioProps) {
   const supervisor = usuario.usuario === 'MCB'
   const base =
-    'flex min-w-0 flex-col items-center justify-center rounded-xl px-1 font-semibold shadow-sm transition duration-200 active:scale-95 animate-[chip-in_0.35s_ease-out_both]'
+    'flex min-w-0 flex-col items-center justify-center rounded-xl px-1 font-semibold [contain:layout_style] shadow-sm transition duration-200 active:scale-95 animate-[chip-in_0.35s_ease-out_both]'
   const size =
     variant === 'grid'
-      ? 'h-16 text-lg lg:h-[4.5rem] 2xl:h-20 2xl:text-xl'
+      ? 'h-16 text-lg short:h-14 short:text-base lg:h-[4.5rem] 2xl:h-20 2xl:text-xl'
       : 'h-16 w-[5.5rem] shrink-0 snap-center text-lg'
   const color = activo
     ? 'bg-club-pc text-white shadow-md ring-2 ring-club-sc dark:shadow-[0_0_24px_rgba(79,124,255,0.6)]'
@@ -47,7 +47,7 @@ export function FichaUsuario({
         <Receipt className="size-3.5 opacity-80" aria-hidden />
       ) : (
         <span
-          className={`w-full truncate text-center text-xs font-normal 2xl:text-sm ${
+          className={`w-full truncate text-center text-xs font-normal short:text-[11px] 2xl:text-sm ${
             activo ? 'text-white' : supervisor ? 'text-white/90' : 'text-club-variant'
           }`}
         >

@@ -17,14 +17,12 @@ const guardado = (): Tema | null => {
 
 const sistema = (): Tema => (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
 
-const aplicar = (theme: Tema, animate: boolean) => {
-  const root = document.documentElement
-  if (animate) {
-    root.classList.add('theme-fade')
-    window.setTimeout(() => root.classList.remove('theme-fade'), 400)
-  }
-  root.classList.toggle('dark', theme === 'dark')
+const aplicar = (theme: Tema) => {
+  const raiz = document.documentElement
+  raiz.classList.add('tema-cambiando')
+  raiz.classList.toggle('dark', theme === 'dark')
   document.querySelector('meta[name="theme-color"]')?.setAttribute('content', COLOR_BARRA[theme])
+  window.setTimeout(() => raiz.classList.remove('tema-cambiando'), 150)
 }
 
 interface EstadoTema {
@@ -41,7 +39,7 @@ export const useTema = create<EstadoTema>((set, get) => ({
     } catch {
       void 0
     }
-    aplicar(next, true)
+    aplicar(next)
     set({ theme: next })
   },
 }))
@@ -49,7 +47,7 @@ export const useTema = create<EstadoTema>((set, get) => ({
 const sincronizar = () => {
   const next = guardado() ?? sistema()
   if (next === useTema.getState().theme) return
-  aplicar(next, true)
+  aplicar(next)
   useTema.setState({ theme: next })
 }
 
@@ -58,4 +56,4 @@ window.addEventListener('storage', (event) => {
   if (event.key === CLAVE_TEMA) sincronizar()
 })
 
-aplicar(useTema.getState().theme, false)
+aplicar(useTema.getState().theme)

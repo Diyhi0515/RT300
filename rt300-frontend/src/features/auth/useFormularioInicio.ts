@@ -1,33 +1,20 @@
 import { useState } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { vibrar } from '@/lib/vibrar'
 import { useOnlineStatus } from '@/shared/hooks/useOnlineStatus'
 import { esquemaFormularioInicio, type DatosFormularioInicio } from './esquemas'
 import { useIniciarSesion } from './hooks'
 import { useAlmacenBloqueo } from './almacenBloqueo'
 import { useBloqueo } from './useBloqueo'
 
-const CLAVE_RECORDAR = 'rt300-last-user'
-
-const leerRecordado = () => {
-  try {
-    return localStorage.getItem(CLAVE_RECORDAR) ?? ''
-  } catch {
-    return ''
-  }
-}
-
-const guardarRecordado = (valor: string | null) => {
-  try {
-    if (valor) localStorage.setItem(CLAVE_RECORDAR, valor)
-    else localStorage.removeItem(CLAVE_RECORDAR)
-  } catch {
-    return
-  }
+try {
+  localStorage.removeItem('rt300-last-user')
+} catch {
+  void 0
 }
 
 export const useFormularioInicio = () => {
-  const [recordar, setRecordar] = useState(() => !!leerRecordado())
   const [abiertoHasta, setAbiertoHasta] = useState<number | null>(null)
   const enLinea = useOnlineStatus()
   const { mutateAsync, isPending } = useIniciarSesion()
@@ -40,7 +27,7 @@ export const useFormularioInicio = () => {
     formState: { errors },
   } = useForm<DatosFormularioInicio>({
     resolver: zodResolver(esquemaFormularioInicio),
-    defaultValues: { usuario: leerRecordado(), clave: '' },
+    defaultValues: { usuario: '', clave: '' },
   })
 
   const usuario = useWatch({ control, name: 'usuario' })
@@ -48,6 +35,7 @@ export const useFormularioInicio = () => {
   const { bloqueado, restante, total, hasta } = useBloqueo(usuarioActual)
 
   const seleccionar = (valor: string) => {
+    vibrar('toque')
     setValue('usuario', valor, { shouldValidate: true })
     setFocus('clave')
   }
@@ -62,7 +50,6 @@ export const useFormularioInicio = () => {
     const usuarioFinal = valores.usuario.toUpperCase()
     try {
       await mutateAsync({ ...valores, usuario: usuarioFinal })
-      guardarRecordado(recordar ? usuarioFinal : null)
     } catch {
       const bloqueadoHasta = useAlmacenBloqueo.getState().usuarios[usuarioFinal]?.bloqueadoHasta
       if (bloqueadoHasta) setAbiertoHasta(bloqueadoHasta)
@@ -77,8 +64,6 @@ export const useFormularioInicio = () => {
     seleccionar,
     limpiar,
     alEnviar: handleSubmit(enviar),
-    recordar,
-    setRecordar,
     cargando: isPending,
     enLinea,
     bloqueado,
