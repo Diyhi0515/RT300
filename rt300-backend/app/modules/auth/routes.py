@@ -7,6 +7,7 @@ from flask_limiter.util import get_remote_address
 from ...composition import auth_service, emisor_tokens
 from ...core.respuesta import responder
 from ...core.security import usuario_actual
+from ...core.sesion_cookie import borrar_renovacion, exigir_cabecera_csrf, guardar_renovacion, renovacion_de_la_cookie
 from ...extensions import limiter
 from .schemas import LoginIn, LoginOut, MeOut, OkOut, TokenOut, UsuariosOut
 
@@ -31,21 +32,31 @@ def usuarios():
 def login():
     body = LoginIn.model_validate(request.get_json(silent=True) or {})
     resultado = auth_service().login(body.usuario, body.clave)
-    return responder(LoginOut, emisor_tokens().emitir(resultado.usuario, resultado.local))
+    datos = emisor_tokens().emitir(resultado.usuario, resultado.local)
+    renovacion = datos.pop("refresh_token")
+    respuesta, status = responder(LoginOut, datos)
+    guardar_renovacion(respuesta, renovacion)
+    return respuesta, status
 
 
 @bp.post("/refresh")
+@limiter.limit("60/minute")
 @jwt_required(refresh=True)
 def refresh():
+    exigir_cabecera_csrf()
     return responder(TokenOut, emisor_tokens().renovar(get_jwt()))
 
 
 @bp.post("/logout")
-@jwt_required(verify_type=False)
+@limiter.limit("30/minute")
 def logout():
-    refresh_token = (request.get_json(silent=True) or {}).get("refresh_token")
-    emisor_tokens().cerrar_sesion(get_jwt(), refresh_token)
-    return responder(OkOut, {"ok": True})
+    exigir_cabecera_csrf()
+    autorizacion = request.headers.get("Authorization", "")
+    acceso = autorizacion[7:] if autorizacion.startswith("Bearer ") else None
+    emisor_tokens().cerrar_sesion(acceso, renovacion_de_la_cookie())
+    respuesta, status = responder(OkOut, {"ok": True})
+    borrar_renovacion(respuesta)
+    return respuesta, status
 
 
 @bp.get("/me")

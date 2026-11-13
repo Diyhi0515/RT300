@@ -1,0 +1,41 @@
+# Proxy de PRODUCCIÓN: sirve el front ya compilado (rt300-frontend/dist) y reenvía /api al backend, todo bajo el mismo origen
+# (necesario para la cookie SameSite=Strict del token de renovación). Aquí viven las cabeceras de seguridad del front.
+# En un servidor con dominio: reemplazar las direcciones por el dominio y quitar "tls internal".
+{
+	auto_https disable_redirects
+	default_sni 127.0.0.1
+}
+
+https://127.0.0.1:8444, https://localhost:8444 {
+	tls internal
+
+	encode zstd gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		-Server
+	}
+
+	handle /api/* {
+		reverse_proxy backend:5000
+	}
+
+	handle {
+		header {
+			Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self'; style-src-attr 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests"
+			X-Content-Type-Options "nosniff"
+			X-Frame-Options "DENY"
+			Referrer-Policy "no-referrer"
+			Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
+			Cross-Origin-Opener-Policy "same-origin"
+			Cross-Origin-Resource-Policy "same-origin"
+		}
+
+		root * /srv
+		header /assets/* Cache-Control "public, max-age=31536000, immutable"
+		header /index.html Cache-Control "no-cache"
+		header /sw.js Cache-Control "no-cache"
+		try_files {path} /index.html
+		file_server
+	}
+}

@@ -7,6 +7,7 @@ interface ConfirmarAccionProps {
   mensaje: string
   textoConfirmar: string
   peligro?: boolean
+  elevado?: boolean
   alConfirmar: () => void
   alCancelar: () => void
 }
@@ -17,11 +18,12 @@ export function ConfirmarAccion({
   mensaje,
   textoConfirmar,
   peligro = false,
+  elevado = false,
   alConfirmar,
   alCancelar,
 }: ConfirmarAccionProps) {
   return (
-    <Modal open={abierto} onClose={alCancelar} title={titulo}>
+    <Modal open={abierto} onClose={alCancelar} title={titulo} elevado={elevado}>
       <div className="space-y-4 px-6 pb-6 pt-8 text-center short:space-y-2 short:pb-4 short:pt-4">
         <span
           className={`mx-auto grid size-14 place-items-center rounded-2xl ${

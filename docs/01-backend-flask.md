@@ -124,7 +124,7 @@ sequenceDiagram
     A->>A: clave_calcular(clave) == adusrclav ?
     alt válido
         A->>DB: reglas (gbrne), mesero (gbage), parámetros (rtctl)
-        A-->>FE: access_token (15 min) + refresh_token + perfil {usuario, nombre, local, rol}
+        A-->>FE: access_token (15 min) + perfil {usuario, nombre, local, rol} · Set-Cookie rt300_rt (refresh, HttpOnly)
     else inválido
         A-->>FE: 401 CREDENCIALES_INVALIDAS
     end
@@ -136,7 +136,8 @@ sequenceDiagram
 - Roles previstos: `garzon`, `cajero`, `admin`. Se derivan de `rturt` / datos de `adusr` (por confirmar).
 - Acciones sensibles (eliminar comanda) exigen además **usuario autorizador + clave** en el cuerpo, como hoy (`uaut`, `cont`); el backend la **verifica antes de escribir** en `rttmp`.
 - Usuario inexistente, sin acceso a pedidos, sin clave o clave errónea devuelven **el mismo mensaje** (no se revela qué usuarios existen). Los motivos de configuración (deshabilitado, sin local…) solo se informan tras una clave correcta.
-- `POST /auth/logout` **revoca** el token de acceso y, si se envía `refresh_token`, también el de refresco (lista en memoria; con varias instancias mover a Redis).
+- `POST /auth/logout` **revoca** el token de acceso (cabecera `Authorization`, si hay) y el de renovación (cookie `rt300_rt`), y borra la cookie. Nunca falla por un token vencido. Los revocados se guardan en SQLite (o Redis con `REDIS_URL`).
+- **Cookie de renovación:** `HttpOnly; SameSite=Strict; Path=/api/v1/auth`, `Secure` fuera de desarrollo (`COOKIE_SECURE` lo fuerza). `/auth/refresh` y `/auth/logout` exigen la cabecera `X-Requested-With: rt300` (defensa CSRF) y responden `403 CSRF` sin ella. CORS permite credenciales solo a los orígenes de `CORS_ORIGINS`.
 - **Acceso por local:** un usuario solo opera mesas, folios y comandas de **su** local (`cloc` del token). Mesa → local por su área (`rtmsa.rtmsacaco → rtaco.rtacocloc`); folio → `rtfol.rtfolcloc`. Lo de otro local responde `403 OTRO_LOCAL`. La regla vive en `core/acceso.py` y la aplican los services, no las rutas.
 - Códigos de error de auth que consume el front: `CREDENCIALES_INVALIDAS` (401), `DEMASIADOS_INTENTOS` (429), `TOKEN_EXPIRADO` y `TOKEN_REVOCADO` (401), más los de configuración del usuario (`USUARIO_DESHABILITADO`, `SIN_LOCAL`, `SIN_MESERO`, `SIN_ALMACEN`…), que solo se informan tras una clave correcta. Los errores HTTP genéricos (400, 404, 405, 413, 429) llevan mensaje en español.
 - Rate limiting: `/auth/login` 10/min, `/auth/usuarios` 30/min, `/comandas/eliminar` 20/min. Cuerpo máximo 1 MB.
@@ -152,7 +153,7 @@ Hay una colección lista para importar en Bruno/Postman: [`docs/bruno/RT300.post
 | Método y ruta | Reemplaza |
 |---|---|
 | `GET  /auth/usuarios` | lista de la pantalla de login (30/min) |
-| `POST /auth/login` | `f5000_iniciar_session` (10/min por IP). Responde `{ access_token, refresh_token, perfil }`; `perfil` = `usuario, nombre, local` (nombre del local, texto), `rol`, y `cloc, calm, cmon, nreg, cven` (código de mesero del usuario) |
+| `POST /auth/login` | `f5000_iniciar_session` (10/min por IP). Responde `{ access_token, perfil }` (el token de renovación va solo en la cookie); `perfil` = `usuario, nombre, local` (nombre del local, texto), `rol`, y `cloc, calm, cmon, nreg, cven` (código de mesero del usuario) |
 | `POST /auth/refresh` · `POST /auth/logout` · `GET /auth/me` | `inc/logout.php` (el logout revoca el token) |
 
 ### salon (RT300a)
@@ -363,7 +364,7 @@ Las credenciales `prueba/prueba` son solo para el contenedor de pruebas local.
 
 | Nivel | Qué prueba | Cómo | Estado |
 |---|---|---|---|
-| Unitarias | `services` con repositorios, gateway y UoW falsos | `docker compose exec backend python -m pytest tests/unit` | **121 pruebas** (servicios, auth, tokens, salón, clientes, comandas, acceso por local, gateway SOAP, imágenes, caché, configuración, API HTTP completa) |
+| Unitarias | `services` con repositorios, gateway y UoW falsos | `docker compose exec backend python -m pytest tests/unit` | **143 pruebas** (servicios, auth, tokens, salón, clientes, comandas, acceso por local, gateway SOAP, imágenes, caché, configuración, API HTTP completa) |
 | Integración | Repositorios y endpoints contra la BD de Docker (solo lectura) | `RT300_INTEGRATION=1 pytest tests/integration` | **11 pruebas** |
 | API | Rutas, permisos, cabeceras, límites, errores | `flask test client` (en unitarias) + colección Bruno | hecho |
 | Calidad | Estilo, errores comunes, seguridad estática | `ruff check app tests` | sin hallazgos |

@@ -79,6 +79,7 @@ describe('tiempoCorto', () => {
     [59 * 60_000, '59 min'],
     [65 * 60_000, '1h 5m'],
     [3 * 3_600_000 + 7 * 60_000, '3h 7m'],
+    [26 * 3_600_000, '1d 2h'],
   ])('hace %i ms se muestra %s', (milisegundos, esperado) => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date('2026-11-13T12:00:00'))

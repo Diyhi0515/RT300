@@ -24,14 +24,20 @@ class EmisorTokens:
         u = Usuario.desde_claims(jwt_refresh)
         return {"access_token": create_access_token(u.usuario, additional_claims=u.claims())}
 
-    def cerrar_sesion(self, jwt_actual: dict, refresh_token: str | None) -> None:
-        """Revoca el token presentado y, si se envía, también el refresh_token de la misma persona."""
-        revocar(jwt_actual["jti"], jwt_actual["exp"])
-        if not refresh_token:
+    def cerrar_sesion(self, acceso: str | None, renovacion: str | None) -> None:
+        """Revoca los tokens presentados que sigan vigentes. Cerrar sesión nunca falla: uno vencido o inválido se ignora."""
+        decodificados = [self._decodificar(t) for t in (acceso, renovacion)]
+        validos = [d for d in decodificados if d]
+        if len({d.get("sub") for d in validos}) > 1:
             return
-        try:
-            d = decode_token(refresh_token)
-        except Exception:  # noqa: BLE001 - un refresh inválido no impide cerrar sesión
-            return
-        if d.get("sub") == jwt_actual.get("sub"):
+        for d in validos:
             revocar(d["jti"], d["exp"])
+
+    @staticmethod
+    def _decodificar(token: str | None) -> dict | None:
+        if not token:
+            return None
+        try:
+            return decode_token(token)
+        except Exception:  # noqa: BLE001 - vencido o inválido: no hay nada que revocar
+            return None

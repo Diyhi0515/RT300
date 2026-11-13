@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from ...core.acceso import exigir_local
-from ...core.errors import Conflict, DomainError, NotFound
+from ...core.errors import Conflict, DomainError, NotFound, ValidationFailed
 from ...domain.mesa import ESTC_LIQUIDADA, Mesa
 from ...domain.uow import UnitOfWork
 from ...domain.usuario import Usuario
@@ -131,11 +131,22 @@ class SalonService:
         return self._repo.cuentas_folio(nfol)
 
     # ───────────── Escrituras (una unidad de trabajo cada una) ─────────────
+    @staticmethod
+    def _validar_cuentas(ccom: int, ncta: int) -> None:
+        """Regla del sistema antiguo (RT300a.js): no puede haber más cuentas que comensales, al ocupar y al modificar."""
+        if ccom < 1:
+            raise ValidationFailed("Indique la cantidad de comensales.", "COMENSALES_INVALIDOS")
+        if ncta > ccom:
+            raise ValidationFailed(
+                "El número de cuentas no puede ser mayor que el número de comensales.", "CUENTAS_MAYOR_COMENSALES"
+            )
+
     def ocupar_mesa(self, u: Usuario, codigo: str, cven: int | None, caco: int, ccom: int, ncta: int) -> dict:
         cven = cven or u.cven
         if not cven:
             raise DomainError("El usuario no tiene mesero asignado.", "SIN_MESERO")
         exigir_local(u, self._repo.local_de_mesa(codigo))
+        self._validar_cuentas(ccom, ncta)
         with self._uow:
             self._mesa_operable(codigo)
             cli = self._cliente_varios()
@@ -173,6 +184,7 @@ class SalonService:
 
     def modificar_mesa(self, u: Usuario, nfol: int, cven: int | None, ccom: int, ncta_nueva: int) -> list[dict]:
         exigir_local(u, self._repo.local_de_folio(nfol))
+        self._validar_cuentas(ccom, ncta_nueva)
         with self._uow:
             ncta_vieja = self._repo.contar_cuentas(nfol)
             if ncta_nueva < ncta_vieja and self._repo.contar_comandas(nfol, solo_vigentes=False) > 0:

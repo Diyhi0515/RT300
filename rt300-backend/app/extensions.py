@@ -1,7 +1,10 @@
 """Extensiones de Flask y almacén de tokens revocados (memoria o Redis)."""
 from __future__ import annotations
 
+import sqlite3
 import time
+from contextlib import closing
+from pathlib import Path
 from typing import Protocol
 
 from flask_cors import CORS
@@ -34,6 +37,31 @@ class RevocadosEnMemoria:
 
     def esta_revocado(self, jti: str) -> bool:
         return jti in self._revocados
+
+
+class RevocadosEnSqlite:
+    """Archivo local: sobrevive a reinicios y lo comparten los procesos de la misma máquina, sin servicios extra.
+    No sirve entre varias máquinas (para eso, Redis)."""
+
+    def __init__(self, ruta: str | Path) -> None:
+        self._ruta = Path(ruta)
+        self._ruta.parent.mkdir(parents=True, exist_ok=True)
+        with self._conexion() as conexion:
+            conexion.execute("PRAGMA journal_mode=WAL")
+            conexion.execute("CREATE TABLE IF NOT EXISTS revocados (jti TEXT PRIMARY KEY, exp REAL NOT NULL)")
+
+    def _conexion(self) -> sqlite3.Connection:
+        return sqlite3.connect(self._ruta, timeout=5)
+
+    def revocar(self, jti: str, exp: float) -> None:
+        with closing(self._conexion()) as conexion, conexion:
+            conexion.execute("DELETE FROM revocados WHERE exp < ?", (time.time(),))
+            conexion.execute("INSERT OR REPLACE INTO revocados (jti, exp) VALUES (?, ?)", (jti, exp))
+
+    def esta_revocado(self, jti: str) -> bool:
+        with closing(self._conexion()) as conexion:
+            fila = conexion.execute("SELECT 1 FROM revocados WHERE jti = ? AND exp >= ?", (jti, time.time())).fetchone()
+        return fila is not None
 
 
 class RevocadosEnRedis:

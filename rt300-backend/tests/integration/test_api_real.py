@@ -119,7 +119,9 @@ def test_cerrar_sesion_revoca_el_token(cliente):
     s = cliente.post("/api/v1/auth/login", json={"usuario": "GP2", "clave": CLAVE}).get_json()
     h = {"Authorization": f"Bearer {s['access_token']}"}
     assert cliente.get("/api/v1/auth/me", headers=h).status_code == 200
-    cliente.post("/api/v1/auth/logout", headers=h, json={"refresh_token": s["refresh_token"]})
+    assert "refresh_token" not in s
+    csrf = {"X-Requested-With": "rt300"}
+    assert cliente.post("/api/v1/auth/refresh", headers=csrf).status_code == 200      # la cookie la guarda el cliente de pruebas
+    cliente.post("/api/v1/auth/logout", headers={**h, **csrf})
     assert cliente.get("/api/v1/auth/me", headers=h).get_json()["error"]["code"] == "TOKEN_REVOCADO"
-    r = cliente.post("/api/v1/auth/refresh", headers={"Authorization": f"Bearer {s['refresh_token']}"})
-    assert r.status_code == 401
+    assert cliente.post("/api/v1/auth/refresh", headers=csrf).status_code == 401

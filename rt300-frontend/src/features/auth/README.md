@@ -81,9 +81,9 @@ Es el contrato real del backend (`rt300-backend`, ver `docs/01-backend-flask.md`
 | Método y ruta | Respuesta |
 |---|---|
 | `GET /auth/usuarios` | `{ "usuarios": [{ "usuario": "GP1", "nombre": "GARZON 1 HOYO 19" }] }` (el front toma la propiedad `usuarios`) |
-| `POST /auth/login` con `{ usuario, clave }` | `{ access_token, refresh_token, perfil }` |
-| `POST /auth/refresh` con `Authorization: Bearer <refresh_token>` | `{ access_token }` |
-| `POST /auth/logout` con `Authorization: Bearer <access_token>` y cuerpo `{ refresh_token }` | `{ ok: true }` |
+| `POST /auth/login` con `{ usuario, clave }` | `{ access_token, perfil }` y la cookie `rt300_rt` (HttpOnly) con el token de renovación |
+| `POST /auth/refresh` (sin cuerpo, con la cookie y la cabecera `X-Requested-With: rt300`) | `{ access_token }` |
+| `POST /auth/logout` (cookie + cabecera `X-Requested-With: rt300`, y `Authorization: Bearer <access_token>` si hay) | `{ ok: true }` y borra la cookie |
 
 `perfil` trae `usuario`, `nombre`, `local` (nombre del local, por ejemplo "RESTAURANTE HOYO 19"), `rol` y también `cloc`, `calm`, `cmon`, `nreg` y `cven` (código de mesero) (los usará el resto del sistema; el esquema de zod de esta feature los ignora).
 
@@ -242,7 +242,7 @@ Archivos tocados y por qué:
 | `lib/env.ts` | `APP_MODE` pasa de `'mockup'` a `'production'`. El mockup no se borró. |
 | `features/auth/esquemas.ts` | `esquemaRespuestaUsuarios` espera `{ usuarios: [...] }`, que es lo que devuelve el backend (todas sus listas vienen envueltas en un objeto). |
 | `features/auth/api.ts` | `listarUsuarios` devuelve la propiedad `usuarios`. `cerrarSesion` delega en `revocarSesion()` de `lib/http.ts`. |
-| `lib/http.ts` | Nuevo `revocarSesion()`: lee los tokens antes de que se limpie la sesión y los envía de forma explícita (acceso en `Authorization`, renovación en el cuerpo como `refresh_token`) con el cliente sin interceptores. Antes la petición salía sin token porque el interceptor corre después de `cerrar()`, y el backend no podía revocar la sesión. El manejo de tokens queda en `lib/http.ts`, como define la arquitectura. |
+| `lib/http.ts` | Nuevo `revocarSesion()`: lee los tokens antes de que se limpie la sesión y los envía de forma explícita con el cliente sin interceptores (desde 2026-11-13 la renovación viaja en la cookie HttpOnly, ver la sección al final). Antes la petición salía sin token porque el interceptor corre después de `cerrar()`, y el backend no podía revocar la sesión. El manejo de tokens queda en `lib/http.ts`, como define la arquitectura. |
 | `simulados/adaptador.ts` | `/auth/usuarios` responde `{ usuarios }` para que el mockup siga el mismo contrato que el backend real. |
 
 Cambios que se hicieron en el backend para esta pantalla:
@@ -252,3 +252,12 @@ Cambios que se hicieron en el backend para esta pantalla:
 - Los errores HTTP genéricos (404, 405, 413, 429) ahora llevan mensajes en español, porque el front muestra el mensaje del servidor cuando no tiene uno propio para el código.
 
 Verificado con el navegador: la lista carga los 89 usuarios reales, una clave incorrecta da 401 y cuenta el intento, `GP1` / `123456` entra a `/mesas`, y "Salir" responde 200 y vuelve al login. `npx tsc -b` y `npm run lint` pasan sin errores.
+
+
+## Sesión con cookie HttpOnly (2026-11-13)
+
+- **El token de renovación ya no pasa por JavaScript:** el backend lo entrega en la cookie `rt300_rt` (`HttpOnly; SameSite=Strict; Path=/api/v1/auth`, y `Secure` fuera de desarrollo). Un fallo XSS no puede leerlo. El token de acceso (15 min) sigue solo en memoria.
+- `sessionStorage` solo guarda `rt300-sesion = 1` (un aviso de "hay sesión renovable", no es un secreto) y el perfil.
+- `lib/http.ts`: las peticiones usan `withCredentials`; la renovación y el cierre de sesión envían `X-Requested-With: rt300` (defensa CSRF); al recargar la página se renueva el acceso **antes** de la primera consulta.
+- **Mismo sitio:** la cookie es `SameSite=Strict`, así que el front y la API deben estar bajo el mismo sitio. En desarrollo basta usar siempre `127.0.0.1` (o siempre `localhost`) para ambos; en producción, el proxy sirve los dos bajo un único origen.
+- Cambio de contrato: `refresh_token` ya no existe en el cuerpo del login y `logout` ya no recibe cuerpo.

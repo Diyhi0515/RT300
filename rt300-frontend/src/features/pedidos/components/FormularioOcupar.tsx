@@ -49,16 +49,16 @@ export function FormularioOcupar({ mesa }: FormularioOcuparProps) {
         etiqueta="Comensales"
         detalle={`Capacidad de ${mesa.capacidad}`}
         valor={comensales}
-        minimo={1}
+        minimo={Math.max(1, cuentas)}
         maximo={Math.max(mesa.capacidad + 4, 12)}
         alCambiar={setComensales}
       />
       <Contador
         etiqueta="Cuentas"
-        detalle="Una por cada persona o grupo que paga aparte"
+        detalle="Una por persona o grupo que paga aparte. No pueden ser más que los comensales"
         valor={cuentas}
         minimo={1}
-        maximo={MAXIMO_CUENTAS}
+        maximo={Math.min(MAXIMO_CUENTAS, comensales)}
         alCambiar={setCuentas}
       />
       <div className="flex items-center gap-3 rounded-2xl border border-line px-4 py-3 short:py-2">

@@ -7,7 +7,7 @@ import type { Perfil } from './types'
 
 interface EstadoSesion {
   perfil: Perfil | null
-  iniciar: (perfil: Perfil, access: string, refresh: string) => void
+  iniciar: (perfil: Perfil, access: string) => void
   cerrar: () => void
 }
 
@@ -15,9 +15,9 @@ export const useSesion = create<EstadoSesion>()(
   persist(
     (set) => ({
       perfil: null,
-      iniciar: (perfil, access, refresh) => {
+      iniciar: (perfil, access) => {
         tokens.fijarAcceso(access)
-        tokens.fijarRenovacion(refresh)
+        tokens.fijarSesionRenovable(true)
         set({ perfil })
       },
       cerrar: () => {

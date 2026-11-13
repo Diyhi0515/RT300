@@ -15,7 +15,7 @@ RUN apt-get update \
 # El servicio no corre como root: si lo comprometen, no tiene privilegios sobre el contenedor.
 RUN groupadd --system app \
  && useradd --system --gid app --home-dir /app --shell /usr/sbin/nologin app \
- && mkdir -p /app /data/cache /data/imagenes \
+ && mkdir -p /app /data/cache /data/imagenes /data/app \
  && chown -R app:app /app /data
 
 WORKDIR /app

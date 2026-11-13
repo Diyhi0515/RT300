@@ -1,14 +1,16 @@
-import { useMemo } from 'react'
-import { Armchair, Banknote, ShieldCheck, Users } from 'lucide-react'
+import { useMemo, useState } from 'react'
+import { Armchair, Banknote, LayoutDashboard, ShieldCheck, Users } from 'lucide-react'
 import { resumenMesas } from '@/features/pedidos/calculos'
 import { useMesas } from '@/features/pedidos/hooks'
-import { CuadriculaMesas } from '../components/CuadriculaMesas'
-import { EncabezadoPagina } from '../components/EncabezadoPagina'
-import { TarjetaIndicador } from '../components/TarjetaIndicador'
-import { formatoMonedaEntera } from '../formato'
+import { CuadriculaMesas } from '@/features/salon/components/CuadriculaMesas'
+import { DetalleMesaAdmin } from '../components/DetalleMesaAdmin'
+import { EncabezadoSeccion } from '../components/EncabezadoSeccion'
+import { TarjetaIndicador } from '@/features/salon/components/TarjetaIndicador'
+import { formatoMonedaEntera } from '@/features/salon/formato'
 
-export function MesasPage() {
+export function PanelPage() {
   const consulta = useMesas()
+  const [elegida, setElegida] = useState<string | null>(null)
   const mesas = useMemo(() => consulta.data ?? [], [consulta.data])
   const { conteo, comensales, consumo, total, porcentaje } = resumenMesas(mesas)
 
@@ -45,7 +47,7 @@ export function MesasPage() {
 
   return (
     <div className="space-y-6 short:space-y-4">
-      <EncabezadoPagina titulo="Administración" icono={ShieldCheck} />
+      <EncabezadoSeccion titulo="Panel" descripcion="Resumen del salón en este momento." icono={LayoutDashboard} />
 
       <section
         aria-label="Indicadores"
@@ -56,7 +58,8 @@ export function MesasPage() {
         ))}
       </section>
 
-      <CuadriculaMesas />
+      <CuadriculaMesas ayuda="Toca una mesa para ver su detalle." alElegir={(m) => setElegida(m.codigo)} />
+      <DetalleMesaAdmin codigo={elegida} alCerrar={() => setElegida(null)} />
     </div>
   )
 }

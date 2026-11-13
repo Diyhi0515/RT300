@@ -39,6 +39,8 @@ describe('ComandaNueva', () => {
     await usuario.click(agregar)
     await usuario.click(screen.getByRole('button', { name: `Agregar ${plato.descripcion}` }))
     await usuario.click(screen.getAllByRole('button', { name: /enviar a cocina/i })[0])
+    expect(cuerpo).toBeNull()
+    await usuario.click(await screen.findByRole('button', { name: 'Sí, enviar' }))
 
     await waitFor(() => expect(cuerpo).not.toBeNull())
     expect(ruta).toBe(`/api/v1/folios/${ocupada.folio}/cuentas/1/comandas`)
@@ -57,5 +59,28 @@ describe('ComandaNueva', () => {
     await screen.findByRole('button', { name: `Agregar ${platos.platos[0].descripcion}` })
 
     expect(screen.getAllByRole('button', { name: /enviar a cocina/i })[0]).toBeDisabled()
+  })
+
+  it('si el usuario cancela la confirmación no se envía nada', async () => {
+    let enviado = false
+    servidor.use(
+      rutaHttp.get('*/api/v1/salon/mesas', () => HttpResponse.json(mesas)),
+      rutaHttp.get('*/api/v1/salon/folios/:folio/detalle', () => HttpResponse.json({ cuentas: [] })),
+      rutaHttp.get('*/api/v1/menu/secciones', () => HttpResponse.json(secciones)),
+      rutaHttp.get('*/api/v1/menu/secciones/:s/:ss/platos', () => HttpResponse.json(platos)),
+      rutaHttp.post('*/api/v1/folios/:folio/cuentas/:cuenta/comandas', () => {
+        enviado = true
+        return HttpResponse.json({ comanda: 1, estado: 'ok' })
+      }),
+    )
+    const usuario = userEvent.setup()
+    renderConProveedores(<ComandaNueva />)
+
+    await usuario.click(await screen.findByRole('button', { name: `Agregar ${platos.platos[0].descripcion}` }))
+    await usuario.click(screen.getAllByRole('button', { name: /enviar a cocina/i })[0])
+    await usuario.click(await screen.findByRole('button', { name: /cancelar/i }))
+
+    expect(enviado).toBe(false)
+    expect(screen.queryByRole('button', { name: 'Sí, enviar' })).not.toBeInTheDocument()
   })
 })

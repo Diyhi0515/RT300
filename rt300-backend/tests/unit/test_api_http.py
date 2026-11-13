@@ -8,6 +8,7 @@ from flask import jsonify
 from app import create_app
 from app.config import Config
 from app.core.errors import Unauthorized
+from app.domain.usuario import Usuario
 from app.extensions import limiter
 
 ORIGEN = "http://localhost:5173"
@@ -15,7 +16,7 @@ ORIGEN = "http://localhost:5173"
 
 @pytest.fixture
 def app():
-    app = create_app(Config(env="development", cors_origins=(ORIGEN,), db_host="no-existe", gateway_mode="fake"))
+    app = create_app(Config(env="development", cors_origins=(ORIGEN,), db_host="no-existe", gateway_mode="fake", revocados_db=""))
 
     @app.get("/api/v1/_grande")
     def grande():
@@ -152,3 +153,90 @@ def test_el_limite_de_login_no_filtra_si_el_usuario_existe(cliente, monkeypatch)
     monkeypatch.setattr("app.modules.auth.routes.auth_service", lambda: AuthFalso())
     r = intentar(cliente, "NOEXISTE", "10.5.5.5")
     assert r.get_json()["error"]["message"] == "Usuario o contraseña incorrectos."
+
+
+CSRF = {"X-Requested-With": "rt300"}
+GARZON = Usuario("GP1", "GARZON 1", 2, 2, 1, 12012, "garzon")
+
+
+class AuthCorrecto:
+    def login(self, usuario, clave):
+        class Resultado:
+            pass
+
+        r = Resultado()
+        r.usuario, r.local = GARZON, "RESTAURANTE"
+        return r
+
+
+@pytest.fixture
+def sesion(cliente, monkeypatch):
+    monkeypatch.setattr("app.modules.auth.routes.auth_service", lambda: AuthCorrecto())
+    return cliente.post("/api/v1/auth/login", json={"usuario": "GP1", "clave": "x"})
+
+
+def _cookie(respuesta):
+    return next(c for c in respuesta.headers.getlist("Set-Cookie") if c.startswith("rt300_rt="))
+
+
+def test_el_login_entrega_el_acceso_en_el_cuerpo_y_la_renovacion_solo_en_cookie_httponly(sesion):
+    cuerpo = sesion.get_json()
+    assert "access_token" in cuerpo and "refresh_token" not in cuerpo
+    cookie = _cookie(sesion)
+    assert "HttpOnly" in cookie and "SameSite=Strict" in cookie and "Path=/api/v1/auth" in cookie
+
+
+def test_la_cookie_exige_https_fuera_de_desarrollo():
+    assert Config(env="production", cookie_secure="").cookie_segura is True
+    assert Config(env="development", cookie_secure="").cookie_segura is False
+    assert Config(env="production", cookie_secure="false").cookie_segura is False
+
+
+def test_refresh_sin_la_cabecera_propia_se_rechaza_aunque_haya_cookie(cliente, sesion):
+    r = cliente.post("/api/v1/auth/refresh")
+    assert r.status_code == 403 and r.get_json()["error"]["code"] == "CSRF"
+
+
+def test_refresh_con_cookie_y_cabecera_entrega_un_acceso_nuevo(cliente, sesion):
+    r = cliente.post("/api/v1/auth/refresh", headers=CSRF)
+    assert r.status_code == 200 and "access_token" in r.get_json()
+
+
+def test_refresh_sin_cookie_responde_401(cliente):
+    assert cliente.post("/api/v1/auth/refresh", headers=CSRF).status_code == 401
+
+
+def test_un_token_de_acceso_no_sirve_para_renovar(cliente, sesion):
+    acceso = sesion.get_json()["access_token"]
+    cliente.delete_cookie("rt300_rt", path="/api/v1/auth")
+    r = cliente.post("/api/v1/auth/refresh", headers={**CSRF, "Authorization": f"Bearer {acceso}"})
+    assert r.status_code == 401
+
+
+def test_logout_sin_la_cabecera_propia_se_rechaza(cliente, sesion):
+    assert cliente.post("/api/v1/auth/logout").status_code == 403
+
+
+def test_logout_revoca_la_renovacion_borra_la_cookie_y_ya_no_se_puede_renovar(cliente, sesion):
+    acceso = sesion.get_json()["access_token"]
+    cookie_valor = _cookie(sesion).split(";")[0].split("=", 1)[1]
+    r = cliente.post("/api/v1/auth/logout", headers={**CSRF, "Authorization": f"Bearer {acceso}"})
+    borrada = _cookie(r)
+    assert r.status_code == 200 and ("Max-Age=0" in borrada or "Expires=Thu, 01 Jan 1970" in borrada)
+    cliente.set_cookie("rt300_rt", cookie_valor, path="/api/v1/auth")      # un atacante que copió la cookie
+    assert cliente.post("/api/v1/auth/refresh", headers=CSRF).status_code == 401
+    assert cliente.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {acceso}"}).status_code == 401
+
+
+def test_logout_funciona_con_el_acceso_vencido(cliente, sesion):
+    r = cliente.post("/api/v1/auth/logout", headers={**CSRF, "Authorization": "Bearer vencido"})
+    assert r.status_code == 200
+
+
+def test_cors_permite_credenciales_solo_para_el_origen_configurado(cliente):
+    ok = cliente.options("/api/v1/auth/refresh", headers={
+        "Origin": ORIGEN, "Access-Control-Request-Method": "POST", "Access-Control-Request-Headers": "x-requested-with"})
+    assert ok.headers["Access-Control-Allow-Credentials"] == "true"
+    assert "x-requested-with" in ok.headers["Access-Control-Allow-Headers"].lower()
+    ajeno = cliente.options("/api/v1/auth/refresh", headers={"Origin": "http://malo.com", "Access-Control-Request-Method": "POST"})
+    assert "Access-Control-Allow-Origin" not in ajeno.headers

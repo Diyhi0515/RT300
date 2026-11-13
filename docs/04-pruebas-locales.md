@@ -51,10 +51,15 @@ Con `GATEWAY_MODE=fake` las comandas **no se imprimen** en cocina: el sistema la
 Casos de error útiles: 11 intentos de login seguidos con clave mala → "Demasiados intentos" (límite por usuario); apagar el backend
 (`docker compose stop backend`) y tocar algo → "No hay conexión con el servidor".
 
+### Área de administración
+
+Para ver `/admin` hace falta un usuario con rol admin. En tu `.env` local agrega `ADMIN_USERS=GP2`, luego `docker compose up -d backend`, cierra sesión y entra con `GP2` / `123456`.
+Debes ver el módulo **Administración** en `/inicio`; dentro, el sidebar con Panel, Mesas en servicio, Menú y Clientes (en el celular, el botón **Menú**). Con `GP1` el módulo no aparece y `/admin` te devuelve a `/inicio`.
+
 ## 4. Pruebas automáticas
 
 ```bash
-# Backend: 121 pruebas unitarias (sin BD) y estilo
+# Backend: 143 pruebas unitarias (sin BD) y estilo
 docker compose exec backend python -m pytest tests/unit -q
 docker compose exec backend ruff check app tests
 

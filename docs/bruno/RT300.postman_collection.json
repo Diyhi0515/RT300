@@ -24,10 +24,6 @@
       "value": ""
     },
     {
-      "key": "refresh",
-      "value": ""
-    },
-    {
       "key": "folio",
       "value": "252438"
     }
@@ -143,7 +139,12 @@
           "name": "Refresh",
           "request": {
             "method": "POST",
-            "header": [],
+            "header": [
+              {
+                "key": "X-Requested-With",
+                "value": "rt300"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/auth/refresh",
               "host": [
@@ -153,14 +154,23 @@
                 "auth",
                 "refresh"
               ]
-            }
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "Usa la cookie rt300_rt que dejó el Login (HttpOnly, se guarda sola). Sin la cabecera X-Requested-With responde 403."
           }
         },
         {
           "name": "Logout",
           "request": {
             "method": "POST",
-            "header": [],
+            "header": [
+              {
+                "key": "X-Requested-With",
+                "value": "rt300"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/auth/logout",
               "host": [
@@ -170,7 +180,8 @@
                 "auth",
                 "logout"
               ]
-            }
+            },
+            "description": "Revoca el token de acceso (Authorization) y la cookie de renovación, y la borra."
           }
         }
       ]

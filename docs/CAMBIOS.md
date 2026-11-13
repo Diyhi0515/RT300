@@ -29,7 +29,9 @@ Sin cambios de esquema de BD ni de flujo de negocio. Guía para probar: [04-prue
 - En producción el arranque falla si quedan claves o usuario de BD de desarrollo, o CORS vacío/`*`.
 - Datos mínimos en las respuestas (`/salon/parametros`, detalle de mesa y modificación, todos con modelos de salida tipados).
 - `X-Request-Id` entrante validado; imágenes sirven aunque la caché no sea escribible.
-- **Redis** en Docker: tokens revocados y contadores de intentos compartidos entre instancias (`REDIS_URL`); verificado que un token revocado sigue inválido tras reiniciar el backend. Si Redis cae, el login sigue con contadores locales.
+- **Tokens revocados en un archivo SQLite** por defecto (`REVOCADOS_DB`, en Docker volumen `appdata`): sobreviven a reinicios sin depender de Docker ni de ningún servicio. Verificado: login → logout → reinicio del backend → el token sigue dando 401. Si el archivo no se puede escribir, cae a memoria con un aviso en el log.
+- **Redis es opcional** (solo para varias máquinas): `docker compose --profile redis up -d` y `REDIS_URL` en `.env`. Los contadores de intentos de login siguen en memoria salvo que uses Redis (se reinician con el servidor; aceptable con un solo servidor).
+- **Auditoría de dependencias** (2026-11-13): `pip-audit` sin vulnerabilidades; `npm audit --omit=dev` (lo que llega al navegador) sin vulnerabilidades. `npm audit` completo marca 19 en herramientas de desarrollo (eslint, workbox, javascript-obfuscator); no se publican. No se aplicó `audit fix --force` por riesgo de romper el build.
 - **HTTPS** opcional con Caddy (`--profile https`, `docker/proxy/Caddyfile`); verificado en `https://127.0.0.1:8443` con HSTS y las cabeceras de seguridad. Ver [03 §7.1](03-puesta-en-marcha.md).
 - Contenedor del backend sin privilegios (`app`) con `HEALTHCHECK`; puertos solo en `127.0.0.1`.
 
@@ -46,11 +48,30 @@ Sin cambios de esquema de BD ni de flujo de negocio. Guía para probar: [04-prue
 ### Pruebas
 | Dónde | Cantidad | Cómo |
 |---|---|---|
-| Backend unitarias | 121 | `docker compose exec backend python -m pytest tests/unit -q` |
+| Backend unitarias | 143 | `docker compose exec backend python -m pytest tests/unit -q` |
 | Backend integración (solo lectura) | 11 | `RT300_INTEGRATION=1 ... pytest tests/integration` |
-| Front (Vitest + Testing Library + msw) | 57 | `npm test` |
+| Front (Vitest + Testing Library + msw) | 81 | `npm test` |
 
 Front: mapeos, cálculos, contrato con el backend (respuestas reales anonimizadas en `src/test/fixtures`), cliente HTTP (renovación de sesión, 401 concurrentes, logout) y componentes (ocupar mesa y enviar comanda solo mandan lo permitido).
+
+### Área de administración (front)
+- Nuevo `/admin` con **sidebar** (cajón en móvil), protegido por rol `admin`; el módulo Administración solo aparece a ese rol. `/mesas` redirige a `/admin`.
+- 4 secciones de solo lectura con endpoints ya existentes: Panel, Mesas en servicio, Menú, Clientes. 4 entradas bloqueadas: Liberar mesa, Comandas, Usuarios y roles, Reportes. Detalle: [`features/admin/README.md`](../rt300-frontend/src/features/admin/README.md).
+- **Recarga de página sin 401:** el token de acceso vive solo en memoria, así que al recargar las primeras consultas salían sin token, recibían 401 y recién ahí renovaban (ruido en la consola y una petición de más). Ahora `lib/http.ts` renueva *antes* de enviar si hay token de renovación pero no de acceso, con una sola renovación compartida entre consultas simultáneas. Pruebas en `lib/http.test.ts`.
+- `tiempoCorto` muestra días (`2d 4h`) cuando pasa de 24 h. Front: 76 pruebas.
+
+### Sesión con cookie HttpOnly y CSP del front
+- **El token de renovación salió de JavaScript:** ahora viaja en la cookie `rt300_rt` (`HttpOnly; SameSite=Strict; Path=/api/v1/auth`, `Secure` fuera de desarrollo). `sessionStorage` ya no guarda ningún token. Verificado en el navegador: `document.cookie` vacío, recarga → `refresh` 200 por cookie, logout → `refresh` 401.
+- **CSRF:** `/auth/refresh` y `/auth/logout` exigen `X-Requested-With: rt300` (403 `CSRF` sin ella); CORS con credenciales solo para `CORS_ORIGINS`; logout nunca falla por un token vencido y revoca acceso y renovación.
+- **Contrato:** el login ya no devuelve `refresh_token`; logout sin cuerpo. La colección de Bruno se actualizó (Refresh sin auth y con la cabecera).
+- **CSP y cabeceras del front** en `docker/proxy/Caddyfile.prod` (perfil `produccion`, puerto 8444): `script-src 'self'` sin inline, etc. Verificada en el navegador sin violaciones. El script del tema pasó a `public/tema-inicial.js`. Ver [03 §7.2](03-puesta-en-marcha.md).
+- Pruebas: backend 143 unitarias; front 79.
+- **Limitación de la prueba:** el service worker del PWA no se pudo comprobar en el navegador integrado (no registra service workers, con o sin CSP); la CSP lo permite (`worker-src 'self'`). La prueba de la CSP se hizo por HTTP local con la misma política (sin `upgrade-insecure-requests`), porque el navegador integrado no confía en el certificado local de Caddy.
+
+### Corrección: cuentas no pueden superar a comensales
+- Yo había quitado esta regla creyendo que el sistema antiguo no la tenía. **Sí la tiene** (`PHJ/RT300a.js`, validación al ocupar y al modificar la mesa; solo en el navegador, el PHP no la comprobaba). Se restauró y ahora además la exige el servidor: `422 CUENTAS_MAYOR_COMENSALES` al ocupar y al modificar (y `COMENSALES_INVALIDOS` si hay menos de 1 comensal), después de comprobar el acceso al local.
+- **Auditoría completa de restricciones** del sistema antiguo (tabla en [`features/pedidos/README.md`](../rt300-frontend/src/features/pedidos/README.md)): todas se cumplen en el servidor; la única que faltaba además de esta era el diálogo "Confirma: Guardar Comanda?", ya agregado en el front ("¿Enviar la comanda?").
+- Front: el contador de cuentas no pasa del número de comensales, los comensales no bajan del número de cuentas, y "agregar cuenta" avisa si ya hay tantas cuentas como comensales. Pruebas nuevas: 4 en el backend y 1 en el front.
 
 ### Pendiente / decisiones abiertas
 `GET /auth/usuarios` sigue público; roles reales para autorizar eliminar comanda; hash de clave fuerte (requiere tabla propia); servicio SOAP real sin probar (192.168.0.2 no es alcanzable desde esta PC).

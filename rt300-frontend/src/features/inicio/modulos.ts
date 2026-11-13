@@ -1,4 +1,5 @@
 import { ClipboardList, ShieldCheck, Wallet, type LucideIcon } from 'lucide-react'
+import type { Rol } from '@/features/auth'
 import type { TonoModulo } from './components/TarjetaModulo'
 
 export type ClaveModulo = 'administracion' | 'pedidos' | 'ventas'
@@ -10,6 +11,7 @@ export interface Modulo {
   icono: LucideIcon
   tono: TonoModulo
   ruta: string | null
+  roles?: Rol[]
 }
 
 export const modulos: Modulo[] = [
@@ -19,7 +21,8 @@ export const modulos: Modulo[] = [
     descripcion: 'Mesas, zonas y control del salón.',
     icono: ShieldCheck,
     tono: 'azul',
-    ruta: '/mesas',
+    ruta: '/admin',
+    roles: ['admin'],
   },
   {
     clave: 'pedidos',
@@ -44,3 +47,5 @@ export const moduloPorClave = (clave: ClaveModulo | null) =>
 
 export const moduloDeRuta = (ruta: string) =>
   modulos.find((m) => m.ruta && (ruta === m.ruta || ruta.startsWith(`${m.ruta}/`))) ?? null
+
+export const modulosDelRol = (rol: Rol) => modulos.filter((m) => !m.roles || m.roles.includes(rol))

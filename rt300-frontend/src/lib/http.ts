@@ -2,7 +2,8 @@ import axios, { AxiosError, type AxiosAdapter, type InternalAxiosRequestConfig }
 import { env } from './env'
 import { ERROR_POR_DEFECTO, resolverMensajeError } from './mensajesError'
 
-const CLAVE_RENOVACION = 'rt300-rt'
+const CLAVE_SESION = 'rt300-sesion'
+const CABECERA_CSRF = { 'X-Requested-With': 'rt300' }
 
 export class ErrorApi extends Error {
   status: number
@@ -26,24 +27,24 @@ export const tokens = {
   fijarAcceso: (value: string | null) => {
     tokenAcceso = value
   },
-  obtenerRenovacion: () => {
+  haySesionRenovable: () => {
     try {
-      return sessionStorage.getItem(CLAVE_RENOVACION)
+      return sessionStorage.getItem(CLAVE_SESION) === '1'
     } catch {
-      return null
+      return false
     }
   },
-  fijarRenovacion: (value: string | null) => {
+  fijarSesionRenovable: (activa: boolean) => {
     try {
-      if (value) sessionStorage.setItem(CLAVE_RENOVACION, value)
-      else sessionStorage.removeItem(CLAVE_RENOVACION)
+      if (activa) sessionStorage.setItem(CLAVE_SESION, '1')
+      else sessionStorage.removeItem(CLAVE_SESION)
     } catch {
       return
     }
   },
   limpiar: () => {
     tokenAcceso = null
-    tokens.fijarRenovacion(null)
+    tokens.fijarSesionRenovable(false)
   },
 }
 
@@ -60,24 +61,26 @@ export const http = axios.create({
   adapter,
   baseURL: env.apiUrl,
   timeout: 20_000,
+  withCredentials: true,
   headers: { 'Content-Type': 'application/json' },
 })
 
-const clienteSimple = axios.create({ adapter, baseURL: env.apiUrl, timeout: 20_000 })
-
-http.interceptors.request.use((config) => {
-  if (tokenAcceso) config.headers.Authorization = `Bearer ${tokenAcceso}`
-  return config
+const clienteSimple = axios.create({
+  adapter,
+  baseURL: env.apiUrl,
+  timeout: 20_000,
+  withCredentials: true,
 })
 
 let renovando: Promise<string | null> | null = null
 
+const esRutaAuth = (url?: string) => !!url?.startsWith('/auth/')
+
 const renovarAcceso = async () => {
-  const refresh = tokens.obtenerRenovacion()
-  if (!refresh) return null
+  if (!tokens.haySesionRenovable()) return null
   try {
     const { data } = await clienteSimple.post<{ access_token: string }>('/auth/refresh', null, {
-      headers: { Authorization: `Bearer ${refresh}` },
+      headers: CABECERA_CSRF,
     })
     tokenAcceso = data.access_token
     return tokenAcceso
@@ -86,23 +89,25 @@ const renovarAcceso = async () => {
   }
 }
 
+const renovarCompartido = () => {
+  renovando ??= renovarAcceso().finally(() => {
+    renovando = null
+  })
+  return renovando
+}
+
+http.interceptors.request.use(async (config) => {
+  if (!tokenAcceso && !esRutaAuth(config.url) && tokens.haySesionRenovable()) await renovarCompartido()
+  if (tokenAcceso) config.headers.Authorization = `Bearer ${tokenAcceso}`
+  return config
+})
+
 export const revocarSesion = async () => {
   const acceso = tokenAcceso
-  const renovacion = tokens.obtenerRenovacion()
-  if (!acceso && !renovacion) return
-  const enviar = (credencial: string) =>
-    clienteSimple.post(
-      '/auth/logout',
-      { refresh_token: renovacion },
-      { headers: { Authorization: `Bearer ${credencial}` } },
-    )
-  try {
-    await enviar((acceso ?? renovacion) as string)
-  } catch (error) {
-    const expirado = error instanceof AxiosError && error.response?.status === 401
-    if (expirado && acceso && renovacion) await enviar(renovacion)
-    else throw error
-  }
+  if (!acceso && !tokens.haySesionRenovable()) return
+  await clienteSimple.post('/auth/logout', null, {
+    headers: acceso ? { ...CABECERA_CSRF, Authorization: `Bearer ${acceso}` } : CABECERA_CSRF,
+  })
 }
 
 type ConfigReintento = InternalAxiosRequestConfig & { _retry?: boolean }
@@ -130,14 +135,11 @@ http.interceptors.response.use(
   (response) => response,
   async (error: AxiosError<CuerpoError>) => {
     const original = error.config as ConfigReintento | undefined
-    const isAuthCall = original?.url?.startsWith('/auth/')
+    const isAuthCall = esRutaAuth(original?.url)
 
     if (error.response?.status === 401 && original && !original._retry && !isAuthCall) {
       original._retry = true
-      renovando ??= renovarAcceso().finally(() => {
-        renovando = null
-      })
-      const token = await renovando
+      const token = await renovarCompartido()
       if (token) {
         original.headers.Authorization = `Bearer ${token}`
         return http(original)

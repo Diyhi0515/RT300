@@ -2,7 +2,7 @@ from datetime import datetime
 
 import pytest
 
-from app.core.errors import Conflict, NotFound
+from app.core.errors import Conflict, NotFound, ValidationFailed
 from app.domain.mesa import ESTC_LIQUIDADA, Mesa
 from app.modules.salon.ports import Cliente, Parametros
 from app.modules.salon.service import SalonService
@@ -47,7 +47,7 @@ class RepoSalon:
 
 def test_ocupar_mesa_crea_folio_y_cuentas_en_una_unidad_de_trabajo():
     uow, repo = FakeUow(), RepoSalon()
-    r = SalonService(repo, uow).ocupar_mesa(GARZON, "M1", cven=12009, caco=1, ccom=2, ncta=3)
+    r = SalonService(repo, uow).ocupar_mesa(GARZON, "M1", cven=12009, caco=1, ccom=3, ncta=3)
     assert r == {"folio": 500, "cuentas": 3}
     assert [c.ncta for c in repo.cuentas_insertadas] == [1, 2, 3]
     assert (uow.commits, uow.rollbacks) == (1, 0)
@@ -90,7 +90,7 @@ def test_habilitar_con_cuenta_liquidada_cierra_el_folio_sin_anularlo():
 def test_modificar_no_permite_quitar_cuentas_con_comandas():
     repo = RepoSalon(comandas=1)
     with pytest.raises(Conflict) as e:
-        SalonService(repo, FakeUow()).modificar_mesa(GARZON, 77, cven=1, ccom=1, ncta_nueva=2)
+        SalonService(repo, FakeUow()).modificar_mesa(GARZON, 77, cven=1, ccom=5, ncta_nueva=2)
     assert e.value.code == "CUENTAS_CON_COMANDAS"
 
 
@@ -110,3 +110,27 @@ def test_detalle_folio_une_cuentas_y_consumo_sin_una_consulta_por_cuenta():
 
 def test_mesas_del_local_usa_el_local_del_usuario():
     assert SalonService(RepoSalon(), FakeUow()).mesas_del_local(GARZON) == [{"mesa": "M1", "cloc": 2}]
+
+
+def test_ocupar_no_permite_mas_cuentas_que_comensales():
+    uow = FakeUow()
+    with pytest.raises(ValidationFailed) as e:
+        SalonService(RepoSalon(), uow).ocupar_mesa(GARZON, "M1", cven=12009, caco=1, ccom=2, ncta=3)
+    assert e.value.code == "CUENTAS_MAYOR_COMENSALES" and uow.commits == 0
+
+
+def test_ocupar_permite_tantas_cuentas_como_comensales():
+    r = SalonService(RepoSalon(), FakeUow()).ocupar_mesa(GARZON, "M1", cven=12009, caco=1, ccom=3, ncta=3)
+    assert r["cuentas"] == 3
+
+
+def test_ocupar_exige_al_menos_un_comensal():
+    with pytest.raises(ValidationFailed) as e:
+        SalonService(RepoSalon(), FakeUow()).ocupar_mesa(GARZON, "M1", cven=12009, caco=1, ccom=0, ncta=1)
+    assert e.value.code == "COMENSALES_INVALIDOS"
+
+
+def test_modificar_no_permite_mas_cuentas_que_comensales():
+    with pytest.raises(ValidationFailed) as e:
+        SalonService(RepoSalon(), FakeUow()).modificar_mesa(GARZON, 77, cven=1, ccom=2, ncta_nueva=3)
+    assert e.value.code == "CUENTAS_MAYOR_COMENSALES"

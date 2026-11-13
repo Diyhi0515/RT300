@@ -130,6 +130,13 @@ export function ResumenMesa({ mesa }: ResumenMesaProps) {
   }
 
   const agregarCuenta = async () => {
+    if (mesa.cuentas.length >= mesa.comensales) {
+      notificar.advertencia(
+        'No puede haber más cuentas que comensales. Aumenta los comensales en los datos de la mesa.',
+        `Mesa ${mesa.codigo}`,
+      )
+      return
+    }
     if (await cambiarMesa(mesa.cuentas.length + 1, mesa.comensales)) vibrar('toque')
   }
 
@@ -188,16 +195,16 @@ export function ResumenMesa({ mesa }: ResumenMesaProps) {
           <Contador
             etiqueta="Comensales"
             valor={comensales}
-            minimo={1}
-            maximo={Math.max(mesa.capacidad + 4, 12, mesa.comensales)}
+            minimo={Math.max(1, cuentas)}
+            maximo={Math.max(mesa.capacidad + 4, 12, mesa.comensales, cuentas)}
             alCambiar={setComensales}
           />
           <Contador
             etiqueta="Cuentas"
-            detalle={`Mínimo ${minimoCuentas} por consumo existente`}
+            detalle={`Mínimo ${minimoCuentas} por consumo existente. No pueden ser más que los comensales`}
             valor={cuentas}
             minimo={minimoCuentas}
-            maximo={MAXIMO_CUENTAS}
+            maximo={Math.max(minimoCuentas, Math.min(MAXIMO_CUENTAS, comensales))}
             alCambiar={setCuentas}
           />
           <div className="grid grid-cols-2 gap-2">

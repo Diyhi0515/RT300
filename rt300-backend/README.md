@@ -74,14 +74,15 @@ encabezado `X-Request-ID` y en los logs JSON.
 
 ```json
 {
-  "access_token": "…", "refresh_token": "…",
+  "access_token": "…",
   "perfil": { "usuario": "GP1", "nombre": "GARZON 1  HOYO 19", "local": "RESTAURANTE HOYO 19", "rol": "garzon",
               "cloc": 2, "calm": 2, "cmon": 1, "nreg": 0, "cven": 12009 }
 }
 ```
 
 `local` es el nombre del local (texto, para mostrar); `cloc` es su código. El access token dura 15 minutos y el de renovación 1 día;
-nunca llevan la clave.
+nunca llevan la clave. **El token de renovación no va en el cuerpo:** llega en la cookie `rt300_rt` (`HttpOnly; SameSite=Strict`, `Secure` fuera de desarrollo).
+`/auth/refresh` y `/auth/logout` exigen la cabecera `X-Requested-With: rt300` (defensa CSRF).
 
 ## Configuración
 
@@ -92,7 +93,8 @@ Todo por variables de entorno (ver `../.env.example`). Las principales:
 | `FLASK_ENV` | `development` en local. Por defecto es `production`, que **no arranca** con las claves de desarrollo. |
 | `SECRET_KEY`, `JWT_SECRET_KEY` | Obligatorias y propias en producción (JWT de 32+ caracteres). |
 | `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` | Conexión a SQL Server. El backend usa `rt300_app` (solo datos, sin DDL). |
-| `CORS_ORIGINS` | Orígenes del front permitidos (coma). |
+| `CORS_ORIGINS` | Orígenes del front permitidos (coma). Con credenciales (cookie), solo estos. |
+| `COOKIE_SECURE` | Cookie del token de renovación solo por HTTPS. Vacío = sí fuera de desarrollo; `true`/`false` lo fuerza. |
 | `GATEWAY_MODE` | `fake` (no imprime nada) · `soap` · `http` · `dll`. |
 | `GATEWAY_WSDL_URL` | Para `soap`: la **misma URL que usaba el PHP** (`SYS_WEBSERVICE_DIR`), con o sin `?WSDL`. |
 | `GATEWAY_HTTP_URL`, `GATEWAY_PASSWORD` | Para `http` y credencial técnica hacia el servicio (decisión pendiente). |
@@ -100,13 +102,14 @@ Todo por variables de entorno (ver `../.env.example`). Las principales:
 | `IMAGENES_DIR`, `IMAGENES_CACHE_DIR` | Carpeta de imágenes de platos y caché WebP. |
 | `MENU_CACHE_SECONDS` | Caché del menú en memoria (300 s por defecto; `0` la apaga). |
 | `PROXY_HOPS` | Proxies de confianza delante de Flask (`1` con nginx). `0` si se accede directo: así nadie falsifica su IP para evadir los límites. |
-| `REDIS_URL` | Redis compartido para tokens revocados y límites de intentos. Vacío = en memoria (solo para 1 instancia). En Docker ya viene configurado. |
+| `REVOCADOS_DB` | Archivo SQLite de tokens revocados (por defecto `data/revocados.sqlite`; en Docker `/data/app`). Sobrevive a reinicios; vale para un solo servidor. |
+| `REDIS_URL` | Opcional, para varias máquinas: Redis compartido para revocados y límites de intentos. Si se define, tiene prioridad sobre SQLite. |
 | `RATE_LIMIT_DEFAULT` | Límite general por IP (`300 per minute`). |
 
 ## Seguridad aplicada
 
 - Todo el SQL va **parametrizado**; los contadores (`rtsrl`) usan lista blanca.
-- JWT de 15 min + refresh; `logout` **revoca** ambos tokens. Con `REDIS_URL` la revocación es compartida entre instancias y sobrevive a reinicios (verificado); sin él queda en memoria.
+- JWT de 15 min + refresh; `logout` **revoca** ambos tokens. La revocación se guarda en un archivo SQLite y sobrevive a reinicios (verificado); con varias máquinas usar `REDIS_URL`.
 - Login sin enumeración de usuarios: usuario inexistente, sin acceso a pedidos, sin clave o clave errónea dan el mismo mensaje.
 - Límites: login 10/min por IP, `/auth/usuarios` 30/min, eliminar comanda 20/min; cuerpo máximo 1 MB.
 - **Acceso por local:** un usuario solo opera mesas, folios y comandas de su local (`403 OTRO_LOCAL` en caso contrario).
@@ -132,7 +135,7 @@ la migración a un hash fuerte requiere una tabla propia y está pendiente de ap
 ## Pruebas y calidad
 
 ```bash
-docker compose exec backend python -m pytest tests/unit -q            # 121 pruebas, sin BD
+docker compose exec backend python -m pytest tests/unit -q            # 143 pruebas, sin BD
 docker compose exec -T -e RT300_INTEGRATION=1 backend python -m pytest tests/integration -q   # 11 pruebas, solo lectura, con la BD
 docker compose exec backend ruff check app tests                       # estilo y errores comunes
 ```

@@ -48,7 +48,7 @@ console.log(`Capturando desde ${BASE} como ${USUARIO}`)
 const login = await pedir('/auth/login', null, { method: 'POST', body: JSON.stringify({ usuario: USUARIO, clave: CLAVE }) })
 const token = login.access_token
 
-await guardar('login', anonimizar({ ...login, access_token: 'token-de-acceso', refresh_token: 'token-de-renovacion' }))
+await guardar('login', anonimizar({ ...login, access_token: 'token-de-acceso' }))
 await guardar('usuarios', anonimizar({ usuarios: (await pedir('/auth/usuarios')).usuarios.slice(0, 5) }))
 const parametros = await pedir('/salon/parametros', token)
 await guardar('parametros', anonimizar({ ...parametros, mesas: parametros.mesas.slice(0, 3), meseros: parametros.meseros.slice(0, 2) }))
