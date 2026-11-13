@@ -3,18 +3,36 @@ from __future__ import annotations
 
 from typing import Any
 
-from ...core.repos_compartidos import LocalQueries
+from ...core.errors import DomainError
+from ...core.repos_compartidos import LocalQueries, PreciosQueries
 from ...core.text import clean, to_int
-from .ports import Autorizador
+from .ports import Autorizador, ContextoPrecios, ParametrosComanda
 
 _GL = [f"rttmpgl{i:02d}" for i in range(1, 20)]
-_INSERT_TMP = (
-    f"INSERT INTO rttmp (rttmpntra, rttmptipo, {', '.join(_GL)}) "
-    f"VALUES (:ntra, :tipo, {', '.join(':g%d' % i for i in range(1, 20))})"
-)
+_PARAMETROS = ", ".join(f":g{i}" for i in range(1, 20))
+# Nombres de columna y parámetros constantes (ningún dato del usuario entra en el texto del SQL)
+_INSERT_TMP = f"INSERT INTO rttmp (rttmpntra, rttmptipo, {', '.join(_GL)}) VALUES (:ntra, :tipo, {_PARAMETROS})"  # noqa: S608
 
 
-class SqlComandasRepository(LocalQueries):
+class SqlComandasRepository(LocalQueries, PreciosQueries):
+    def contexto_precios(self, nfol: int, ncta: int, cloc: int) -> ContextoPrecios:
+        """Port de la regla de RT300c.php: tipo/entidad de precio y lista del cliente de la cuenta."""
+        tent, entg = self.entidad_de_precio(cloc)
+        gbrne = self._one("SELECT TOP 1 gbrnelpre FROM gbrne") or {}
+        cuenta = self._one("SELECT g.gbagelpre AS lpre FROM rtfoc c LEFT JOIN gbage g ON g.gbagecage = c.rtfoccage "
+                           "WHERE c.rtfocnfol = :f AND c.rtfocncta = :n", f=nfol, n=ncta) or {}
+        lpre = clean(cuenta.get("lpre")) or clean(gbrne.get("gbrnelpre"))
+        return ContextoPrecios(tent=tent, entg=entg, lpre=to_int(lpre, 0) or 0)
+
+    def parametros_comanda(self) -> ParametrosComanda:
+        inctl = self._one("SELECT TOP 1 inctlndec FROM inctl")
+        rtctl = self._one("SELECT TOP 1 rtctlcpxc FROM rtctl")
+        gbpmt = self._one("SELECT TOP 1 gbpmttcof FROM gbpmt")
+        if inctl is None or rtctl is None or gbpmt is None:
+            raise DomainError("Faltan parámetros del restaurante (inventario, control o generales).", "SIN_PARAMETROS")
+        return ParametrosComanda(cpxc=clean(rtctl.get("rtctlcpxc")), decimales=to_int(inctl.get("inctlndec"), 2) or 0,
+                                 tcam=float(gbpmt.get("gbpmttcof") or 0))
+
     def siguiente_transaccion(self) -> int:
         return self._serial("rtsrl", "rtsrlntmp")
 

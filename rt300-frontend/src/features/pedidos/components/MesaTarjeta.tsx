@@ -26,24 +26,11 @@ const ESTILO: Record<
     numero: 'text-fg',
     insignia: 'bg-club-pc text-white',
   },
-  cobro: {
-    etiqueta: 'Por cobrar',
-    fondo: 'border-accent-solid/55 bg-accent-solid/12 hover:border-accent-solid',
-    numero: 'text-fg',
-    insignia: 'bg-accent-solid text-[#2a1a00]',
-  },
-  reservada: {
-    etiqueta: 'Reservada',
-    fondo:
-      'border-dashed border-club-secondary/60 bg-club-secondary/10 hover:border-club-secondary',
-    numero: 'text-club-secondary',
-    insignia: 'bg-club-secondary text-white dark:text-[#071226]',
-  },
 }
 
 export function MesaTarjeta({ mesa, seleccionada, indice, alElegir }: MesaTarjetaProps) {
   const estilo = ESTILO[mesa.estado]
-  const ocupada = mesa.estado === 'ocupada' || mesa.estado === 'cobro'
+  const ocupada = mesa.estado === 'ocupada'
 
   return (
     <button

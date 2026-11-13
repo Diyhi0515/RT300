@@ -88,6 +88,19 @@ class GuardarComandaIn(_Base):
     rtcic: list[ComponenteInsumo] = []
 
 
+class ItemEnviarIn(_Base):
+    """Lo único que decide el garzón: qué plato y cuántos. El precio, el centro de producción y los insumos salen de la base."""
+
+    cart: str = Field(min_length=1, max_length=30)
+    cant: int = Field(ge=1, le=99)
+    glos: str = Field(default="", max_length=100)
+
+
+class EnviarComandaIn(_Base):
+    glos: str = Field(default="", max_length=200)
+    items: list[ItemEnviarIn] = Field(min_length=1, max_length=100)
+
+
 class ReintentarIn(_Base):
     nfol: int
     ncta: int

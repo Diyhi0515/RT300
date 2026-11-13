@@ -9,6 +9,20 @@ from ...core.sql import blank_to_none
 from ...core.text import clean, to_int
 from .ports import Cliente, FolioConMesero, Parametros
 
+_SQL_MESAS = """
+    SELECT m.rtmsamesa AS mesa, m.rtmsadesc AS descripcion, m.rtmsaccom AS capacidad, m.rtmsacaco AS area,
+           m.rtmsaestm AS estado, m.rtmsanfol AS folio, m.rtmsastat AS stat,
+           m.rtmsaposx AS posx, m.rtmsaposy AS posy,
+           f.rtfolccom AS comensales, f.rtfolcven AS cven, g.gbagenomb AS mozo,
+           CASE WHEN f.rtfolnfol IS NULL THEN NULL
+                ELSE CONVERT(varchar(10), f.rtfolffol, 23) + 'T' + LTRIM(RTRIM(f.rtfolhora)) END AS apertura,
+           (SELECT COUNT(*) FROM rtfoc c WHERE c.rtfocnfol = m.rtmsanfol AND c.rtfocmrcb = 0) AS cuentas,
+           (SELECT COALESCE(SUM(c.rtfocimpt), 0) FROM rtfoc c
+             WHERE c.rtfocnfol = m.rtmsanfol AND c.rtfocmrcb = 0 AND c.rtfocestc = 1) AS consumo
+      FROM rtmsa m
+      LEFT JOIN rtfol f ON f.rtfolnfol = m.rtmsanfol AND m.rtmsanfol <> 0
+      LEFT JOIN gbage g ON g.gbagecage = f.rtfolcven"""
+
 
 class SqlSalonRepository(MesaQueries):
     # ───────────── Lectura ─────────────
@@ -22,13 +36,15 @@ class SqlSalonRepository(MesaQueries):
             fdia=datetime.fromisoformat(str(gbpmt["gbpmtfdia"])) if gbpmt and gbpmt.get("gbpmtfdia") else None,
             cliente_varios=to_int((gbrne or {}).get("gbrneccli")),
             decimales_definidos=bool(inctl and clean(inctl.get("inctlndec"))),
+            decimales=to_int((inctl or {}).get("inctlndec"), 2) or 0,
         )
 
     def moneda(self, cmon: int) -> dict | None:
-        return self._one("SELECT * FROM gbcon WHERE gbconpfij = 10 AND gbconcorr = :c", c=cmon)
+        return self._one("SELECT gbconcorr AS codigo, gbconabre AS abreviatura, gbcondesc AS descripcion "
+                         "FROM gbcon WHERE gbconpfij = 10 AND gbconcorr = :c", c=cmon)
 
     def local(self, cloc: int) -> dict | None:
-        return self._one("SELECT * FROM vtloc WHERE vtloccloc = :c", c=cloc)
+        return self._one("SELECT vtloccloc AS codigo, vtlocdesc AS descripcion FROM vtloc WHERE vtloccloc = :c", c=cloc)
 
     def area_asignada(self, usuario: str) -> int | None:
         r = self._one("SELECT rturtcaco FROM rturt WHERE rturtuser = :u", u=usuario)
@@ -44,13 +60,17 @@ class SqlSalonRepository(MesaQueries):
                                FROM gbven v JOIN gbage g ON v.gbvencage = g.gbagecage ORDER BY v.gbvencage""")
 
     def mesas_por_area(self, caco: int) -> list[dict]:
-        return self._rows("""SELECT rtmsamesa AS mesa, rtmsadesc AS descripcion, rtmsaccom AS comensales,
-                                    rtmsacaco AS area, rtmsaestm AS estado, rtmsanfol AS folio, rtmsastat AS stat
-                               FROM rtmsa WHERE rtmsacaco = :c AND rtmsastat = 1 AND rtmsamrcb = 0
-                              ORDER BY rtmsamesa""", c=caco)
+        """Mesas del área con lo que muestra el plano: capacidad y, si está ocupada, el folio con comensales, mozo,
+        apertura, nº de cuentas y consumo (todo en una consulta, sin una llamada por mesa)."""
+        return self._rows(_SQL_MESAS + " WHERE m.rtmsacaco = :c AND m.rtmsastat = 1 AND m.rtmsamrcb = 0 ORDER BY m.rtmsamesa",
+                          c=caco)
+
+    def mesas_del_local(self, cloc: int) -> list[dict]:
+        return self._rows(_SQL_MESAS + " WHERE m.rtmsacaco IN (SELECT rtacocaco FROM rtaco WHERE rtacocloc = :l) "  # noqa: S608
+                                       "AND m.rtmsastat = 1 AND m.rtmsamrcb = 0 ORDER BY m.rtmsacaco, m.rtmsamesa", l=cloc)
 
     def mesa_detalle(self, codigo: str) -> dict | None:
-        return self._one("SELECT * FROM rtmsa WHERE LTRIM(RTRIM(rtmsamesa)) = :m AND rtmsastat = 1 AND rtmsamrcb = 0",
+        return self._one(_SQL_MESAS + " WHERE LTRIM(RTRIM(m.rtmsamesa)) = :m AND m.rtmsastat = 1 AND m.rtmsamrcb = 0",
                          m=codigo.strip())
 
     def folio_con_mesero(self, nfol: int) -> FolioConMesero | None:
@@ -67,7 +87,7 @@ class SqlSalonRepository(MesaQueries):
         return r["hora"] if r else None
 
     def folio_abierto_tipo1(self, nfol: int) -> dict | None:
-        return self._one("SELECT rtfolccom, rtfolcven FROM rtfol WHERE rtfolnfol = :n AND rtfoltped = 1 "
+        return self._one("SELECT rtfolccom AS comensales, rtfolcven AS cven FROM rtfol WHERE rtfolnfol = :n AND rtfoltped = 1 "
                          "AND rtfolestf = 1 AND rtfolmrcb = 0", n=nfol)
 
     def resumen(self, nfol: int, mesa: str | None = None, ncta: int | None = None) -> list[dict]:
@@ -83,6 +103,27 @@ class SqlSalonRepository(MesaQueries):
                AND (:ncta IS NULL OR h.rtcohncta = :ncta)
              GROUP BY d.rtcdancom, d.rtcdacart, a.inartdesc, d.rtcdapvta
              ORDER BY d.rtcdancom, d.rtcdacart""", nfol=nfol, mesa=blank_to_none(mesa), ncta=ncta)
+
+    def cuentas_con_cliente(self, nfol: int) -> list[dict]:
+        """Todas las cuentas no anuladas del folio con su cliente (abiertas y liquidadas)."""
+        return self._rows("""
+            SELECT c.rtfocncta AS ncta, c.rtfocnomb AS nombre, c.rtfocnruc AS nruc, c.rtfocndid AS ndid,
+                   c.rtfoccage AS cage, COALESCE(g.gbagenomb, '') AS cliente, c.rtfocestc AS estc, c.rtfocimpt AS impt
+              FROM rtfoc c LEFT JOIN gbage g ON g.gbagecage = c.rtfoccage AND c.rtfoccage <> 0
+             WHERE c.rtfocnfol = :n AND c.rtfocmrcb = 0
+             ORDER BY c.rtfocncta""", n=nfol)
+
+    def consumo_por_cuenta(self, nfol: int) -> list[dict]:
+        """Consumo vigente del folio agrupado por cuenta y plato, en una sola consulta."""
+        return self._rows("""
+            SELECT h.rtcohncta AS ncta, d.rtcdacart AS cart, a.inartdesc AS descripcion, d.rtcdapvta AS pvta,
+                   SUM(d.rtcdacant) AS cant, SUM(d.rtcdaimpt) AS impt
+              FROM rtcda d
+              JOIN rtcoh h ON h.rtcohncom = d.rtcdancom
+              JOIN inart a ON a.inartcart = d.rtcdacart
+             WHERE h.rtcohnfol = :n AND h.rtcohesco = 1 AND h.rtcohmrcb = 0 AND d.rtcdamrcb = 0
+             GROUP BY h.rtcohncta, d.rtcdacart, a.inartdesc, d.rtcdapvta
+             ORDER BY h.rtcohncta, d.rtcdacart""", n=nfol)
 
     def cuentas_folio(self, nfol: int) -> list[dict]:
         return self._rows("""SELECT rtfocncta AS ncta, rtfocestc AS estc, rtfocmrcb AS mrcb, rtfocnomb AS nomb,
@@ -156,8 +197,8 @@ class SqlSalonRepository(MesaQueries):
         self._exec("UPDATE rtfol SET rtfolestf = 2, rtfolfesf = :f, rtfoluser = :u WHERE rtfolnfol = :n", f=fdia, u=usrn, n=nfol)
         self._exec("UPDATE rtfoc SET rtfocmrcb = 9, rtfocfmrc = :f WHERE rtfocnfol = :n AND rtfocestc = 1", f=fdia, n=nfol)
 
-    def actualizar_folio(self, nfol: int, ccom: int, cven: int, usrn: str, hora: str, fdia: str) -> None:
-        self._exec("UPDATE rtfol SET rtfolccom = :c, rtfolcven = :v, rtfoluser = :u, rtfolhora = :h, rtfolfpro = :f "
+    def actualizar_folio(self, nfol: int, ccom: int, cven: int | None, usrn: str, hora: str, fdia: str) -> None:
+        self._exec("UPDATE rtfol SET rtfolccom = :c, rtfolcven = COALESCE(:v, rtfolcven), rtfoluser = :u, rtfolhora = :h, rtfolfpro = :f "
                    "WHERE rtfolnfol = :n", c=ccom, v=cven, u=usrn, h=hora, f=fdia, n=nfol)
 
     def borrar_cuentas_sobrantes(self, nfol: int, desde_exclusivo: int) -> None:

@@ -3,7 +3,6 @@ import pytest
 
 from app.core.acceso import exigir_local
 from app.core.errors import Forbidden
-from app.domain.mesa import Mesa
 from app.modules.clientes.service import ClientesService
 from app.modules.comandas.administrar import AdministrarComandasService
 from app.modules.comandas.guardar import GuardarComandaService
@@ -42,7 +41,7 @@ def test_no_se_puede_ver_el_detalle_ni_las_mesas_de_otro_local():
     repo.local = OTRO_LOCAL
     s = SalonService(repo, FakeUow())
     for accion in (lambda: s.detalle_mesa(GARZON, "M1"), lambda: s.mesas_de_area(GARZON, 1),
-                   lambda: s.resumen_folio(GARZON, 5), lambda: s.cuentas_folio(GARZON, 5),
+                   lambda: s.resumen_folio(GARZON, 5), lambda: s.detalle_folio(GARZON, 5), lambda: s.cuentas_folio(GARZON, 5),
                    lambda: s.modificar_mesa(GARZON, 5, 1, 1, 2)):
         with pytest.raises(Forbidden):
             accion()

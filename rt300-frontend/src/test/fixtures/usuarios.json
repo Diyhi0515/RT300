@@ -1,0 +1,24 @@
+{
+  "usuarios": [
+    {
+      "nombre": "NOMBRE 1",
+      "usuario": "ASM"
+    },
+    {
+      "nombre": "NOMBRE 2",
+      "usuario": "AQJ"
+    },
+    {
+      "nombre": "NOMBRE 3",
+      "usuario": "GPA"
+    },
+    {
+      "nombre": "NOMBRE 4",
+      "usuario": "BZT"
+    },
+    {
+      "nombre": "NOMBRE 5",
+      "usuario": "BFD"
+    }
+  ]
+}

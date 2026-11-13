@@ -1,5 +1,5 @@
-import { CalendarClock, Check, Users, type LucideIcon } from 'lucide-react'
-import type { EstadoMesa } from '../types'
+import { Check, Users, type LucideIcon } from 'lucide-react'
+import type { EstadoMesaPlano } from '@/features/pedidos/types'
 
 interface Estilo {
   etiqueta: string
@@ -7,7 +7,7 @@ interface Estilo {
   clases: string
 }
 
-const MESA: Record<EstadoMesa, Estilo> = {
+const MESA: Record<EstadoMesaPlano, Estilo> = {
   libre: {
     etiqueta: 'Libre',
     icono: Check,
@@ -18,15 +18,10 @@ const MESA: Record<EstadoMesa, Estilo> = {
     icono: Users,
     clases: 'bg-primary/10 text-primary',
   },
-  reservada: {
-    etiqueta: 'Reservada',
-    icono: CalendarClock,
-    clases: 'bg-amber-500/15 text-amber-700 dark:text-amber-300',
-  },
 }
 
 interface InsigniaEstadoProps {
-  estado: EstadoMesa
+  estado: EstadoMesaPlano
 }
 
 export function InsigniaEstado({ estado }: InsigniaEstadoProps) {

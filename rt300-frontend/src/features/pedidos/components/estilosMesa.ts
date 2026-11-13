@@ -1,4 +1,4 @@
-import { CalendarClock, Check, Receipt, Users, type LucideIcon } from 'lucide-react'
+import { Check, Users, type LucideIcon } from 'lucide-react'
 import type { EstadoMesaPlano } from '../types'
 
 export interface EstiloEstadoMesa {
@@ -28,24 +28,6 @@ export const estilosMesa: Record<EstadoMesaPlano, EstiloEstadoMesa> = {
     silla: 'bg-club-pc/75',
     barra: 'bg-club-pc',
   },
-  reservada: {
-    etiqueta: 'Reservada',
-    icono: CalendarClock,
-    insignia: 'bg-club-secondary/15 text-club-secondary',
-    cuerpo:
-      'border-dashed border-club-secondary bg-gradient-to-b from-surface to-club-secondary/20 text-club-secondary',
-    silla: 'bg-club-secondary/45',
-    barra: 'bg-club-secondary',
-  },
-  cobro: {
-    etiqueta: 'Por cobrar',
-    icono: Receipt,
-    insignia: 'bg-accent-solid/20 text-amber-700 dark:text-amber-300',
-    cuerpo:
-      'border-accent-solid bg-gradient-to-b from-accent-solid to-amber-600 text-[#2a1a00] shadow-[0_10px_26px_rgba(245,159,11,.4)]',
-    silla: 'bg-accent-solid/70',
-    barra: 'bg-accent-solid',
-  },
 }
 
-export const ordenEstados: EstadoMesaPlano[] = ['libre', 'ocupada', 'cobro', 'reservada']
+export const ordenEstados: EstadoMesaPlano[] = ['libre', 'ocupada']

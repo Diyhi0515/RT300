@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import { alNoAutorizado, tokens } from '@/lib/http'
+import { queryClient } from '@/lib/queryClient'
 import { notificar } from '@/shared/avisos/almacen'
 import type { Perfil } from './types'
 
@@ -21,6 +22,7 @@ export const useSesion = create<EstadoSesion>()(
       },
       cerrar: () => {
         tokens.limpiar()
+        queryClient.clear()
         set({ perfil: null })
       },
     }),

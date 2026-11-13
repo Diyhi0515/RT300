@@ -85,7 +85,7 @@ Es el contrato real del backend (`rt300-backend`, ver `docs/01-backend-flask.md`
 | `POST /auth/refresh` con `Authorization: Bearer <refresh_token>` | `{ access_token }` |
 | `POST /auth/logout` con `Authorization: Bearer <access_token>` y cuerpo `{ refresh_token }` | `{ ok: true }` |
 
-`perfil` trae `usuario`, `nombre`, `local` (nombre del local, por ejemplo "RESTAURANTE HOYO 19"), `rol` y también `cloc`, `calm`, `cmon` y `nreg` (los usará el resto del sistema; el esquema de zod de esta feature los ignora).
+`perfil` trae `usuario`, `nombre`, `local` (nombre del local, por ejemplo "RESTAURANTE HOYO 19"), `rol` y también `cloc`, `calm`, `cmon`, `nreg` y `cven` (código de mesero) (los usará el resto del sistema; el esquema de zod de esta feature los ignora).
 
 Roles válidos: `garzon`, `cajero`, `admin`. Los errores vienen como `{ error: { code, message, request_id } }`.
 
@@ -95,6 +95,7 @@ Roles válidos: `garzon`, `cajero`, `admin`. Los errores vienen como `{ error: {
 | `DEMASIADOS_INTENTOS` (429) | más de 10 logins por minuto desde la misma IP | aviso con el mensaje del servidor; no cuenta como intento |
 | `USUARIO_DESHABILITADO`, `SIN_LOCAL`, `SIN_MESERO`, `SIN_ALMACEN`... (401) | usuario válido pero mal configurado en la base de datos; solo se informa tras una clave correcta | aviso con el mensaje del servidor; no cuenta como intento |
 | `TOKEN_EXPIRADO`, `TOKEN_REVOCADO` (401) | token vencido o sesión cerrada | intenta renovar una vez; si no se puede, cierra la sesión |
+| `SESION_DESACTUALIZADA` (401, solo al renovar) | la sesión se abrió antes de una actualización del backend (le falta el código de mesero) | cierra la sesión y pide ingresar de nuevo |
 
 El access token dura 15 minutos y el de renovación 1 día. Al cerrar sesión, el backend revoca ambos.
 

@@ -28,6 +28,7 @@ class CuentasClienteOut(Salida):
 class ClienteOut(Salida):
     codigo: int
     nombre: str | None = None
+    nruc: str | int | None = None
 
 
 class ClientesOut(Salida):
@@ -35,7 +36,6 @@ class ClientesOut(Salida):
 
 
 class ClienteDetalleOut(ClienteOut):
-    nruc: str | int | None = None
     ndid: str | int | None = None
     lpre: int | None = None   # lista de precio del cliente (la usa la toma de pedido)
 

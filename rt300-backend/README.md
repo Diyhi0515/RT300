@@ -30,7 +30,7 @@ curl http://localhost:5000/api/v1/health      # {"db": true, "status": "ok"}
 Usuario de prueba: `GP1` / `123456` (también `GP2`, `GP5`, `GP6`). Pruebas unitarias:
 
 ```bash
-docker compose exec backend python -m pytest tests/unit      # 60 pruebas, sin base de datos
+docker compose exec backend python -m pytest tests/unit      # 76 pruebas, sin base de datos
 ```
 
 ## Arquitectura en una mirada
@@ -56,15 +56,15 @@ Los servicios dependen de **abstracciones** (puertos), no de SQLAlchemy ni de Fl
 ## API
 
 Prefijo `/api/v1`, JSON, `Authorization: Bearer <JWT>` salvo `/health`, `/auth/usuarios`, `/auth/login` y la imagen del plato.
-37 endpoints; el listado completo con su equivalencia en el PHP está en [01-backend-flask.md §5](../docs/01-backend-flask.md).
+40 endpoints; el listado completo con su equivalencia en el PHP está en [01-backend-flask.md §5](../docs/01-backend-flask.md).
 
 | Módulo | Endpoints principales |
 |---|---|
 | `auth` | `GET /auth/usuarios` · `POST /auth/login` · `POST /auth/refresh` · `POST /auth/logout` · `GET /auth/me` |
-| `salon` | `GET /salon/parametros` · `GET /salon/areas/{caco}/mesas` · `GET /salon/mesas/{mesa}` · `POST /salon/mesas/{mesa}/ocupar` · `POST …/habilitar` · `PATCH /salon/folios/{nfol}` |
+| `salon` | `GET /salon/parametros` · `GET /salon/mesas` · `GET /salon/folios/{nfol}/detalle` · `GET /salon/areas/{caco}/mesas` · `GET /salon/mesas/{mesa}` · `POST /salon/mesas/{mesa}/ocupar` · `POST …/habilitar` · `PATCH /salon/folios/{nfol}` |
 | `clientes` | `GET /folios/{nfol}/cuentas` · `GET /clientes` · `PUT /folios/{nfol}/cuentas/{ncta}` |
 | `menu` | secciones, platos, extras, datos de plato/extra, insumos alternativos, textos, centros de producción, imagen |
-| `comandas` | `POST /comandas` · `POST /comandas/{ntmp}/reintentar` · `GET /folios/{nfol}/comandas` · `POST /comandas/eliminar` · `POST /comandas/reimprimir` |
+| `comandas` | `POST /folios/{nfol}/cuentas/{ncta}/comandas` (el servidor arma la comanda) · `POST /comandas` · `POST /comandas/{ntmp}/reintentar` · `GET /folios/{nfol}/comandas` · `POST /comandas/eliminar` · `POST /comandas/reimprimir` |
 | `cuentas` | `GET …/estado` · `POST …/imprimir` |
 
 Formato de error uniforme: `{ "error": { "code": "MESA_OCUPADA", "message": "…", "request_id": "…" } }`. El `request_id` también va en el
@@ -76,7 +76,7 @@ encabezado `X-Request-ID` y en los logs JSON.
 {
   "access_token": "…", "refresh_token": "…",
   "perfil": { "usuario": "GP1", "nombre": "GARZON 1  HOYO 19", "local": "RESTAURANTE HOYO 19", "rol": "garzon",
-              "cloc": 2, "calm": 2, "cmon": 1, "nreg": 0 }
+              "cloc": 2, "calm": 2, "cmon": 1, "nreg": 0, "cven": 12009 }
 }
 ```
 
@@ -98,25 +98,49 @@ Todo por variables de entorno (ver `../.env.example`). Las principales:
 | `GATEWAY_HTTP_URL`, `GATEWAY_PASSWORD` | Para `http` y credencial técnica hacia el servicio (decisión pendiente). |
 | `ADMIN_USERS`, `CAJERO_USERS` | Usuarios por rol, separados por coma (el mapeo real de roles está pendiente). |
 | `IMAGENES_DIR`, `IMAGENES_CACHE_DIR` | Carpeta de imágenes de platos y caché WebP. |
+| `MENU_CACHE_SECONDS` | Caché del menú en memoria (300 s por defecto; `0` la apaga). |
+| `PROXY_HOPS` | Proxies de confianza delante de Flask (`1` con nginx). `0` si se accede directo: así nadie falsifica su IP para evadir los límites. |
+| `REDIS_URL` | Redis compartido para tokens revocados y límites de intentos. Vacío = en memoria (solo para 1 instancia). En Docker ya viene configurado. |
+| `RATE_LIMIT_DEFAULT` | Límite general por IP (`300 per minute`). |
 
 ## Seguridad aplicada
 
 - Todo el SQL va **parametrizado**; los contadores (`rtsrl`) usan lista blanca.
-- JWT de 15 min + refresh; `logout` **revoca** ambos tokens (lista en memoria; con varias instancias, mover a Redis).
+- JWT de 15 min + refresh; `logout` **revoca** ambos tokens. Con `REDIS_URL` la revocación es compartida entre instancias y sobrevive a reinicios (verificado); sin él queda en memoria.
 - Login sin enumeración de usuarios: usuario inexistente, sin acceso a pedidos, sin clave o clave errónea dan el mismo mensaje.
 - Límites: login 10/min por IP, `/auth/usuarios` 30/min, eliminar comanda 20/min; cuerpo máximo 1 MB.
 - **Acceso por local:** un usuario solo opera mesas, folios y comandas de su local (`403 OTRO_LOCAL` en caso contrario).
 - Eliminar comanda: el backend valida la clave del autorizador **antes** de escribir.
 - Usuario de BD de mínimos permisos; puertos de Docker publicados solo en `127.0.0.1`; Flask sin depurador interactivo.
+- **Cabeceras HTTP seguras** en toda respuesta (`nosniff`, `X-Frame-Options: DENY`, CSP `default-src 'none'`, `no-referrer`, HSTS bajo HTTPS, `Cache-Control: no-store` salvo el menú).
+- **Límite de intentos por usuario** además de por IP (10 cada 10 min): frena la fuerza bruta distribuida contra una cuenta.
+- **Producción valida la configuración al arrancar:** rechaza claves de desarrollo, usuario/clave de BD de desarrollo y CORS vacío o `*`.
+- **Datos mínimos:** las respuestas solo traen lo que el front usa (p. ej. `/salon/parametros` ya no expone datos internos del local).
+- Contenedor sin privilegios (usuario `app`) con `HEALTHCHECK`.
 - Imágenes: anchos fijos y sin salir de la carpeta (anti path-traversal). Errores 500 sin detalle interno.
 
 La clave se verifica con el algoritmo heredado `clave_calcular` (débil, sin sal) **solo para poder entrar con las claves ya existentes**;
 la migración a un hash fuerte requiere una tabla propia y está pendiente de aprobación.
 
-## Pruebas
+## Rendimiento
 
-`tests/unit/` (60): servicios con repositorios, gateway y unit of work **falsos** (auth, tokens, respuestas tipadas, salón, clientes, comandas,
-acceso por local, gateway SOAP, helpers SQL, imágenes). Sin pruebas de integración contra la BD todavía; la verificación en vivo se hace con la colección de Bruno.
+- **Caché TTL del menú** (patrón decorador: `MenuRepoConCache` envuelve al repositorio; el servicio no se entera) más `Cache-Control` público de 5 min en secciones, platos, extras y textos.
+- **gzip** en respuestas JSON de 1 KB o más (excepto `/auth/*`).
+- Consulta de platos con precios reescrita para usar el índice `inpva (tent, entg, cart)`: de ~600 ms a ~40 ms (con caché, ~9 ms).
+- Imágenes ya optimizadas (WebP) con caché en disco; si el disco no es escribible se sirve igual, sin caché.
+
+## Pruebas y calidad
+
+```bash
+docker compose exec backend python -m pytest tests/unit -q            # 121 pruebas, sin BD
+docker compose exec -T -e RT300_INTEGRATION=1 backend python -m pytest tests/integration -q   # 11 pruebas, solo lectura, con la BD
+docker compose exec backend ruff check app tests                       # estilo y errores comunes
+```
+
+- `tests/unit/`: servicios con repositorios, gateway y unit of work **falsos**; además la API completa con el cliente de pruebas de Flask
+  (cabeceras, CORS, gzip, límites de intentos, errores sin detalle interno), la caché, la validación de configuración y las imágenes.
+- `tests/integration/`: repositorios y endpoints contra la BD real de Docker. **Solo leen**; se saltan si no está `RT300_INTEGRATION=1`.
+- La verificación manual de punta a punta está en [`docs/04-pruebas-locales.md`](../docs/04-pruebas-locales.md).
 
 ## Agregar una función nueva
 

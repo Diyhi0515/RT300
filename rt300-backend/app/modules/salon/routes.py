@@ -7,6 +7,7 @@ from ...core.respuesta import responder
 from ...core.security import autenticado, usuario_actual
 from .schemas import (
     CuentasFolioOut,
+    DetalleFolioOut,
     DetalleMesaOut,
     HabilitarOut,
     MesasOut,
@@ -25,6 +26,13 @@ bp = Blueprint("salon", __name__)
 @autenticado
 def parametros():
     return responder(ParametrosOut, salon_service().parametros_iniciales(usuario_actual()))
+
+
+@bp.get("/mesas")
+@autenticado
+def mesas_del_local():
+    """Todas las mesas del local del usuario (para contar ocupadas por área sin una llamada por área)."""
+    return responder(MesasOut, {"mesas": salon_service().mesas_del_local(usuario_actual())})
 
 
 @bp.get("/areas/<int:caco>/mesas")
@@ -64,6 +72,12 @@ def modificar(nfol: int):
     b = ModificarMesaIn.model_validate(request.get_json(silent=True) or {})
     cuentas = salon_service().modificar_mesa(usuario_actual(), nfol, b.cven, b.ccom, b.ncta)
     return responder(CuentasFolioOut, {"cuentas": cuentas})
+
+
+@bp.get("/folios/<int:nfol>/detalle")
+@autenticado
+def detalle_folio(nfol: int):
+    return responder(DetalleFolioOut, salon_service().detalle_folio(usuario_actual(), nfol))
 
 
 @bp.get("/folios/<int:nfol>/resumen")

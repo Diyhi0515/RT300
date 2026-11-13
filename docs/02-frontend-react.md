@@ -82,7 +82,8 @@ El botón **ADMIN** (eliminar/reimprimir) solo se muestra con rol `admin`/`cajer
 | Pantalla | Estado |
 |---|---|
 | `/login` (auth) | **Conectada** a `rt300-backend` (`APP_MODE = 'production'`; el mockup se conserva en `src/simulados`). Contrato, errores y cambios: [`features/auth/README.md`](../rt300-frontend/src/features/auth/README.md) |
-| `/mesas`, `/comanda`, `/cuentas`, `/estado` | Pendientes. El backend ya expone sus endpoints ([01 §5](01-backend-flask.md)) y una colección de prueba en `docs/bruno/` |
+| `/pedidos` (mesas, panel, comanda), `/pedidos/cuentas/:mesa`, `/mesas` (Administración) | **Conectadas** al backend. Detalle, mapeos y reglas: [`features/pedidos/README.md`](../rt300-frontend/src/features/pedidos/README.md) |
+| Estado de cuenta en pantalla, eliminar y reimprimir comandas (panel ADMIN) | Pendientes. El backend ya expone sus endpoints ([01 §5](01-backend-flask.md)) |
 
 Reglas para conectar las siguientes pantallas:
 

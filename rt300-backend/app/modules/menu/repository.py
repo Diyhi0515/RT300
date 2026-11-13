@@ -1,7 +1,7 @@
 """SQL del menú. Tablas legacy: rtsme/rtssm, rtalb, rtacp, inart, inpva, gbcon, rtins, rtial, rtext/rtrem, rttxt/rttsm, rtcpd/rtaac."""
 from __future__ import annotations
 
-from ...core.sql import SqlRepository
+from ...core.repos_compartidos import PreciosQueries
 from ...core.text import clean, to_int
 from .ports import PlatoAlb, Precio
 
@@ -10,7 +10,7 @@ _INS_SQL = """SELECT i.rtinscart, i.rtinscins, a.inartdesc, i.rtinscant, i.rtins
                WHERE i.rtinscart IN :cs ORDER BY i.rtinscart, i.rtinscins"""
 
 
-class SqlMenuRepository(SqlRepository):
+class SqlMenuRepository(PreciosQueries):
     # ───────────── Secciones ─────────────
     def secciones(self, cloc: int) -> list[dict]:
         """Secciones con al menos un plato vendible en el local (rtacp del local, o platos sin restricción de local)."""
@@ -30,27 +30,33 @@ class SqlMenuRepository(SqlRepository):
 
     # ───────────── Platos ─────────────
     def platos(self, cloc: int, csme: int, cssm: int) -> list[dict]:
-        """Platos con precio y moneda. El PHP lanzaba una consulta de precio por plato."""
+        """Platos con el precio con el que se cobra (mismo tipo y entidad que la ficha del plato).
+
+        Buscar el precio solo por artículo recorría toda `inpva` una vez por plato (índice por tipo, entidad y artículo):
+        ~600 ms para una sección de 546 platos. Con tipo y entidad es una búsqueda por índice (~40 ms).
+        """
+        tent, entg = self.entidad_de_precio(cloc)
         return self._rows("""
             SELECT a.inartdesc AS descripcion, b.rtalbcart AS cart, b.rtalbcsme AS csme, b.rtalbcssm AS cssm,
                    b.rtalbnimg AS imagen, a.inartmfra AS mfra,
-                   COALESCE(p.inpvapvta, 0) AS pvta, COALESCE(p.gbconabre, 'Bs.') AS moneda
+                   COALESCE(p.inpvapvta, 0) AS pvta, COALESCE(c.gbconabre, 'Bs.') AS moneda
               FROM rtalb b
               JOIN inart a ON a.inartcart = b.rtalbcart
-              OUTER APPLY (SELECT TOP 1 v.inpvapvta, c.gbconabre
-                             FROM inpva v JOIN gbcon c ON c.gbconcorr = v.inpvamven AND c.gbconpfij = 10
-                            WHERE v.inpvacart = b.rtalbcart) p
+              LEFT JOIN inpva p ON p.inpvatent = :tent AND p.inpvaentg = :entg AND p.inpvacart = b.rtalbcart
+              LEFT JOIN gbcon c ON c.gbconcorr = p.inpvamven AND c.gbconpfij = 10
              WHERE a.inartmrcb = 0 AND b.rtalbstat = 1 AND b.rtalbcsme = :csme
                AND (:cssm = 0 OR b.rtalbcssm = :cssm)
                AND (EXISTS (SELECT 1 FROM rtacp x WHERE x.rtacpcart = b.rtalbcart AND x.rtacpcloc = :cloc)
                     OR b.rtalbmprd = 'N')
-             ORDER BY a.inartdesc""", cloc=cloc, csme=csme, cssm=cssm)
+             ORDER BY a.inartdesc""", cloc=cloc, csme=csme, cssm=cssm, tent=tent, entg=entg)
 
     def alb(self, cart: str) -> PlatoAlb | None:
-        r = self._one("SELECT rtalbcart, rtalbcsme, rtalbcssm, rtalbmcom, rtalbmprd, rtalbcbas FROM rtalb WHERE rtalbcart = :c", c=cart)
+        r = self._one("SELECT b.rtalbcart, a.inartdesc, b.rtalbcsme, b.rtalbcssm, b.rtalbmcom, b.rtalbmprd, b.rtalbcbas "
+                      "FROM rtalb b LEFT JOIN inart a ON a.inartcart = b.rtalbcart WHERE b.rtalbcart = :c", c=cart)
         if r is None:
             return None
-        return PlatoAlb(cart=clean(r["rtalbcart"]), csme=to_int(r["rtalbcsme"], 0) or 0, cssm=to_int(r["rtalbcssm"], 0) or 0,
+        return PlatoAlb(cart=clean(r["rtalbcart"]), descripcion=clean(r["inartdesc"]),
+                        csme=to_int(r["rtalbcsme"], 0) or 0, cssm=to_int(r["rtalbcssm"], 0) or 0,
                         compuesto=clean(r["rtalbmcom"]) == "S", produce=clean(r["rtalbmprd"]) == "S",
                         cbas=float(r["rtalbcbas"] or 0))
 

@@ -10,6 +10,10 @@ def _env(name: str, default: str = "") -> str:
     return os.getenv(name, default).strip()
 
 
+USUARIOS_DB_DE_DESARROLLO = frozenset({"sa", "prueba", "rt300_app_dev"})
+CLAVES_DB_DE_DESARROLLO = frozenset({"", "prueba", "Rt300App2026x", "Rt300_Sa_2026!"})
+
+
 @dataclass(frozen=True)
 class Config:
     env: str = field(default_factory=lambda: _env("FLASK_ENV", "production"))
@@ -44,6 +48,10 @@ class Config:
     cajero_users: tuple[str, ...] = field(
         default_factory=lambda: tuple(u.strip().upper() for u in _env("CAJERO_USERS").split(",") if u.strip())
     )
+    menu_cache_seconds: int = field(default_factory=lambda: int(_env("MENU_CACHE_SECONDS", "300")))
+    proxy_hops: int = field(default_factory=lambda: int(_env("PROXY_HOPS", "0")))
+    rate_limit_default: str = field(default_factory=lambda: _env("RATE_LIMIT_DEFAULT", "300 per minute"))
+    redis_url: str = field(repr=False, default_factory=lambda: _env("REDIS_URL"))
     imagenes_dir: str = field(default_factory=lambda: _env("IMAGENES_DIR", "/data/imagenes"))
     imagenes_cache_dir: str = field(default_factory=lambda: _env("IMAGENES_CACHE_DIR", "/data/cache"))
     gateway_timeout_seconds: int = field(default_factory=lambda: int(_env("GATEWAY_TIMEOUT_SECONDS", "30")))
@@ -61,9 +69,15 @@ class Config:
         return timedelta(days=self.jwt_refresh_days)
 
     def validate(self) -> None:
-        """En producción se exigen secretos propios (no los de desarrollo)."""
-        if not self.is_dev:
-            if "cambiar" in self.secret_key or "cambiar" in self.jwt_secret_key or len(self.jwt_secret_key) < 32:
-                raise RuntimeError(
-                    "SECRET_KEY/JWT_SECRET_KEY inseguros: defina valores propios (JWT >= 32 caracteres)."
-                )
+        """En producción se rechaza arrancar con credenciales o ajustes de desarrollo."""
+        if self.is_dev:
+            return
+        problemas = []
+        if "cambiar" in self.secret_key or "cambiar" in self.jwt_secret_key or len(self.jwt_secret_key) < 32:
+            problemas.append("SECRET_KEY/JWT_SECRET_KEY inseguros: defina valores propios (JWT >= 32 caracteres)")
+        if self.db_user.lower() in USUARIOS_DB_DE_DESARROLLO or self.db_password in CLAVES_DB_DE_DESARROLLO:
+            problemas.append("DB_USER/DB_PASSWORD son de desarrollo: use un usuario propio con permisos mínimos")
+        if not self.cors_origins or "*" in self.cors_origins:
+            problemas.append("CORS_ORIGINS debe listar los orígenes permitidos (sin '*')")
+        if problemas:
+            raise RuntimeError("Configuración insegura para producción: " + "; ".join(problemas) + ".")

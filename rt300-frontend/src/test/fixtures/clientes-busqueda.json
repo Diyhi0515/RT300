@@ -1,0 +1,19 @@
+{
+  "clientes": [
+    {
+      "codigo": 15577,
+      "nombre": "NOMBRE 1",
+      "nruc": null
+    },
+    {
+      "codigo": 17,
+      "nombre": "NOMBRE 2",
+      "nruc": "0"
+    },
+    {
+      "codigo": 20516,
+      "nombre": "NOMBRE 3",
+      "nruc": null
+    }
+  ]
+}

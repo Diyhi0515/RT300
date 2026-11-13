@@ -1,5 +1,5 @@
 import { Hash, X } from 'lucide-react'
-import { areas } from '@/simulados/pedidos'
+import { useAreas } from '../hooks'
 import { usePedidos } from '../store'
 import type { MesaPlano } from '../types'
 import { estilosMesa } from './estilosMesa'
@@ -13,7 +13,7 @@ export function CabeceraMesa({ mesa, cerrable = false }: CabeceraMesaProps) {
   const seleccionar = usePedidos((s) => s.seleccionar)
   const estilo = estilosMesa[mesa.estado]
   const Icono = estilo.icono
-  const area = areas.find((a) => a.id === mesa.areaId)
+  const area = useAreas().find((a) => a.id === mesa.areaId)
 
   return (
     <header className="relative overflow-hidden border-b border-line px-5 pb-4 pt-5 short:py-3">

@@ -1,40 +1,47 @@
 import { useMemo, useState } from 'react'
 import { LayoutGrid, Search, Users, X } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { useAreas, useMesas } from '@/features/pedidos/hooks'
+import { usePedidos } from '@/features/pedidos/store'
+import type { EstadoMesaPlano } from '@/features/pedidos/types'
 import { tiempoTranscurrido } from '../formato'
-import { useSalon } from '../store'
-import type { EstadoMesa, Mesa } from '../types'
 import { InsigniaEstado } from './InsigniaEstado'
-import { ModalMesa } from './ModalMesa'
 
-type Filtro = 'todas' | EstadoMesa
+type Filtro = 'todas' | EstadoMesaPlano
 
 const FILTROS: { valor: Filtro; etiqueta: string }[] = [
   { valor: 'todas', etiqueta: 'Todas' },
   { valor: 'libre', etiqueta: 'Libres' },
   { valor: 'ocupada', etiqueta: 'Ocupadas' },
-  { valor: 'reservada', etiqueta: 'Reservadas' },
 ]
 
-const BORDE: Record<EstadoMesa, string> = {
+const BORDE: Record<EstadoMesaPlano, string> = {
   libre: 'border-emerald-500/30 hover:border-emerald-500/70',
   ocupada: 'border-primary/40 bg-primary/[0.06] hover:border-primary',
-  reservada: 'border-amber-500/40 hover:border-amber-500/80',
 }
 
 export function CuadriculaMesas() {
-  const mesas = useSalon((s) => s.mesas)
+  const consulta = useMesas()
+  const areas = useAreas()
+  const mostrarMesa = usePedidos((s) => s.mostrarMesa)
+  const navigate = useNavigate()
   const [filtro, setFiltro] = useState<Filtro>('todas')
   const [busqueda, setBusqueda] = useState('')
-  const [seleccionada, setSeleccionada] = useState<Mesa | null>(null)
+  const mesas = useMemo(() => consulta.data ?? [], [consulta.data])
+
+  const nombres = useMemo(() => new Map(areas.map((a) => [a.id, a.nombre])), [areas])
+  const nombreArea = (id: string) => nombres.get(id) ?? ''
 
   const visibles = useMemo(() => {
     const texto = busqueda.trim().toLowerCase()
     return mesas.filter(
       (m) =>
         (filtro === 'todas' || m.estado === filtro) &&
-        (!texto || String(m.numero).includes(texto) || m.zona.toLowerCase().includes(texto)),
+        (!texto ||
+          m.codigo.toLowerCase().includes(texto) ||
+          (nombres.get(m.areaId) ?? '').toLowerCase().includes(texto)),
     )
-  }, [mesas, filtro, busqueda])
+  }, [mesas, nombres, filtro, busqueda])
 
   const conteo = (valor: Filtro) =>
     valor === 'todas' ? mesas.length : mesas.filter((m) => m.estado === valor).length
@@ -48,9 +55,7 @@ export function CuadriculaMesas() {
           </span>
           <div>
             <h2 className="font-bold">Salón</h2>
-            <p className="text-xs text-muted">
-              Toca una mesa para ocuparla, reservarla o liberarla.
-            </p>
+            <p className="text-xs text-muted">Toca una mesa para abrirla en Pedidos.</p>
           </div>
         </div>
         <label className="relative w-full sm:w-64">
@@ -109,7 +114,22 @@ export function CuadriculaMesas() {
         })}
       </div>
 
-      {visibles.length === 0 ? (
+      {consulta.isPending ? (
+        <p role="status" className="px-4 pb-8 pt-4 text-center text-sm text-muted">
+          Cargando mesas...
+        </p>
+      ) : consulta.isError ? (
+        <p role="alert" className="px-4 pb-8 pt-4 text-center text-sm text-muted">
+          No se pudieron cargar las mesas.{' '}
+          <button
+            type="button"
+            onClick={() => void consulta.refetch()}
+            className="cursor-pointer font-bold text-primary underline"
+          >
+            Reintentar
+          </button>
+        </p>
+      ) : visibles.length === 0 ? (
         <p className="px-4 pb-8 pt-4 text-center text-sm text-muted">
           No hay mesas que coincidan con la búsqueda.
         </p>
@@ -117,19 +137,22 @@ export function CuadriculaMesas() {
         <div className="grid grid-cols-2 gap-3 px-4 pb-4 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6 short:grid-cols-4 short:gap-2">
           {visibles.map((m, i) => (
             <button
-              key={m.numero}
+              key={m.codigo}
               type="button"
-              onClick={() => setSeleccionada(m)}
+              onClick={() => {
+                mostrarMesa(m.codigo, m.areaId)
+                void navigate('/pedidos')
+              }}
               style={{ animationDelay: `${Math.min(i, 18) * 25}ms` }}
               className={`flex animate-[chip-in_0.35s_ease-out_both] cursor-pointer flex-col gap-2 rounded-2xl border bg-surface p-3 text-left transition duration-200 hover:-translate-y-0.5 hover:shadow-lg active:scale-95 short:gap-1 short:p-2 ${BORDE[m.estado]}`}
             >
               <span className="flex items-start justify-between gap-2">
                 <strong className="text-2xl font-bold leading-none tabular-nums short:text-xl">
-                  {m.numero}
+                  {m.codigo.slice(-2)}
                 </strong>
                 <InsigniaEstado estado={m.estado} />
               </span>
-              <span className="text-xs text-muted">{m.zona}</span>
+              <span className="truncate text-xs text-muted">{nombreArea(m.areaId)}</span>
               <span className="flex items-center gap-1 text-xs font-medium">
                 <Users className="size-3.5 text-primary" />
                 {m.estado === 'ocupada' ? `${m.comensales}/${m.capacidad}` : m.capacidad}
@@ -143,8 +166,6 @@ export function CuadriculaMesas() {
           ))}
         </div>
       )}
-
-      <ModalMesa mesa={seleccionada} alCerrar={() => setSeleccionada(null)} />
     </section>
   )
 }

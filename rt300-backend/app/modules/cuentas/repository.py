@@ -10,7 +10,8 @@ class SqlCuentasRepository(LocalQueries):
         return self._one("SELECT 1 AS x FROM rtfol WHERE rtfolnfol = :n AND rtfolestf = 1 AND rtfolmrcb = 0", n=nfol) is not None
 
     def moneda(self, cmon: int) -> dict | None:
-        return self._one("SELECT * FROM gbcon WHERE gbconpfij = 10 AND gbconcorr = :c", c=cmon)
+        return self._one("SELECT gbconcorr AS codigo, gbconabre AS abreviatura, gbcondesc AS descripcion "
+                         "FROM gbcon WHERE gbconpfij = 10 AND gbconcorr = :c", c=cmon)
 
     def cuentas_abiertas(self, nfol: int) -> list[dict]:
         return self._rows("""

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from flask_jwt_extended import create_access_token, create_refresh_token, decode_token
 
+from ...core.errors import Unauthorized
 from ...domain.usuario import Usuario
 from ...extensions import revocar
 
@@ -18,6 +19,8 @@ class EmisorTokens:
         }
 
     def renovar(self, jwt_refresh: dict) -> dict:
+        if "cven" not in jwt_refresh:
+            raise Unauthorized("Tu sesión es anterior a una actualización. Inicia sesión de nuevo.", "SESION_DESACTUALIZADA")
         u = Usuario.desde_claims(jwt_refresh)
         return {"access_token": create_access_token(u.usuario, additional_claims=u.claims())}
 

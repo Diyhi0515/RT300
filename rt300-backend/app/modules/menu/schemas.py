@@ -74,6 +74,7 @@ class AlternativoOut(Salida):
 
 
 class FichaPlatoOut(Salida):
+    descripcion: str | None = None
     rtins: list[InsumoOut] | None = None
     rtcom: list[ComponenteOut] | None = None
     rtial: list[AlternativoOut] | None = None

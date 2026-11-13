@@ -1,11 +1,59 @@
-import type {
-  AreaConsumo,
-  CategoriaMenu,
-  ClienteRegistrado,
-  Cuenta,
-  MesaPlano,
-  Plato,
-} from '@/features/pedidos/types'
+type EstadoMesaPlano = 'libre' | 'ocupada' | 'reservada' | 'cobro'
+
+type FormaMesa = 'redonda' | 'larga'
+
+type CategoriaMenu = 'entradas' | 'fuertes' | 'bebidas' | 'postres'
+
+interface AreaConsumo {
+  id: string
+  nombre: string
+  prefijo: string
+}
+
+interface LineaCuenta {
+  id: string
+  platoId: string
+  nombre: string
+  cantidad: number
+  precio: number
+  nota?: string
+}
+
+interface Cuenta {
+  numero: number
+  nombre: string
+  codigoCliente?: string
+  nit?: string
+  liquidada: boolean
+  lineas: LineaCuenta[]
+}
+
+interface ClienteRegistrado {
+  codigo: string
+  nombre: string
+  nit: string
+}
+
+interface MesaPlano {
+  codigo: string
+  areaId: string
+  capacidad: number
+  forma: FormaMesa
+  estado: EstadoMesaPlano
+  comensales: number
+  apertura: number | null
+  mozo: string | null
+  folio: number
+  cuentas: Cuenta[]
+}
+
+interface Plato {
+  id: string
+  nombre: string
+  detalle: string
+  precio: number
+  categoria: CategoriaMenu
+}
 
 export const areas: AreaConsumo[] = [
   { id: 'planta-baja', nombre: 'Planta baja', prefijo: 'HPB' },

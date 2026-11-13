@@ -6,6 +6,20 @@ from .sql import SqlRepository
 from .text import clean, to_int
 
 
+class PreciosQueries(SqlRepository):
+    """Regla del negocio que decide con qué tipo y entidad se cobra (gbrne.gbrnedpre): C = compañía, U = unidad, L = local."""
+
+    def entidad_de_precio(self, cloc: int) -> tuple[int, int]:
+        gbrne = self._one("SELECT TOP 1 gbrnedpre FROM gbrne") or {}
+        regla = clean(gbrne.get("gbrnedpre"))
+        if regla == "U":
+            loc = self._one("SELECT vtlocuneg FROM vtloc WHERE vtloccloc = :c", c=cloc) or {}
+            return 1, to_int(loc.get("vtlocuneg"), 0) or 0
+        if regla == "L":
+            return 2, cloc
+        return 0, 0
+
+
 class LocalQueries(SqlRepository):
     """A qué local pertenece cada recurso (para el control de acceso por local)."""
 

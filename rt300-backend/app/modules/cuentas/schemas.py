@@ -5,7 +5,7 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 from ...core.respuesta import Salida
-from ...core.salidas_comunes import ConsumoOut
+from ...core.salidas_comunes import ConsumoOut, MonedaOut
 
 
 class ImprimirIn(BaseModel):
@@ -49,6 +49,6 @@ class LineaEstadoOut(Salida):
 
 
 class EstadoCuentaOut(Salida):
-    moneda: dict[str, Any]
+    moneda: MonedaOut
     detalle: list[LineaEstadoOut]
     resumen: list[ConsumoOut]

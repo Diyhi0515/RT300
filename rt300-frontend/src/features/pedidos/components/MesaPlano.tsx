@@ -22,7 +22,7 @@ const sillasLargas = (capacidad: number) => {
 export function MesaPlano({ mesa, seleccionada, indice, alElegir }: MesaPlanoProps) {
   const estilo = estilosMesa[mesa.estado]
   const Icono = estilo.icono
-  const ocupada = mesa.estado === 'ocupada' || mesa.estado === 'cobro'
+  const ocupada = mesa.estado === 'ocupada'
   const larga = mesa.forma === 'larga'
 
   return (

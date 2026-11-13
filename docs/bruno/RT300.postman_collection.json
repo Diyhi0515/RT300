@@ -215,6 +215,23 @@
           }
         },
         {
+          "name": "Mesas del local (todas)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/salon/mesas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "salon",
+                "mesas"
+              ]
+            }
+          }
+        },
+        {
           "name": "Detalle de mesa",
           "request": {
             "method": "GET",
@@ -256,7 +273,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"cven\": 12009,\n  \"caco\": 1,\n  \"ccom\": 2,\n  \"ncta\": 2\n}",
+              "raw": "{\n  \"caco\": 1,\n  \"ccom\": 2,\n  \"ncta\": 2\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -381,6 +398,25 @@
                 "folios",
                 "{{folio}}",
                 "cuentas"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Detalle del folio (cuentas + consumo)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/salon/folios/{{folio}}/detalle",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "salon",
+                "folios",
+                "{{folio}}",
+                "detalle"
               ]
             }
           }
@@ -726,6 +762,40 @@
     {
       "name": "comandas",
       "item": [
+        {
+          "name": "Enviar comanda (el servidor arma precios e insumos)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/folios/{{folio}}/cuentas/1/comandas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "folios",
+                "{{folio}}",
+                "cuentas",
+                "1",
+                "comandas"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"glos\": \"\",\n  \"items\": [\n    {\n      \"cart\": \"5101004\",\n      \"cant\": 2\n    },\n    {\n      \"cart\": \"12013\",\n      \"cant\": 1,\n      \"glos\": \"sin sal\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
         {
           "name": "Guardar comanda",
           "request": {

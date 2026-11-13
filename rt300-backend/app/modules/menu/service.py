@@ -99,7 +99,7 @@ class MenuService:
     def _ficha(self, u: Usuario, alb: PlatoAlb, pvta: float, cpxc: str) -> dict:
         return {
             **self._estructura_insumos(alb),
-            "ccpd": self._ccpd(alb, u.cloc, cpxc), "pvta": pvta, "csme": alb.csme, "cssm": alb.cssm,
+            "descripcion": alb.descripcion, "ccpd": self._ccpd(alb, u.cloc, cpxc), "pvta": pvta, "csme": alb.csme, "cssm": alb.cssm,
             "mcom": "S" if alb.compuesto else "N", "cbas": alb.cbas,
         }
 

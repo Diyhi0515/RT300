@@ -1,8 +1,8 @@
 import { useRef, useState } from 'react'
 import { Building2, Check, ChevronDown } from 'lucide-react'
-import { areas } from '@/simulados/pedidos'
 import { useClickExterior } from '@/shared/hooks/useClickExterior'
 import { resumenMesas } from '../calculos'
+import { useAreaActual, useAreas, useMesas } from '../hooks'
 import { usePedidos } from '../store'
 
 interface DesplegableAreaProps {
@@ -10,14 +10,14 @@ interface DesplegableAreaProps {
 }
 
 export function DesplegableArea({ local }: DesplegableAreaProps) {
-  const mesas = usePedidos((s) => s.mesas)
-  const areaId = usePedidos((s) => s.areaId)
+  const mesas = useMesas().data ?? []
+  const areas = useAreas()
+  const actual = useAreaActual()
+  const areaId = actual?.id ?? null
   const elegirArea = usePedidos((s) => s.elegirArea)
   const [abierto, setAbierto] = useState(false)
   const contenedor = useRef<HTMLDivElement>(null)
   useClickExterior(contenedor, abierto, () => setAbierto(false))
-
-  const actual = areas.find((a) => a.id === areaId)
 
   return (
     <div ref={contenedor} className="relative min-w-0 max-w-full">

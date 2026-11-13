@@ -48,7 +48,7 @@ class SqlUnitOfWork:
     def __init__(self, conn: Connection):
         self._conn = conn
 
-    def __enter__(self) -> "SqlUnitOfWork":
+    def __enter__(self) -> SqlUnitOfWork:
         return self
 
     def __exit__(self, exc_type, exc, tb) -> bool:

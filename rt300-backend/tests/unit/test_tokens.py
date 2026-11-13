@@ -3,6 +3,7 @@ import pytest
 from flask import Flask
 from flask_jwt_extended import JWTManager, decode_token
 
+from app.core.errors import Unauthorized
 from app.domain.usuario import Usuario
 from app.extensions import esta_revocado
 from app.modules.auth.tokens import EmisorTokens
@@ -53,3 +54,10 @@ def test_un_refresh_invalido_no_impide_cerrar_sesion():
     acceso = decode_token(r["access_token"])
     EmisorTokens().cerrar_sesion(acceso, "basura")
     assert esta_revocado(acceso["jti"])
+
+
+def test_un_refresh_de_una_sesion_anterior_sin_cven_exige_iniciar_sesion_de_nuevo():
+    antiguo = {"usuario": "GP1", "nombre": "G", "cloc": 2, "calm": 2, "cmon": 1, "nreg": 0, "rol": "garzon"}
+    with pytest.raises(Unauthorized) as e:
+        EmisorTokens().renovar(antiguo)
+    assert e.value.code == "SESION_DESACTUALIZADA"

@@ -5,10 +5,12 @@ import { useSesion } from '@/features/auth'
 import { formatoMoneda } from '@/features/salon/formato'
 import { vibrar } from '@/lib/vibrar'
 import { notificar } from '@/shared/avisos/almacen'
-import { clientes } from '@/simulados/pedidos'
+import { buscarClientes } from '../api'
 import { totalCuenta } from '../calculos'
+import { useActualizarCuenta, useClientes, useMesaDetalle } from '../hooks'
+import { mapearCliente } from '../mapeos'
 import { usePedidos } from '../store'
-import type { ClienteRegistrado, Cuenta } from '../types'
+import type { ClienteRegistrado, Cuenta, MesaDetalle } from '../types'
 
 const campo =
   'h-11 w-full rounded-xl border border-line bg-surface px-3 text-sm font-medium outline-none transition focus:border-club-pc focus:ring-2 focus:ring-club-pc/25'
@@ -21,15 +23,31 @@ const botonSecundario =
 const botonPrimario =
   'inline-flex h-11 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-club-pc to-club-tertiary px-5 text-sm font-bold text-white shadow-[0_8px_20px_rgba(43,83,184,.3)] transition hover:brightness-110 active:scale-95'
 
-const normalizar = (texto: string) =>
-  texto.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim()
-
 export function DatosCuentasPage() {
   const { codigo } = useParams()
+  const { mesa, cargandoMesas, cargandoCuentas } = useMesaDetalle(codigo ?? null)
+
+  if (cargandoMesas || cargandoCuentas) {
+    return (
+      <p role="status" className="py-16 text-center text-sm text-muted">
+        Cargando cuentas...
+      </p>
+    )
+  }
+  if (!mesa || mesa.cuentas.length === 0) return <Navigate to="/pedidos" replace />
+
+  return <Contenido key={mesa.folio} mesa={mesa} />
+}
+
+interface ContenidoProps {
+  mesa: MesaDetalle
+}
+
+function Contenido({ mesa }: ContenidoProps) {
   const perfil = useSesion((s) => s.perfil)
-  const mesa = usePedidos((s) => s.mesas.find((m) => m.codigo === codigo))
   const cuentaActiva = usePedidos((s) => s.cuentaActiva)
-  const { actualizarCuenta, abrirCuenta, seleccionar } = usePedidos.getState()
+  const { abrirCuenta, mostrarMesa } = usePedidos.getState()
+  const actualizar = useActualizarCuenta()
 
   const inicial = mesa?.cuentas.find((c) => c.numero === cuentaActiva) ?? mesa?.cuentas[0]
   const [numero, setNumero] = useState(inicial?.numero ?? 1)
@@ -44,7 +62,15 @@ export function DatosCuentasPage() {
     window.scrollTo(0, 0)
   }, [])
 
-  if (!mesa || mesa.cuentas.length === 0) return <Navigate to="/pedidos" replace />
+  const filtro =
+    aplicado.codigo.trim() || aplicado.nombre.trim().length >= 2
+      ? {
+          nombre: aplicado.nombre.trim() || undefined,
+          codigo: Number(aplicado.codigo.trim()) || undefined,
+        }
+      : null
+  const consulta = useClientes(filtro)
+  const listado = consulta.data ?? []
 
   const elegirCuenta = (c: Cuenta) => {
     setNumero(c.numero)
@@ -60,32 +86,41 @@ export function DatosCuentasPage() {
     vibrar('toque')
   }
 
-  const buscarCodigo = () => {
-    const cliente = clientes.find((c) => normalizar(c.codigo) === normalizar(codigoCliente))
-    if (cliente) aplicarCliente(cliente)
-    else notificar.advertencia('No existe un cliente con ese código.', 'Cliente no encontrado')
+  const buscarCodigo = async () => {
+    const buscado = Number(codigoCliente.trim())
+    if (!buscado) {
+      notificar.advertencia('Escribe el código del cliente.', 'Falta el código')
+      return
+    }
+    try {
+      const [cliente] = await buscarClientes({ codigo: buscado })
+      if (cliente) aplicarCliente(mapearCliente(cliente))
+    } catch {
+      notificar.advertencia('No existe un cliente con ese código.', 'Cliente no encontrado')
+    }
   }
 
-  const modificar = () => {
+  const modificar = async () => {
     const limpio = nombre.trim()
     if (!limpio) {
       notificar.advertencia('Escribe el nombre de la cuenta.', 'Falta el nombre')
       return
     }
-    actualizarCuenta(mesa.codigo, numero, {
-      nombre: limpio,
-      codigoCliente: codigoCliente.trim(),
-      nit: nit.trim(),
-    })
+    try {
+      await actualizar.mutateAsync({
+        folio: mesa.folio,
+        cuenta: numero,
+        mesa: mesa.codigo,
+        cage: Number(codigoCliente.trim()) || 0,
+        nruc: nit.trim(),
+        nomb: limpio,
+      })
+    } catch {
+      return
+    }
     vibrar('exito')
     notificar.exito(`Se actualizó la cuenta ${numero}.`, `Mesa ${mesa.codigo}`)
   }
-
-  const listado = clientes.filter(
-    (c) =>
-      normalizar(c.nombre).includes(normalizar(aplicado.nombre)) &&
-      normalizar(c.codigo).includes(normalizar(aplicado.codigo)),
-  )
 
   return (
     <div className="space-y-5 short:space-y-3">
@@ -93,7 +128,7 @@ export function DatosCuentasPage() {
         <Link
           to="/pedidos"
           onClick={() => {
-            seleccionar(mesa.codigo)
+            mostrarMesa(mesa.codigo, mesa.areaId)
             abrirCuenta(numero)
           }}
           aria-label="Volver a pedidos"
@@ -124,7 +159,7 @@ export function DatosCuentasPage() {
           <form
             onSubmit={(e) => {
               e.preventDefault()
-              modificar()
+              void modificar()
             }}
             className="space-y-4 rounded-3xl border border-line bg-surface p-4 shadow-[0_12px_32px_rgba(1,21,38,.06)] sm:p-5"
           >
@@ -156,7 +191,7 @@ export function DatosCuentasPage() {
                     inputMode="text"
                     autoComplete="off"
                   />
-                  <button type="button" onClick={buscarCodigo} className={botonSecundario}>
+                  <button type="button" onClick={() => void buscarCodigo()} className={botonSecundario}>
                     <Search className="size-4" />
                     Buscar
                   </button>
@@ -186,9 +221,13 @@ export function DatosCuentasPage() {
               </label>
             </div>
             <div className="flex justify-end">
-              <button type="submit" className={`${botonPrimario} w-full sm:w-auto`}>
+              <button
+                type="submit"
+                disabled={actualizar.isPending}
+                className={`${botonPrimario} w-full disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto`}
+              >
                 <Check className="size-4" />
-                Modificar
+                {actualizar.isPending ? 'Guardando...' : 'Modificar'}
               </button>
             </div>
           </form>
@@ -309,7 +348,15 @@ export function DatosCuentasPage() {
               <span>Nombre</span>
               <span className="text-right">Código</span>
             </div>
-            {listado.length === 0 ? (
+            {filtro === null ? (
+              <p className="px-4 py-6 text-center text-sm text-muted">
+                Escribe un nombre (al menos 2 letras) o un código y pulsa Buscar.
+              </p>
+            ) : consulta.isPending ? (
+              <p role="status" className="px-4 py-6 text-center text-sm text-muted">
+                Buscando...
+              </p>
+            ) : listado.length === 0 ? (
               <p className="px-4 py-6 text-center text-sm text-muted">Sin resultados.</p>
             ) : (
               <ul className="max-h-[min(36dvh,16rem)] divide-y divide-line overflow-y-auto overscroll-contain">
@@ -322,7 +369,7 @@ export function DatosCuentasPage() {
                     >
                       <span className="min-w-0">
                         <strong className="block truncate font-semibold">{c.nombre}</strong>
-                        <small className="text-[11px] text-muted">NIT {c.nit}</small>
+                        <small className="text-[11px] text-muted">NIT {c.nit || '-'}</small>
                       </span>
                       <span className="text-right text-xs font-bold tabular-nums text-club-primary">
                         {c.codigo}

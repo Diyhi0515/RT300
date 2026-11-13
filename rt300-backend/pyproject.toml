@@ -1,0 +1,23 @@
+[tool.ruff]
+line-length = 140
+target-version = "py313"
+extend-exclude = [".venv", ".cache"]
+cache-dir = "/tmp/.ruff_cache"   # la carpeta del proyecto está montada desde Windows y el servicio no corre como root
+
+[tool.ruff.lint]
+# E/F: errores y pyflakes · I: imports ordenados · B: bugs probables · UP: sintaxis moderna · SIM: simplificaciones
+# S: seguridad (bandit) · BLE: excepciones demasiado anchas · RUF/C4/PIE: varios
+select = ["E", "F", "I", "B", "UP", "SIM", "S", "BLE", "RUF", "C4", "PIE"]
+ignore = [
+    "EXE002",  # los archivos montados desde Windows aparecen como ejecutables
+    "RUF001", "RUF002", "RUF003",  # el proyecto está en español: tildes y eñes son correctas
+]
+
+[tool.ruff.lint.per-file-ignores]
+"app/config.py" = ["S105", "S106"]  # valores por defecto de DESARROLLO; en producción validate() los rechaza
+"tests/**" = ["S101", "S105", "S106", "BLE001"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+cache_dir = "/tmp/.pytest_cache"
+markers = ["integration: necesita la base de datos de Docker y RT300_INTEGRATION=1"]

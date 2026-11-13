@@ -61,8 +61,12 @@ Importa `docs\bruno\RT300.postman_collection.json` en Bruno (Collections → Imp
 ## 5. Pruebas
 
 ```bash
-docker compose exec backend python -m pytest tests/unit
+docker compose exec backend python -m pytest tests/unit -q
+docker compose exec -T -e RT300_INTEGRATION=1 backend python -m pytest tests/integration -q
+cd rt300-frontend && npm test
 ```
+
+Flujo manual completo para probar en tu PC: [04-pruebas-locales.md](04-pruebas-locales.md).
 
 ## 6. Servicio de comandas real
 
@@ -85,10 +89,22 @@ docker compose up -d db backend      # base de datos + API
 cd rt300-frontend && npm install && npm run dev
 ```
 
-En desarrollo el front llama a `/api/v1` y el proxy de Vite lo reenvía a `http://localhost:5000` (no hace falta CORS).
+En desarrollo el front llama a `/api/v1` y el proxy de Vite lo reenvía a `http://127.0.0.1:5000` (se usa la IP y no `localhost` porque en Windows `localhost` prueba primero IPv6 y añade ~200 ms a cada petición) (no hace falta CORS).
 Si usa `VITE_API_URL` con otro origen, ese origen debe estar en `CORS_ORIGINS` del backend.
 Para las siguientes pantallas: guardar `access_token` (15 min), renovar con `/auth/refresh`, y al cerrar sesión llamar `/auth/logout`
 enviando el `refresh_token` en el cuerpo (el backend revoca ambos tokens).
+
+## 7.1 HTTPS (TLS) y Redis
+
+- **Redis** ya es parte del `docker-compose.yml` (sin puerto publicado, con clave `REDIS_PASSWORD`). El backend lo usa solo; no hay que hacer nada.
+- **HTTPS local o en servidor** con Caddy (certificado propio, se renueva solo):
+
+```bash
+PROXY_HOPS=1 VITE_API_URL=/api/v1 docker compose --profile https up -d
+```
+
+Abre `https://127.0.0.1:8443`. El navegador avisará del certificado hasta que confíes en la CA de Caddy (volumen `caddy_data`, `pki/authorities/local/root.crt`). `PROXY_HOPS=1` es obligatorio con el proxy, para que el backend vea la IP real y el esquema https.
+En un servidor con dominio, cambia las direcciones de `docker/proxy/Caddyfile` por el dominio y quita `tls internal`: Caddy obtiene un certificado público solo. Para volver al modo normal: `docker compose stop proxy` y `docker compose up -d backend frontend`.
 
 ## 8. Reglas de trabajo con la base de datos
 

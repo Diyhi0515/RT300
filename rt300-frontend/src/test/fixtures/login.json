@@ -1,0 +1,15 @@
+{
+  "access_token": "token-de-acceso",
+  "perfil": {
+    "calm": 2,
+    "cloc": 2,
+    "cmon": 1,
+    "cven": 12009,
+    "local": "RESTAURANTE HOYO 19",
+    "nombre": "NOMBRE 1",
+    "nreg": 0,
+    "rol": "garzon",
+    "usuario": "GP1"
+  },
+  "refresh_token": "token-de-renovacion"
+}

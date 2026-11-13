@@ -6,6 +6,7 @@ from dataclasses import dataclass
 
 from ...core.errors import Unauthorized
 from ...core.legacy_password import verificar
+from ...core.text import to_int
 from ...domain.usuario import Usuario
 from .ports import AuthRepo
 
@@ -70,5 +71,5 @@ class AuthService:
             raise Unauthorized("Falta Definir tipo de pedido inicial.", "SIN_TIPO_PEDIDO")
 
         sesion = Usuario(usuario=usuario, nombre=cred.nombre, cloc=cred.cloc, calm=cred.calm, cmon=cmon,
-                         nreg=acceso.nreg, rol=self._roles.rol_de(usuario))
+                         nreg=acceso.nreg, rol=self._roles.rol_de(usuario), cven=to_int(cred.cven, 0) or 0)
         return ResultadoLogin(sesion, self._repo.nombre_local(cred.cloc))

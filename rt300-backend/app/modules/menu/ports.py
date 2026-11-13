@@ -9,6 +9,7 @@ class PlatoAlb:
     """Plato de alimentos y bebidas (rtalb)."""
 
     cart: str
+    descripcion: str
     csme: int
     cssm: int
     compuesto: bool         # rtalbmcom = 'S'

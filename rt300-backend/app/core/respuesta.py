@@ -16,6 +16,10 @@ class Salida(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
 
-def responder(modelo: type[Salida], datos: Any, status: int = 200) -> tuple[Response, int]:
+def responder(modelo: type[Salida], datos: Any, status: int = 200, cache_seg: int = 0) -> tuple[Response, int]:
+    """`cache_seg` > 0 permite que el navegador guarde la respuesta (solo para datos casi estáticos, como el menú)."""
     cuerpo = modelo.model_validate(datos).model_dump(mode="json", exclude_unset=True)
-    return jsonify(cuerpo), status
+    resp = jsonify(cuerpo)
+    if cache_seg > 0:
+        resp.headers["Cache-Control"] = f"private, max-age={cache_seg}"
+    return resp, status

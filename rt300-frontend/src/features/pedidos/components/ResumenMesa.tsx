@@ -7,11 +7,10 @@ import {
   LayoutList,
   Pencil,
   Plus,
-  Receipt,
+  Printer,
   UserRound,
   Users,
   UtensilsCrossed,
-  Wallet,
   X,
 } from 'lucide-react'
 import { formatoMoneda, formatoNumero, tiempoTranscurrido } from '@/features/salon/formato'
@@ -19,48 +18,50 @@ import { useNavigate } from 'react-router-dom'
 import { vibrar } from '@/lib/vibrar'
 import { notificar } from '@/shared/avisos/almacen'
 import { totalCuenta } from '../calculos'
+import {
+  useActualizarCuenta,
+  useHabilitarMesa,
+  useImprimirCuenta,
+  useModificarMesa,
+} from '../hooks'
 import { usePedidos } from '../store'
-import type { MesaPlano } from '../types'
+import type { DatosCuenta, MesaDetalle } from '../types'
 import { ConfirmarAccion } from './ConfirmarAccion'
 import { Contador } from './Contador'
 import { TodasLasCuentas } from './TodasLasCuentas'
 
 interface ResumenMesaProps {
-  mesa: MesaPlano
+  mesa: MesaDetalle
 }
 
 const COLUMNAS = 'grid-cols-[minmax(0,1fr)_2rem_3.6rem_4.2rem]'
+
+const MAXIMO_CUENTAS = 50
 
 const accion =
   'flex h-11 cursor-pointer items-center justify-center gap-2 rounded-xl border border-line bg-surface px-3 text-sm font-semibold transition hover:border-primary/50 hover:bg-primary/5 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 short:h-10'
 
 export function ResumenMesa({ mesa }: ResumenMesaProps) {
   const cuentaActiva = usePedidos((s) => s.cuentaActiva)
-  const {
-    abrirCuenta,
-    abrirComanda,
-    modificar,
-    pedirCuenta,
-    liquidarCuenta,
-    liberar,
-    agregarCuenta,
-    renombrarCuenta,
-    actualizarCuenta,
-    eliminarCuenta,
-  } = usePedidos.getState()
+  const { abrirCuenta, abrirComanda } = usePedidos.getState()
+  const modificar = useModificarMesa()
+  const actualizar = useActualizarCuenta()
+  const habilitar = useHabilitarMesa()
+  const imprimir = useImprimirCuenta()
   const navigate = useNavigate()
   const [editando, setEditando] = useState(false)
   const [verTodas, setVerTodas] = useState(false)
   const [eliminando, setEliminando] = useState<number | null>(null)
   const [renombrando, setRenombrando] = useState(false)
   const [nombre, setNombre] = useState('')
-  const [confirmando, setConfirmando] = useState<'liquidar' | 'liberar' | null>(null)
+  const [confirmando, setConfirmando] = useState<'liberar' | null>(null)
   const [comensales, setComensales] = useState(mesa.comensales)
   const [cuentas, setCuentas] = useState(mesa.cuentas.length)
 
   const cuenta = mesa.cuentas.find((c) => c.numero === cuentaActiva) ?? mesa.cuentas[0]
   const numeroActivo = cuenta?.numero
   const cuentaAEliminar = mesa.cuentas.find((c) => c.numero === eliminando)
+  const trabajando = modificar.isPending || actualizar.isPending || habilitar.isPending
 
   useEffect(() => {
     if (numeroActivo === undefined) return
@@ -73,20 +74,91 @@ export function ResumenMesa({ mesa }: ResumenMesaProps) {
     1,
     ...mesa.cuentas.filter((c) => c.lineas.length > 0 || c.liquidada).map((c) => c.numero),
   )
-  const puedeAgregar = mesa.estado === 'ocupada' && mesa.cuentas.length < mesa.comensales
+  const sinConsumo = mesa.cuentas.every((c) => c.lineas.length === 0 && !c.liquidada)
+  const puedeAgregar = mesa.cuentas.length < MAXIMO_CUENTAS
+  const puedeEliminar = (numero: number) =>
+    mesa.cuentas.length > 1 && numero === mesa.cuentas.length && sinConsumo
   const totalActiva = cuenta ? totalCuenta(cuenta) : 0
 
-  const guardarDatos = () => {
-    modificar(mesa.codigo, comensales, cuentas)
+  const cambiarMesa = async (totalCuentas: number, totalComensales: number) => {
+    try {
+      await modificar.mutateAsync({
+        folio: mesa.folio,
+        ccom: totalComensales,
+        ncta: totalCuentas,
+      })
+      return true
+    } catch {
+      return false
+    }
+  }
+
+  const guardarDatos = async () => {
+    if (!(await cambiarMesa(cuentas, comensales))) return
     setEditando(false)
     vibrar('exito')
     notificar.exito('Se actualizaron los datos de la mesa.', `Mesa ${mesa.codigo}`)
   }
 
-  const guardarNombre = () => {
+  const actualizarDatos = async (numero: number, datos: DatosCuenta) => {
+    try {
+      await actualizar.mutateAsync({
+        folio: mesa.folio,
+        cuenta: numero,
+        mesa: mesa.codigo,
+        cage: Number(datos.codigoCliente) || 0,
+        nruc: datos.nit,
+        nomb: datos.nombre,
+      })
+    } catch {
+      return
+    }
+    vibrar('exito')
+    notificar.exito(`Se actualizó la cuenta ${numero}.`, `Mesa ${mesa.codigo}`)
+  }
+
+  const guardarNombre = async () => {
     const limpio = nombre.trim()
-    if (cuenta && limpio) renombrarCuenta(mesa.codigo, cuenta.numero, limpio)
+    if (cuenta && limpio) {
+      await actualizarDatos(cuenta.numero, {
+        nombre: limpio,
+        codigoCliente: cuenta.codigoCliente ?? '',
+        nit: cuenta.nit ?? '',
+      })
+    }
     setRenombrando(false)
+  }
+
+  const agregarCuenta = async () => {
+    if (await cambiarMesa(mesa.cuentas.length + 1, mesa.comensales)) vibrar('toque')
+  }
+
+  const imprimirCuenta = async () => {
+    if (!cuenta) return
+    try {
+      await imprimir.mutateAsync({
+        folio: mesa.folio,
+        cuenta: cuenta.numero,
+        mesa: mesa.codigo,
+        cven: String(mesa.codigoMozo ?? 0),
+        caco: mesa.areaId,
+      })
+    } catch {
+      return
+    }
+    vibrar('exito')
+    notificar.exito(`Se envió a imprimir la cuenta ${cuenta.numero}.`, `Mesa ${mesa.codigo}`)
+  }
+
+  const habilitarMesa = async () => {
+    try {
+      await habilitar.mutateAsync({ mesa: mesa.codigo, folio: mesa.folio })
+    } catch {
+      return
+    }
+    abrirCuenta(null)
+    vibrar('exito')
+    notificar.exito('La mesa quedó libre.', `Mesa ${mesa.codigo} habilitada`)
   }
 
   return (
@@ -110,13 +182,6 @@ export function ResumenMesa({ mesa }: ResumenMesaProps) {
         </p>
       </div>
 
-      {mesa.estado === 'cobro' && (
-        <p className="flex items-center gap-2 rounded-xl bg-accent-solid/15 px-3.5 py-2.5 text-sm font-semibold text-amber-800 dark:text-amber-200">
-          <Receipt className="size-[18px] shrink-0" />
-          La cuenta fue solicitada. Liquida las cuentas para cerrar la mesa.
-        </p>
-      )}
-
       {editando ? (
         <div className="space-y-3 rounded-2xl border border-line p-3">
           <h4 className="text-sm font-bold text-primary">Datos de la mesa</h4>
@@ -124,18 +189,15 @@ export function ResumenMesa({ mesa }: ResumenMesaProps) {
             etiqueta="Comensales"
             valor={comensales}
             minimo={1}
-            maximo={Math.max(mesa.capacidad + 4, 12)}
-            alCambiar={(v) => {
-              setComensales(v)
-              if (cuentas > v) setCuentas(Math.max(v, minimoCuentas))
-            }}
+            maximo={Math.max(mesa.capacidad + 4, 12, mesa.comensales)}
+            alCambiar={setComensales}
           />
           <Contador
             etiqueta="Cuentas"
             detalle={`Mínimo ${minimoCuentas} por consumo existente`}
             valor={cuentas}
             minimo={minimoCuentas}
-            maximo={Math.max(comensales, minimoCuentas)}
+            maximo={MAXIMO_CUENTAS}
             alCambiar={setCuentas}
           />
           <div className="grid grid-cols-2 gap-2">
@@ -144,10 +206,11 @@ export function ResumenMesa({ mesa }: ResumenMesaProps) {
             </button>
             <button
               type="button"
-              onClick={guardarDatos}
-              className="flex h-11 cursor-pointer items-center justify-center rounded-xl bg-club-pc text-sm font-bold text-white transition hover:brightness-110 active:scale-[0.98]"
+              disabled={trabajando}
+              onClick={() => void guardarDatos()}
+              className="flex h-11 cursor-pointer items-center justify-center rounded-xl bg-club-pc text-sm font-bold text-white transition hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
             >
-              Guardar
+              {modificar.isPending ? 'Guardando...' : 'Guardar'}
             </button>
           </div>
         </div>
@@ -156,18 +219,16 @@ export function ResumenMesa({ mesa }: ResumenMesaProps) {
           cuentas={mesa.cuentas}
           activa={numeroActivo}
           puedeAgregar={puedeAgregar}
+          puedeEliminar={puedeEliminar}
           alElegir={(numero) => {
             abrirCuenta(numero)
             setRenombrando(false)
             setVerTodas(false)
           }}
-          alActualizar={(numero, datos) => actualizarCuenta(mesa.codigo, numero, datos)}
-          alEditarCuentas={() => navigate(`/pedidos/cuentas/${mesa.codigo}`)}
+          alActualizar={(numero, datos) => void actualizarDatos(numero, datos)}
+          alEditarCuentas={() => navigate(`/pedidos/cuentas/${encodeURIComponent(mesa.codigo)}`)}
           alEliminar={setEliminando}
-          alAgregar={() => {
-            agregarCuenta(mesa.codigo)
-            vibrar('toque')
-          }}
+          alAgregar={() => void agregarCuenta()}
           alVolver={() => setVerTodas(false)}
         />
       ) : (
@@ -220,11 +281,9 @@ export function ResumenMesa({ mesa }: ResumenMesaProps) {
               <button
                 type="button"
                 aria-label="Agregar cuenta"
-                onClick={() => {
-                  agregarCuenta(mesa.codigo)
-                  vibrar('toque')
-                }}
-                className="grid size-10 shrink-0 cursor-pointer place-items-center rounded-xl border border-dashed border-club-pc/60 text-club-primary transition hover:bg-club-pc/10 active:scale-90"
+                disabled={trabajando}
+                onClick={() => void agregarCuenta()}
+                className="grid size-10 shrink-0 cursor-pointer place-items-center rounded-xl border border-dashed border-club-pc/60 text-club-primary transition hover:bg-club-pc/10 active:scale-90 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 <Plus className="size-4" />
               </button>
@@ -239,7 +298,7 @@ export function ResumenMesa({ mesa }: ResumenMesaProps) {
                     className="flex min-w-0 flex-1 items-center gap-1.5"
                     onSubmit={(e) => {
                       e.preventDefault()
-                      guardarNombre()
+                      void guardarNombre()
                     }}
                   >
                     <input
@@ -359,27 +418,11 @@ export function ResumenMesa({ mesa }: ResumenMesaProps) {
                   <button
                     type="button"
                     className={accion}
-                    disabled={mesa.estado === 'cobro'}
-                    onClick={() => {
-                      pedirCuenta(mesa.codigo)
-                      vibrar('exito')
-                      notificar.informacion(
-                        'Se avisó a caja que la mesa pidió la cuenta.',
-                        `Mesa ${mesa.codigo}`,
-                      )
-                    }}
+                    disabled={cuenta.lineas.length === 0 || imprimir.isPending}
+                    onClick={() => void imprimirCuenta()}
                   >
-                    <Receipt className="size-4" />
-                    Pedir cuenta
-                  </button>
-                  <button
-                    type="button"
-                    className={accion}
-                    disabled={cuenta.liquidada || cuenta.lineas.length === 0}
-                    onClick={() => setConfirmando('liquidar')}
-                  >
-                    <Wallet className="size-4" />
-                    Liquidar cuenta
+                    <Printer className="size-4" />
+                    {imprimir.isPending ? 'Enviando...' : 'Imprimir cuenta'}
                   </button>
                   <button type="button" className={accion} onClick={() => setEditando(true)}>
                     <Pencil className="size-4" />
@@ -388,7 +431,7 @@ export function ResumenMesa({ mesa }: ResumenMesaProps) {
                   <button
                     type="button"
                     onClick={() => setConfirmando('liberar')}
-                    className={`${accion} border-danger/40 text-danger hover:border-danger hover:bg-danger/10`}
+                    className={`${accion} col-span-2 border-danger/40 text-danger hover:border-danger hover:bg-danger/10`}
                   >
                     <DoorOpen className="size-4" />
                     Habilitar mesa
@@ -404,51 +447,31 @@ export function ResumenMesa({ mesa }: ResumenMesaProps) {
         abierto={cuentaAEliminar !== undefined}
         peligro
         titulo="Eliminar la cuenta"
-        mensaje={
-          cuentaAEliminar && cuentaAEliminar.lineas.length > 0
-            ? `La cuenta ${cuentaAEliminar.numero} (${cuentaAEliminar.nombre}) tiene ${cuentaAEliminar.lineas.length} ${cuentaAEliminar.lineas.length === 1 ? 'pedido' : 'pedidos'} por ${formatoMoneda(totalCuenta(cuentaAEliminar))}. Se eliminarán la cuenta y todos sus pedidos. Esta acción no se puede deshacer.`
-            : `Se eliminará la cuenta ${cuentaAEliminar?.numero ?? ''}. Esta acción no se puede deshacer.`
-        }
+        mensaje={`Se eliminará la cuenta ${cuentaAEliminar?.numero ?? ''}. Solo se puede mientras la mesa no tenga comandas.`}
         textoConfirmar="Eliminar"
         alCancelar={() => setEliminando(null)}
         alConfirmar={() => {
           const eliminada = cuentaAEliminar
           setEliminando(null)
           if (!eliminada) return
-          eliminarCuenta(mesa.codigo, eliminada.numero)
-          vibrar('exito')
-          notificar.exito(`Se eliminó la cuenta ${eliminada.numero}.`, `Mesa ${mesa.codigo}`)
-        }}
-      />
-      <ConfirmarAccion
-        abierto={confirmando === 'liquidar'}
-        titulo="Liquidar la cuenta"
-        mensaje={`Se cobrarán ${formatoMoneda(totalActiva)} de la cuenta ${cuenta?.numero ?? ''}.`}
-        textoConfirmar="Liquidar"
-        alCancelar={() => setConfirmando(null)}
-        alConfirmar={() => {
-          setConfirmando(null)
-          if (!cuenta) return
-          liquidarCuenta(mesa.codigo, cuenta.numero)
-          vibrar('exito')
-          notificar.exito(
-            `Se cobraron ${formatoMoneda(totalActiva)}.`,
-            `Cuenta ${cuenta.numero} liquidada`,
-          )
+          void cambiarMesa(mesa.cuentas.length - 1, mesa.comensales).then((hecho) => {
+            if (!hecho) return
+            abrirCuenta(null)
+            vibrar('exito')
+            notificar.exito(`Se eliminó la cuenta ${eliminada.numero}.`, `Mesa ${mesa.codigo}`)
+          })
         }}
       />
       <ConfirmarAccion
         abierto={confirmando === 'liberar'}
         peligro
         titulo="Habilitar la mesa"
-        mensaje={`Se cerrará la mesa ${mesa.codigo} y quedará libre. Las cuentas con consumo sin liquidar se perderán.`}
+        mensaje={`Se cerrará la mesa ${mesa.codigo} y quedará libre. Solo se puede si no tiene comandas.`}
         textoConfirmar="Habilitar"
         alCancelar={() => setConfirmando(null)}
         alConfirmar={() => {
           setConfirmando(null)
-          liberar(mesa.codigo)
-          vibrar('exito')
-          notificar.exito('La mesa quedó libre.', `Mesa ${mesa.codigo} habilitada`)
+          void habilitarMesa()
         }}
       />
     </div>

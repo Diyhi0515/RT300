@@ -1,4 +1,26 @@
-import type { Mesa, Pedido } from '@/features/salon/types'
+type EstadoMesa = 'libre' | 'ocupada' | 'reservada'
+
+type EstadoPedido = 'pendiente' | 'preparando' | 'servido' | 'cobrado'
+
+interface Mesa {
+  numero: number
+  zona: string
+  capacidad: number
+  estado: EstadoMesa
+  comensales: number
+  apertura: number | null
+  garzon: string | null
+}
+
+interface Pedido {
+  id: string
+  mesa: number
+  cliente: string
+  platos: number
+  total: number
+  estado: EstadoPedido
+  hora: number
+}
 
 const ZONAS = ['Terraza', 'Piscina', 'Salón', 'Jardín']
 const GARZONES = ['GP1', 'GP3', 'GP5', 'GP7', 'GP9', 'GP11']

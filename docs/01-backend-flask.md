@@ -152,19 +152,21 @@ Hay una colección lista para importar en Bruno/Postman: [`docs/bruno/RT300.post
 | Método y ruta | Reemplaza |
 |---|---|
 | `GET  /auth/usuarios` | lista de la pantalla de login (30/min) |
-| `POST /auth/login` | `f5000_iniciar_session` (10/min por IP). Responde `{ access_token, refresh_token, perfil }`; `perfil` = `usuario, nombre, local` (nombre del local, texto), `rol`, y `cloc, calm, cmon, nreg` |
+| `POST /auth/login` | `f5000_iniciar_session` (10/min por IP). Responde `{ access_token, refresh_token, perfil }`; `perfil` = `usuario, nombre, local` (nombre del local, texto), `rol`, y `cloc, calm, cmon, nreg, cven` (código de mesero del usuario) |
 | `POST /auth/refresh` · `POST /auth/logout` · `GET /auth/me` | `inc/logout.php` (el logout revoca el token) |
 
 ### salon (RT300a)
 | Método y ruta | Reemplaza |
 |---|---|
 | `GET  /salon/parametros` | `f4100_cargar_parametros_iniciales_rt300a` |
-| `GET  /salon/areas/{caco}/mesas` | `f4100_cargar_mesas_area_consumo_rt300a` |
+| `GET  /salon/mesas` | *(nuevo)* todas las mesas del local del usuario, en una llamada |
+| `GET  /salon/areas/{caco}/mesas` | `f4100_cargar_mesas_area_consumo_rt300a`. Cada mesa trae `capacidad` (sillas), `posx`, `posy` y, si está ocupada, `comensales` del folio, `mozo`, `cven`, `apertura` (ISO), `cuentas` y `consumo` |
 | `GET  /salon/mesas/{mesa}` | `click_mesa_rt300a` |
-| `POST /salon/mesas/{mesa}/ocupar` | `f1000_ocuparmesa_rt300a` (toma atómica, 409 si ya está ocupada) |
+| `POST /salon/mesas/{mesa}/ocupar` | `f1000_ocuparmesa_rt300a` (toma atómica, 409 si ya está ocupada). El mesero `cven` es opcional: por defecto el del usuario |
 | `POST /salon/mesas/{mesa}/habilitar` | `f1000_habilitar_mesa_rt300a` |
 | `GET  /salon/folios/{nfol}/modificacion` · `PATCH /salon/folios/{nfol}` | `f5100_buscar_datos_mesa` · `f2000_modificar_mesa` |
 | `GET  /salon/folios/{nfol}/resumen` · `/cuentas` | `mostrar_resumen` · `mostrar_cuentas` |
+| `GET  /salon/folios/{nfol}/detalle` | *(nuevo)* cuentas del folio con cliente y líneas de consumo, en 2 consultas |
 
 ### clientes (RT300b)
 | Método y ruta | Reemplaza |
@@ -189,7 +191,8 @@ Hay una colección lista para importar en Bruno/Postman: [`docs/bruno/RT300.post
 ### comandas
 | Método y ruta | Reemplaza |
 |---|---|
-| `POST /comandas` | `f1000_guardar_rt300c` + `f5944_invocar_web_service` |
+| `POST /folios/{nfol}/cuentas/{ncta}/comandas` | *(nuevo, el camino normal)* `f1000_guardar_rt300c` + `f5944_invocar_web_service`. El cliente envía solo `{ glos?, items: [{ cart, cant }] }`; el servidor calcula precio (con la lista de la cuenta), centro de producción e insumos y escribe `rttmp` como lo hacía el navegador antiguo |
+| `POST /comandas` | mismo flujo en bajo nivel: el cliente envía las filas completas (`rtcda`, `rttac`, `rttco`, `rtcia`, `rtcic`) |
 | `POST /comandas/{ntmp}/reintentar` | *(nuevo)* reinvoca al servicio sin reinsertar `rttmp` |
 | `GET  /folios/{nfol}/comandas?mesa=` | `aministrar_comandas_rt300a` (panel ADMIN) |
 | `GET  /comandas/motivos-eliminacion` | `rtmtr` |
@@ -325,7 +328,10 @@ FLASK_ENV=development           # production (por defecto) exige SECRET_KEY/JWT_
 SECRET_KEY=...
 JWT_SECRET_KEY=...
 JWT_ACCESS_MINUTES=15
-CORS_ORIGINS=http://localhost:5173
+CORS_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
+MENU_CACHE_SECONDS=300         # 0 = sin caché de menú
+PROXY_HOPS=0                   # 1 si hay nginx delante
+RATE_LIMIT_DEFAULT=300 per minute
 
 DB_DRIVER=ODBC Driver 18 for SQL Server
 DB_HOST=localhost
@@ -357,9 +363,10 @@ Las credenciales `prueba/prueba` son solo para el contenedor de pruebas local.
 
 | Nivel | Qué prueba | Cómo | Estado |
 |---|---|---|---|
-| Unitarias | `services` con repositorios, gateway y UoW falsos | `docker compose exec backend python -m pytest tests/unit` | **60 pruebas** (auth, tokens, respuestas tipadas, salon, clientes, comandas, acceso por local, gateway SOAP, helpers SQL, imágenes) |
-| Integración | `repositories` contra la BD de Docker | `pytest -m integration` | pendiente |
-| API | Rutas, permisos, errores | colección Bruno + `flask test client` | colección lista; tests pendientes |
+| Unitarias | `services` con repositorios, gateway y UoW falsos | `docker compose exec backend python -m pytest tests/unit` | **121 pruebas** (servicios, auth, tokens, salón, clientes, comandas, acceso por local, gateway SOAP, imágenes, caché, configuración, API HTTP completa) |
+| Integración | Repositorios y endpoints contra la BD de Docker (solo lectura) | `RT300_INTEGRATION=1 pytest tests/integration` | **11 pruebas** |
+| API | Rutas, permisos, cabeceras, límites, errores | `flask test client` (en unitarias) + colección Bruno | hecho |
+| Calidad | Estilo, errores comunes, seguridad estática | `ruff check app tests` | sin hallazgos |
 | Regresión vs PHP | Mismas entradas → mismo resultado que el sistema actual | comparar menú, mesas y resúmenes | pendiente |
 
 ---

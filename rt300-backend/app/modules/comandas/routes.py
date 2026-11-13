@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from flask import Blueprint, request
 
-from ...composition import administrar_comandas_service, guardar_comanda_service
+from ...composition import administrar_comandas_service, armar_comanda_service, guardar_comanda_service
 from ...core.respuesta import responder
 from ...core.security import autenticado, usuario_actual
 from ...extensions import limiter
@@ -11,6 +11,7 @@ from .schemas import (
     AdministrarComandasOut,
     ComandaGuardadaOut,
     EliminarComandaIn,
+    EnviarComandaIn,
     GuardarComandaIn,
     MotivosOut,
     ReimprimirComandaIn,
@@ -25,6 +26,14 @@ bp = Blueprint("comandas", __name__)
 def guardar():
     b = GuardarComandaIn.model_validate(request.get_json(silent=True) or {})
     return responder(ComandaGuardadaOut, guardar_comanda_service().guardar(usuario_actual(), b), 201)
+
+
+@bp.post("/folios/<int:nfol>/cuentas/<int:ncta>/comandas")
+@autenticado
+def enviar(nfol: int, ncta: int):
+    """Camino normal para el frontend: solo plato y cantidad; el servidor arma precios e insumos."""
+    b = EnviarComandaIn.model_validate(request.get_json(silent=True) or {})
+    return responder(ComandaGuardadaOut, armar_comanda_service().enviar(usuario_actual(), nfol, ncta, b), 201)
 
 
 @bp.post("/comandas/<int:ntmp>/reintentar")

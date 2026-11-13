@@ -7,6 +7,10 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
+    "typecheck": "tsc -b",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "fixtures": "node scripts/capturar-fixtures.mjs",
     "preview": "vite preview"
   },
   "dependencies": {

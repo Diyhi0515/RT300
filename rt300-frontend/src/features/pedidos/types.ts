@@ -1,13 +1,10 @@
-export type EstadoMesaPlano = 'libre' | 'ocupada' | 'reservada' | 'cobro'
+export type EstadoMesaPlano = 'libre' | 'ocupada'
 
 export type FormaMesa = 'redonda' | 'larga'
-
-export type CategoriaMenu = 'entradas' | 'fuertes' | 'bebidas' | 'postres'
 
 export interface AreaConsumo {
   id: string
   nombre: string
-  prefijo: string
 }
 
 export interface LineaCuenta {
@@ -49,16 +46,32 @@ export interface MesaPlano {
   comensales: number
   apertura: number | null
   mozo: string | null
+  codigoMozo: number | null
   folio: number
+  numeroCuentas: number
+  consumo: number
+}
+
+export interface MesaDetalle extends MesaPlano {
   cuentas: Cuenta[]
+}
+
+export interface SubseccionMenu {
+  codigo: number
+  nombre: string
+}
+
+export interface SeccionMenu {
+  codigo: number
+  nombre: string
+  subsecciones: SubseccionMenu[]
 }
 
 export interface Plato {
   id: string
   nombre: string
-  detalle: string
   precio: number
-  categoria: CategoriaMenu
+  moneda: string
 }
 
 export interface ItemComanda {

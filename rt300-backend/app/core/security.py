@@ -8,6 +8,7 @@ from flask_jwt_extended import get_jwt, verify_jwt_in_request
 from ..domain.usuario import ROLES, Usuario  # noqa: F401 (re-export)
 from .errors import Forbidden
 
+
 def usuario_actual() -> Usuario:
     return Usuario.desde_claims(get_jwt())
 

@@ -38,6 +38,10 @@ class RepoSalon:
     def cerrar_folio_liquidado(self, *a): self.llamadas.append(("cerrar",))
     def anular_folio(self, *a): self.llamadas.append(("anular",))
     def contar_cuentas(self, n): return 3
+    def mesas_del_local(self, cloc): return [{"mesa": "M1", "cloc": cloc}]
+    def cuentas_con_cliente(self, n): return [{"ncta": 1, "nombre": "A"}, {"ncta": 2, "nombre": "B"}, {"ncta": 3, "nombre": "C"}]
+    def consumo_por_cuenta(self, n):
+        return [{"ncta": 1, "cart": "X", "cant": 2}, {"ncta": 1, "cart": "Y", "cant": 1}, {"ncta": 3, "cart": "X", "cant": 5}]
     def maxima_cuenta_con_nota(self, n): return 0
 
 
@@ -95,3 +99,14 @@ def test_mesa_inexistente():
     repo.mesa = lambda c: None
     with pytest.raises(NotFound):
         SalonService(repo, FakeUow()).habilitar_mesa(GARZON, "X")
+
+
+def test_detalle_folio_une_cuentas_y_consumo_sin_una_consulta_por_cuenta():
+    r = SalonService(RepoSalon(), FakeUow()).detalle_folio(GARZON, 77)
+    por_cuenta = {c["ncta"]: [x["cart"] for x in c["lineas"]] for c in r["cuentas"]}
+    assert por_cuenta == {1: ["X", "Y"], 2: [], 3: ["X"]}      # la cuenta 2 existe aunque no tenga consumo
+    assert all("ncta" not in x for c in r["cuentas"] for x in c["lineas"])
+
+
+def test_mesas_del_local_usa_el_local_del_usuario():
+    assert SalonService(RepoSalon(), FakeUow()).mesas_del_local(GARZON) == [{"mesa": "M1", "cloc": 2}]

@@ -39,11 +39,15 @@ def test_un_dato_con_tipo_invalido_falla_en_lugar_de_salir_mal():
         responder(FichaPlatoOut, {"ccpd": 0, "pvta": "no-numero", "csme": 1, "cssm": 1, "mcom": "N", "cbas": 1})
 
 
-def test_los_bloques_legacy_declarados_como_dict_pasan_completos():
-    datos = {"caco": 1, "areas": [], "mesas": [], "meseros": [], "local": {"vtlocdesc": "X", "otra": 1},
-             "moneda": {"gbconabre": "Bs."}, "config": {"gbpmt": {"a": 1}, "gbrne": None, "inctl": {}, "rtctl": {}}}
+def test_parametros_no_expone_las_filas_completas_de_las_tablas_de_configuracion():
+    datos = {"caco": 1, "areas": [], "mesas": [], "meseros": [],
+             "local": {"codigo": 2, "descripcion": "RESTAURANTE", "vtlocdire": "calle secreta"},
+             "moneda": {"codigo": 1, "abreviatura": "Bs.", "descripcion": "BOLIVIANOS", "gbconmmod": "x"},
+             "decimales": 3, "config": {"gbpmt": {"gbpmtcoel": "correo@empresa.com"}}}
     salida = cuerpo(responder(ParametrosOut, datos))
-    assert salida["local"] == {"vtlocdesc": "X", "otra": 1} and salida["config"]["gbpmt"] == {"a": 1}
+    assert salida["local"] == {"codigo": 2, "descripcion": "RESTAURANTE"}
+    assert salida["moneda"] == {"codigo": 1, "abreviatura": "Bs.", "descripcion": "BOLIVIANOS"}
+    assert "config" not in salida and salida["decimales"] == 3
 
 
 def test_codigo_de_estado_personalizado():

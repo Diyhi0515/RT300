@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react'
 import { Map as IconoPlano, MousePointerClick, Rows3 } from 'lucide-react'
 import { useSesion } from '@/features/auth'
-import { areas } from '@/simulados/pedidos'
 import { resumenMesas } from '../calculos'
+import { useAreaActual, useMesas } from '../hooks'
 import { usePedidos } from '../store'
 import { DesplegableArea } from './DesplegableArea'
 import { estilosMesa, ordenEstados } from './estilosMesa'
@@ -27,14 +27,15 @@ const VISTAS: { valor: Vista; etiqueta: string; icono: typeof Rows3 }[] = [
 ]
 
 export function PlanoMesas() {
-  const mesas = usePedidos((s) => s.mesas)
-  const areaId = usePedidos((s) => s.areaId)
+  const consulta = useMesas()
+  const mesas = useMemo(() => consulta.data ?? [], [consulta.data])
+  const area = useAreaActual()
+  const areaId = area?.id ?? ''
   const seleccionada = usePedidos((s) => s.seleccionada)
   const seleccionar = usePedidos((s) => s.seleccionar)
   const perfil = useSesion((s) => s.perfil)
   const [vista, setVista] = useState<Vista>(leerVista)
 
-  const area = areas.find((a) => a.id === areaId)
   const visibles = useMemo(() => mesas.filter((m) => m.areaId === areaId), [mesas, areaId])
   const conteo = resumenMesas(visibles).conteo
 
@@ -115,7 +116,22 @@ export function PlanoMesas() {
         </ul>
       </header>
 
-      {vista === 'tarjetas' ? (
+      {consulta.isPending ? (
+        <p role="status" className="relative px-4 pb-8 pt-6 text-center text-sm text-muted">
+          Cargando mesas...
+        </p>
+      ) : consulta.isError ? (
+        <p role="alert" className="relative px-4 pb-8 pt-6 text-center text-sm text-muted">
+          No se pudieron cargar las mesas.{' '}
+          <button
+            type="button"
+            onClick={() => void consulta.refetch()}
+            className="cursor-pointer font-bold text-primary underline"
+          >
+            Reintentar
+          </button>
+        </p>
+      ) : vista === 'tarjetas' ? (
         <div
           key={`${areaId}-tarjetas`}
           className="relative grid animate-[fade_0.3s_ease-out] grid-cols-2 gap-2.5 p-3 @lg:grid-cols-3 @3xl:grid-cols-4 @5xl:grid-cols-5 sm:p-4"

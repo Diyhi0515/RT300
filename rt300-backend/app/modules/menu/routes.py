@@ -5,6 +5,7 @@ from flask import Blueprint, current_app, request
 from ...composition import menu_service
 from ...core.respuesta import responder
 from ...core.security import autenticado, usuario_actual
+from ...extensions import limiter
 from . import images
 from .schemas import (
     AlternativosOut,
@@ -19,22 +20,26 @@ from .schemas import (
 bp = Blueprint("menu", __name__)
 
 
+def _cache() -> int:
+    return current_app.config["APP_CONFIG"].menu_cache_seconds
+
+
 @bp.get("/secciones")
 @autenticado
 def secciones():
-    return responder(SeccionesOut, {"secciones": menu_service().secciones(usuario_actual().cloc)})
+    return responder(SeccionesOut, {"secciones": menu_service().secciones(usuario_actual().cloc)}, cache_seg=_cache())
 
 
 @bp.get("/secciones/<int:csme>/<int:cssm>/platos")
 @autenticado
 def platos(csme: int, cssm: int):
-    return responder(PlatosOut, {"platos": menu_service().platos(usuario_actual(), csme, cssm)})
+    return responder(PlatosOut, {"platos": menu_service().platos(usuario_actual(), csme, cssm)}, cache_seg=_cache())
 
 
 @bp.get("/secciones/<int:csme>/<int:cssm>/extras")
 @autenticado
 def extras(csme: int, cssm: int):
-    return responder(ExtrasOut, {"extras": menu_service().extras(csme, cssm)})
+    return responder(ExtrasOut, {"extras": menu_service().extras(csme, cssm)}, cache_seg=_cache())
 
 
 @bp.get("/platos/<cart>")
@@ -65,7 +70,7 @@ def alternativos(cins: str):
 @bp.get("/textos")
 @autenticado
 def textos():
-    return responder(TextosOut, menu_service().textos(request.args.get("cart") or None))
+    return responder(TextosOut, menu_service().textos(request.args.get("cart") or None), cache_seg=_cache())
 
 
 @bp.get("/subtextos")
@@ -81,6 +86,7 @@ def centros(cart: str):
 
 
 @bp.get("/platos/<cart>/imagen")
+@limiter.exempt
 def imagen(cart: str):
     """Pública a propósito: la consume <img src>, que no puede enviar el JWT. Solo sirve archivos de IMAGENES_DIR."""
     cfg = current_app.config["APP_CONFIG"]

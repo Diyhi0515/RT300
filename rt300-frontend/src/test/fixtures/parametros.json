@@ -1,0 +1,104 @@
+{
+  "areas": [
+    {
+      "codigo": 1,
+      "descripcion": "HOYO 19 PLANTA BAJA"
+    },
+    {
+      "codigo": 2,
+      "descripcion": "HOYO 19 PLANTA ALTA"
+    },
+    {
+      "codigo": 3,
+      "descripcion": "HOYO 19 TERRAZA"
+    },
+    {
+      "codigo": 4,
+      "descripcion": "HOYO 19 BARRA"
+    }
+  ],
+  "caco": 1,
+  "decimales": 3,
+  "local": {
+    "codigo": 2,
+    "descripcion": "RESTAURANTE HOYO 19"
+  },
+  "mesas": [
+    {
+      "apertura": "2026-07-24T15:39:43",
+      "area": 1,
+      "capacidad": 6,
+      "comensales": 50,
+      "consumo": 2084,
+      "cuentas": 50,
+      "cven": 12018,
+      "descripcion": "MESA 1",
+      "estado": 3,
+      "folio": 252438,
+      "mesa": "HPB01",
+      "mozo": "MOZO 1",
+      "posx": 1,
+      "posy": 1,
+      "stat": 1
+    },
+    {
+      "apertura": null,
+      "area": 1,
+      "capacidad": 6,
+      "comensales": null,
+      "consumo": 0,
+      "cuentas": 0,
+      "cven": null,
+      "descripcion": "MESA 2",
+      "estado": 1,
+      "folio": 0,
+      "mesa": "HPB02",
+      "mozo": null,
+      "posx": 2,
+      "posy": 1,
+      "stat": 1
+    },
+    {
+      "apertura": null,
+      "area": 1,
+      "capacidad": 4,
+      "comensales": null,
+      "consumo": 0,
+      "cuentas": 0,
+      "cven": null,
+      "descripcion": "MESA 3",
+      "estado": 1,
+      "folio": 0,
+      "mesa": "HPB03",
+      "mozo": null,
+      "posx": 3,
+      "posy": 1,
+      "stat": 1
+    }
+  ],
+  "meseros": [
+    {
+      "codigo": 1,
+      "gbvencmon": 1,
+      "gbvencmov": 1,
+      "gbvenfpag": 1,
+      "gbvenfulq": null,
+      "gbvenpcom": 0,
+      "nombre": "NOMBRE 2"
+    },
+    {
+      "codigo": 406,
+      "gbvencmon": 1,
+      "gbvencmov": 1,
+      "gbvenfpag": 1,
+      "gbvenfulq": null,
+      "gbvenpcom": 0,
+      "nombre": "NOMBRE 3"
+    }
+  ],
+  "moneda": {
+    "abreviatura": "Bs.",
+    "codigo": 1,
+    "descripcion": "BOLIVIANOS"
+  }
+}

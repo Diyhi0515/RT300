@@ -48,7 +48,7 @@ class SoapGateway:
     def _call(self, op: str, **params):
         try:
             return self._invoke(op, params)
-        except Exception as exc:  # noqa: BLE001 - zeep/requests lanzan muchos tipos
+        except Exception as exc:
             log.exception("SOAP %s falló", op)
             raise GatewayError("El servicio de comandas no está disponible.") from exc
 

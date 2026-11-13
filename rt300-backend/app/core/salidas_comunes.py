@@ -15,6 +15,17 @@ class ConsumoOut(Salida):
     impt: float | None = None
 
 
+class LocalOut(Salida):
+    codigo: int
+    descripcion: str | None = None
+
+
+class MonedaOut(Salida):
+    codigo: int
+    abreviatura: str | None = None
+    descripcion: str | None = None
+
+
 class MensajeOut(Salida):
     mensaje: str
 

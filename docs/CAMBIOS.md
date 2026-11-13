@@ -4,7 +4,7 @@ Qué se construyó, qué cambió respecto al sistema antiguo (`RT-300WEB`, PHP) 
 indica la fecha. Las fechas son de 2026.
 
 Documentos relacionados: [00 arquitectura](00-arquitectura-general.md) · [01 backend](01-backend-flask.md) ·
-[03 puesta en marcha](03-puesta-en-marcha.md) · [README del backend](../rt300-backend/README.md) ·
+[03 puesta en marcha](03-puesta-en-marcha.md) · [04 pruebas locales](04-pruebas-locales.md) · [README del backend](../rt300-backend/README.md) ·
 [README del login (front)](../rt300-frontend/src/features/auth/README.md)
 
 ## Lo que NO cambió
@@ -19,7 +19,95 @@ Documentos relacionados: [00 arquitectura](00-arquitectura-general.md) · [01 ba
 
 ---
 
-## 2026-11-09 · Corrección de arquitectura: respuestas tipadas y tokens *(sin commit al escribir esto)*
+## 2026-11-13 · Mejora de seguridad, velocidad y calidad + pruebas *(sin commit al escribir esto)*
+
+Sin cambios de esquema de BD ni de flujo de negocio. Guía para probar: [04-pruebas-locales.md](04-pruebas-locales.md).
+
+### Seguridad
+- Cabeceras HTTP seguras en todas las respuestas; `Cache-Control: no-store` salvo el menú.
+- Límite de intentos de login **por usuario** (10 / 10 min) además del de IP; `ProxyFix` configurable (`PROXY_HOPS`) para que la IP no se falsifique.
+- En producción el arranque falla si quedan claves o usuario de BD de desarrollo, o CORS vacío/`*`.
+- Datos mínimos en las respuestas (`/salon/parametros`, detalle de mesa y modificación, todos con modelos de salida tipados).
+- `X-Request-Id` entrante validado; imágenes sirven aunque la caché no sea escribible.
+- **Redis** en Docker: tokens revocados y contadores de intentos compartidos entre instancias (`REDIS_URL`); verificado que un token revocado sigue inválido tras reiniciar el backend. Si Redis cae, el login sigue con contadores locales.
+- **HTTPS** opcional con Caddy (`--profile https`, `docker/proxy/Caddyfile`); verificado en `https://127.0.0.1:8443` con HSTS y las cabeceras de seguridad. Ver [03 §7.1](03-puesta-en-marcha.md).
+- Contenedor del backend sin privilegios (`app`) con `HEALTHCHECK`; puertos solo en `127.0.0.1`.
+
+### Velocidad (medido en local)
+- Platos con precios: ~600 ms → ~40 ms (consulta con el índice `inpva`); con caché TTL del menú ~9 ms.
+- gzip en JSON ≥ 1 KB; `Cache-Control` público de 5 min en el menú.
+- El front usa `127.0.0.1` en vez de `localhost` (en Windows `localhost` sumaba ~200 ms por petición). Rutas del front ya cargan por partes (lazy).
+
+### Calidad
+- Caché como decorador (`MenuRepoConCache`), `core/cache.py`, `core/compresion.py`, `core/seguridad_http.py`: cada una con una sola responsabilidad.
+- `ruff` configurado (`pyproject.toml`) y sin hallazgos.
+- Variables nuevas: `MENU_CACHE_SECONDS`, `PROXY_HOPS`, `RATE_LIMIT_DEFAULT` (en `.env.example` y `docker-compose.yml`).
+
+### Pruebas
+| Dónde | Cantidad | Cómo |
+|---|---|---|
+| Backend unitarias | 121 | `docker compose exec backend python -m pytest tests/unit -q` |
+| Backend integración (solo lectura) | 11 | `RT300_INTEGRATION=1 ... pytest tests/integration` |
+| Front (Vitest + Testing Library + msw) | 57 | `npm test` |
+
+Front: mapeos, cálculos, contrato con el backend (respuestas reales anonimizadas en `src/test/fixtures`), cliente HTTP (renovación de sesión, 401 concurrentes, logout) y componentes (ocupar mesa y enviar comanda solo mandan lo permitido).
+
+### Pendiente / decisiones abiertas
+`GET /auth/usuarios` sigue público; roles reales para autorizar eliminar comanda; hash de clave fuerte (requiere tabla propia); servicio SOAP real sin probar (192.168.0.2 no es alcanzable desde esta PC).
+
+---
+
+## 2026-11-13 · Pantallas de mesas, pedidos y comanda conectadas al backend *(sin commit al escribir esto)*
+
+El equipo de front subió las pantallas nuevas (`808abf5`: `/inicio`, `/pedidos`, `/pedidos/cuentas/:mesa`, `/mesas`). Estaban **100 % simuladas**: sus stores traían datos inventados y no llamaban a la API; además el build de producción incluía esos datos. Ahora usan el backend real.
+
+### Decisiones acordadas
+
+| Tema | Decisión |
+|---|---|
+| Reservar mesa / estado "reservada" | Quitado (la base solo tiene libre y ocupada) |
+| "Por cobrar" y "Liquidar cuenta" | Quitados. Pedir cuenta pasa a **Imprimir cuenta**; liquidar es del módulo de caja |
+| Agregar y quitar cuentas | Botones con reglas: agregar suma una; quitar solo la última y sin consumo |
+| Regla "cuentas ≤ comensales" | Quitada (no existe en el sistema antiguo) |
+
+### Backend
+
+| Cambio | Detalle |
+|---|---|
+| `perfil.cven` | El login devuelve el código de mesero del usuario (va en el token). Ocupar y modificar mesa ya no exigen `cven`: se usa el del usuario |
+| Mesas enriquecidas | `GET /salon/areas/{caco}/mesas` y `/salon/parametros` devuelven `capacidad` (sillas), `posx`, `posy` y, si está ocupada, `comensales` del folio, `mozo`, `cven`, `apertura` (ISO), `cuentas` y `consumo`, en una sola consulta. **`comensales` pasó a significar los del folio; las sillas son `capacidad`** |
+| `GET /salon/mesas` | Todas las mesas del local del usuario en una llamada (el front cuenta ocupadas por área) |
+| `GET /salon/folios/{nfol}/detalle` | Cuentas del folio con cliente y líneas de consumo, en 2 consultas (sin una por cuenta) |
+| `POST /folios/{nfol}/cuentas/{ncta}/comandas` | **El servidor arma la comanda**: el cliente solo envía `{ cart, cant }`. Precio (con la lista de la cuenta), centro de producción e insumos salen de la base; `rttmp` queda con las mismas filas que generaba el navegador antiguo. Corrige que el servidor aceptaba el precio enviado por el cliente. `POST /comandas` sigue disponible como bajo nivel |
+| Insumos | Cantidad total = producto + merma (así está en 1,06 millones de filas reales de `rtcia`; el JS antiguo tenía un error de concatenación de textos que daba otro resultado según los decimales) |
+| `GET /clientes` | La búsqueda por nombre ahora también devuelve `nruc` |
+| Ficha del plato | `/menu/platos/{cart}` devuelve `descripcion` |
+| Sesiones anteriores | Un refresh token sin `cven` responde `401 SESION_DESACTUALIZADA` y el front cierra la sesión: hay que ingresar otra vez |
+| Código | `modules/comandas/armar.py` (caso de uso), `catalogo_menu.py` (adaptador al módulo menú, sin que `comandas` importe `menu`), puertos nuevos; 3 endpoints, 76 pruebas unitarias |
+
+### Frontend (`rt300-frontend`)
+
+| Cambio | Detalle |
+|---|---|
+| Capa de datos | `features/pedidos/{esquemas,api,mapeos,hooks}.ts` (zod + TanStack Query). `store.ts` quedó solo con estado de pantalla |
+| Componentes | `PlanoMesas`, `DesplegableArea`, `CabeceraMesa`, `PanelMesa`, `FormularioOcupar`, `ResumenMesa`, `TodasLasCuentas`, `ComandaNueva`, `DatosCuentasPage` leen y escriben por la API |
+| Comanda | Menú real: 18 secciones y 124 subsecciones, productos con precio de la base |
+| Administración | `/mesas` usa las mesas reales; tocar una mesa la abre en Pedidos. Se eliminaron `ModalMesa`, el store y los tipos del prototipo |
+| Mockup | `simulados/pedidos.ts` y `salon.ts` se conservan con tipos propios, sin uso. **El adaptador del mockup solo cubre el login** |
+| Build | El bundle de producción ya no contiene datos de prueba (comprobado) |
+| `features/pedidos/README.md` | Nuevo: flujo de datos, endpoints, reglas, mapeos y pendientes |
+
+### Verificado
+
+En el navegador con la base real: carga de 20 mesas de "HOYO 19 PLANTA BAJA" (mesa 01 ocupada, Bs 2.084), renovación automática del token, ocupar la mesa HPB02, abrir Nueva comanda con el menú real, enviar 3 productos (`POST …/comandas → 201`, `rttmp` con 2 líneas, 7 insumos y 5 componentes con cantidades coherentes), agregar una cuenta (`PATCH → 200`), búsqueda de clientes de la agenda y la confirmación de habilitar. Se verificó el cierre de sesiones anteriores. `npx tsc -b`, `npm run lint` y `npm run build` pasan; 76 pruebas del backend en verde. Las pruebas escribieron en la copia de la base: la mesa quedó libre y se borraron las filas de prueba de `rttmp`.
+
+### Pendiente
+
+Insumos modificables, extras y textos en la comanda; pantalla de eliminar y reimprimir comandas; búsqueda en todo el menú; imágenes de platos; ampliar el mockup. Con `GATEWAY_MODE=fake` la comanda no aparece en el consumo (la crea el servicio real).
+
+---
+
+## 2026-11-09 · Corrección de arquitectura: respuestas tipadas y tokens
 
 Se detectaron tres desviaciones respecto a la arquitectura documentada y se corrigieron.
 
@@ -173,4 +261,6 @@ creadas en `rttmp` se borraron. La base de Docker es una **copia de producción*
 | `3d366ab` | 11-06 | Backend completo: API, arquitectura limpia, seguridad base, pruebas |
 | `e19d920` | 11-09 | Imágenes de platos, usuario de BD mínimo, acceso por local, SOAP configurable, refactor SOLID y documentación |
 | `3074a55` | 11-09 | Login del frontend (equipo de front) |
-| *(pendiente)* | 11-09 | Conexión del login con el backend, corrección de arquitectura (respuestas tipadas, tokens) y documentación |
+| `79d5338`, `e1969fe` | 11-09 | Conexión del login con el backend, corrección de arquitectura (respuestas tipadas, tokens) y documentación |
+| `808abf5` | 11-12 | Pantallas nuevas del front (equipo de front, aún simuladas) |
+| *(pendiente)* | 11-13 | Pantallas de mesas, pedidos y comanda conectadas al backend |

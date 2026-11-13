@@ -28,6 +28,7 @@ class SesionOut(Salida):
     cmon: int
     nreg: int
     rol: str
+    cven: int
 
 
 class PerfilOut(SesionOut):

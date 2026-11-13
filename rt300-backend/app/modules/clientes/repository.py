@@ -22,7 +22,7 @@ class SqlClientesRepository(MesaQueries):
 
     def buscar_clientes(self, nombre: str | None, cage: int | None, limite: int = 100) -> list[dict]:
         return self._rows("""
-            SELECT TOP (:lim) gbagecage AS codigo, gbagenomb AS nombre
+            SELECT TOP (:lim) gbagecage AS codigo, gbagenomb AS nombre, gbagenruc AS nruc
               FROM gbage
              WHERE (:nombre IS NULL OR gbagenomb LIKE :nombre)
                AND (:cage IS NULL OR gbagecage = :cage)

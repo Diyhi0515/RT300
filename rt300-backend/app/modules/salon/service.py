@@ -1,8 +1,6 @@
 """Casos de uso del salón. Sin Flask ni SQL: dependen del puerto `SalonRepo` y de una `UnitOfWork`."""
 from __future__ import annotations
 
-from datetime import datetime
-
 from ...core.acceso import exigir_local
 from ...core.errors import Conflict, DomainError, NotFound
 from ...domain.mesa import ESTC_LIQUIDADA, Mesa
@@ -75,8 +73,22 @@ class SalonService:
             "meseros": self._repo.meseros(),
             "local": local,
             "moneda": moneda,
-            "config": {"gbpmt": p.gbpmt, "gbrne": p.gbrne, "inctl": p.inctl, "rtctl": p.rtctl},
+            "decimales": p.decimales,
         }
+
+    def mesas_del_local(self, u: Usuario) -> list[dict]:
+        return self._repo.mesas_del_local(u.cloc)
+
+    def detalle_folio(self, u: Usuario, nfol: int) -> dict:
+        """Cuentas del folio con sus líneas de consumo (2 consultas, sin una por cuenta)."""
+        exigir_local(u, self._repo.local_de_folio(nfol))
+        lineas: dict[int, list[dict]] = {}
+        for linea in self._repo.consumo_por_cuenta(nfol):
+            lineas.setdefault(int(linea.pop("ncta")), []).append(linea)
+        cuentas = self._repo.cuentas_con_cliente(nfol)
+        for c in cuentas:
+            c["lineas"] = lineas.get(int(c["ncta"]), [])
+        return {"cuentas": cuentas}
 
     def mesas_de_area(self, u: Usuario, caco: int) -> list[dict]:
         exigir_local(u, self._repo.local_de_area(caco))
@@ -119,7 +131,10 @@ class SalonService:
         return self._repo.cuentas_folio(nfol)
 
     # ───────────── Escrituras (una unidad de trabajo cada una) ─────────────
-    def ocupar_mesa(self, u: Usuario, codigo: str, cven: int, caco: int, ccom: int, ncta: int) -> dict:
+    def ocupar_mesa(self, u: Usuario, codigo: str, cven: int | None, caco: int, ccom: int, ncta: int) -> dict:
+        cven = cven or u.cven
+        if not cven:
+            raise DomainError("El usuario no tiene mesero asignado.", "SIN_MESERO")
         exigir_local(u, self._repo.local_de_mesa(codigo))
         with self._uow:
             self._mesa_operable(codigo)
@@ -156,7 +171,7 @@ class SalonService:
                     self._repo.anular_folio(m.folio, u.usuario, fdia, hora)
         return {"mesa": codigo, "folio_anulado": m.folio or None}
 
-    def modificar_mesa(self, u: Usuario, nfol: int, cven: int, ccom: int, ncta_nueva: int) -> list[dict]:
+    def modificar_mesa(self, u: Usuario, nfol: int, cven: int | None, ccom: int, ncta_nueva: int) -> list[dict]:
         exigir_local(u, self._repo.local_de_folio(nfol))
         with self._uow:
             ncta_vieja = self._repo.contar_cuentas(nfol)

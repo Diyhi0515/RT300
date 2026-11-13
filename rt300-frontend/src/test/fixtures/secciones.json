@@ -1,0 +1,76 @@
+{
+  "secciones": [
+    {
+      "csme": 1,
+      "cssm": 0,
+      "descripcion": "GASEOSAS,AGUAS Y ENERGIZANTES",
+      "stat": 1
+    },
+    {
+      "csme": 1,
+      "cssm": 1,
+      "descripcion": "AGUAS",
+      "stat": 1
+    },
+    {
+      "csme": 1,
+      "cssm": 2,
+      "descripcion": "ENERGIZANTES",
+      "stat": 1
+    },
+    {
+      "csme": 1,
+      "cssm": 3,
+      "descripcion": "GASEOSAS",
+      "stat": 1
+    },
+    {
+      "csme": 1,
+      "cssm": 4,
+      "descripcion": "JUGOS",
+      "stat": 1
+    },
+    {
+      "csme": 2,
+      "cssm": 0,
+      "descripcion": "BEBIDAS CON ALCOHOL",
+      "stat": 1
+    },
+    {
+      "csme": 2,
+      "cssm": 1,
+      "descripcion": "CERVEZAS",
+      "stat": 1
+    },
+    {
+      "csme": 2,
+      "cssm": 2,
+      "descripcion": "LICORES",
+      "stat": 1
+    },
+    {
+      "csme": 2,
+      "cssm": 3,
+      "descripcion": "RONES",
+      "stat": 1
+    },
+    {
+      "csme": 2,
+      "cssm": 4,
+      "descripcion": "VODKA",
+      "stat": 1
+    },
+    {
+      "csme": 2,
+      "cssm": 5,
+      "descripcion": "WHISKY",
+      "stat": 1
+    },
+    {
+      "csme": 2,
+      "cssm": 6,
+      "descripcion": "VINOS Y CHAMPAGNES",
+      "stat": 1
+    }
+  ]
+}

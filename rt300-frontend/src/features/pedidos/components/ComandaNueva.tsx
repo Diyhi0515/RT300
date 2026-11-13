@@ -1,36 +1,23 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
-import {
-  ChefHat,
-  ChevronUp,
-  CupSoda,
-  IceCreamCone,
-  Minus,
-  Plus,
-  Salad,
-  Search,
-  Send,
-  Utensils,
-  X,
-  type LucideIcon,
-} from 'lucide-react'
+import { ChefHat, ChevronUp, Minus, Plus, Search, Send, Utensils, X } from 'lucide-react'
 import { formatoMoneda } from '@/features/salon/formato'
 import { vibrar } from '@/lib/vibrar'
 import { notificar } from '@/shared/avisos/almacen'
-import { catalogo, categoriasMenu } from '@/simulados/pedidos'
 import { cantidadItems, totalItems } from '../calculos'
+import { useEnviarComanda, useMesaDetalle, usePlatos, useSecciones } from '../hooks'
 import { usePedidos } from '../store'
-import type { CategoriaMenu, ItemComanda, Plato } from '../types'
-
-const ICONO_CATEGORIA: Record<CategoriaMenu, LucideIcon> = {
-  entradas: Salad,
-  fuertes: Utensils,
-  bebidas: CupSoda,
-  postres: IceCreamCone,
-}
+import type { ItemComanda, Plato } from '../types'
 
 const boton =
   'grid size-10 shrink-0 cursor-pointer place-items-center rounded-xl transition active:scale-90 short:size-9'
+
+const pestana = (activa: boolean) =>
+  `inline-flex h-10 max-w-[16rem] shrink-0 cursor-pointer items-center gap-2 rounded-xl px-3.5 text-sm font-semibold transition active:scale-95 short:h-9 ${
+    activa
+      ? 'bg-primary text-white shadow-md shadow-primary/30'
+      : 'border border-line bg-surface text-muted hover:border-primary/50 hover:text-fg'
+  }`
 
 interface ContenidoProps {
   codigo: string
@@ -39,11 +26,19 @@ interface ContenidoProps {
 }
 
 function Contenido({ codigo, numero, alCerrar }: ContenidoProps) {
-  const enviarComanda = usePedidos((s) => s.enviarComanda)
-  const [categoria, setCategoria] = useState<CategoriaMenu>('entradas')
+  const { mesa } = useMesaDetalle(codigo)
+  const secciones = useSecciones()
+  const envio = useEnviarComanda()
+  const [seccionElegida, setSeccionElegida] = useState<number | null>(null)
+  const [subseccion, setSubseccion] = useState(0)
   const [busqueda, setBusqueda] = useState('')
-  const [cantidades, setCantidades] = useState<Record<string, number>>({})
+  const [elegidos, setElegidos] = useState<Record<string, ItemComanda>>({})
   const [verResumen, setVerResumen] = useState(false)
+
+  const listaSecciones = secciones.data ?? []
+  const seccion = seccionElegida ?? listaSecciones[0]?.codigo ?? null
+  const seccionActual = listaSecciones.find((s) => s.codigo === seccion)
+  const platos = usePlatos(seccion, subseccion)
 
   useEffect(() => {
     const previo = document.body.style.overflow
@@ -58,28 +53,19 @@ function Contenido({ codigo, numero, alCerrar }: ContenidoProps) {
     }
   }, [alCerrar])
 
-  const items: ItemComanda[] = useMemo(
-    () =>
-      catalogo
-        .filter((p) => cantidades[p.id] > 0)
-        .map((plato) => ({ plato, cantidad: cantidades[plato.id] })),
-    [cantidades],
-  )
-
+  const items = Object.values(elegidos)
   const texto = busqueda.trim().toLowerCase()
-  const visibles = catalogo.filter((p) =>
-    texto
-      ? p.nombre.toLowerCase().includes(texto) || p.detalle.toLowerCase().includes(texto)
-      : p.categoria === categoria,
+  const visibles = (platos.data ?? []).filter(
+    (p) => !texto || p.nombre.toLowerCase().includes(texto) || p.id.toLowerCase().includes(texto),
   )
 
   const cambiar = (plato: Plato, delta: number) => {
     vibrar('toque')
-    setCantidades((actual) => {
-      const nueva = Math.max(0, (actual[plato.id] ?? 0) + delta)
+    setElegidos((actual) => {
+      const nueva = Math.max(0, (actual[plato.id]?.cantidad ?? 0) + delta)
       const copia = { ...actual }
       if (nueva === 0) delete copia[plato.id]
-      else copia[plato.id] = nueva
+      else copia[plato.id] = { plato, cantidad: nueva }
       return copia
     })
   }
@@ -87,14 +73,24 @@ function Contenido({ codigo, numero, alCerrar }: ContenidoProps) {
   const total = totalItems(items)
   const cantidad = cantidadItems(items)
 
-  const enviar = () => {
-    if (!items.length) return
-    enviarComanda(codigo, numero, items)
+  const enviar = async () => {
+    if (!items.length || !mesa) return
+    try {
+      await envio.mutateAsync({
+        folio: mesa.folio,
+        cuenta: numero,
+        glos: '',
+        items: items.map((i) => ({ cart: i.plato.id, cant: i.cantidad })),
+      })
+    } catch {
+      return
+    }
     vibrar('exito')
     notificar.exito(
       `${cantidad} ${cantidad === 1 ? 'producto' : 'productos'} por ${formatoMoneda(total)}.`,
       'Comanda enviada a cocina',
     )
+    alCerrar()
   }
 
   const resumen = (
@@ -120,6 +116,18 @@ function Contenido({ codigo, numero, alCerrar }: ContenidoProps) {
         </ul>
       )}
     </>
+  )
+
+  const botonEnviar = (clases: string, etiqueta: string) => (
+    <button
+      type="button"
+      disabled={!items.length || envio.isPending || !mesa}
+      onClick={() => void enviar()}
+      className={clases}
+    >
+      <Send className="size-[18px]" />
+      {envio.isPending ? 'Enviando...' : etiqueta}
+    </button>
   )
 
   return (
@@ -157,56 +165,98 @@ function Contenido({ codigo, numero, alCerrar }: ContenidoProps) {
           <div className="flex min-h-0 min-w-0 flex-col">
             <div className="shrink-0 space-y-2.5 px-4 pb-2 pt-3 short:space-y-1.5 short:pt-2">
               <label className="relative block">
-                <span className="sr-only">Buscar en el menú</span>
+                <span className="sr-only">Buscar en la sección</span>
                 <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted" />
                 <input
                   type="search"
                   value={busqueda}
                   onChange={(e) => setBusqueda(e.target.value)}
-                  placeholder="Buscar en el menú"
+                  placeholder="Buscar en esta sección"
                   className="h-11 w-full rounded-xl border border-line bg-surface pl-9 pr-3 text-base outline-none transition placeholder:text-muted focus:border-primary focus:ring-4 focus:ring-primary/10 short:h-10 [&::-webkit-search-cancel-button]:hidden"
                 />
               </label>
               <div
                 role="tablist"
-                aria-label="Categorías del menú"
+                aria-label="Secciones del menú"
                 className="-mx-4 flex gap-2 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
               >
-                {categoriasMenu.map(({ id, etiqueta }) => {
-                  const Icono = ICONO_CATEGORIA[id]
-                  const activa = !texto && categoria === id
-                  return (
+                {secciones.isPending && (
+                  <span role="status" className="py-2 text-sm text-muted">
+                    Cargando menú...
+                  </span>
+                )}
+                {listaSecciones.map((s) => (
+                  <button
+                    key={s.codigo}
+                    type="button"
+                    role="tab"
+                    aria-selected={s.codigo === seccion}
+                    onClick={() => {
+                      setBusqueda('')
+                      setSubseccion(0)
+                      setSeccionElegida(s.codigo)
+                    }}
+                    className={pestana(s.codigo === seccion)}
+                  >
+                    <Utensils className="size-4 shrink-0" />
+                    <span className="truncate">{s.nombre}</span>
+                  </button>
+                ))}
+              </div>
+              {seccionActual && seccionActual.subsecciones.length > 0 && (
+                <div
+                  role="tablist"
+                  aria-label="Subsecciones"
+                  className="-mx-4 flex gap-1.5 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                >
+                  {[{ codigo: 0, nombre: 'Todas' }, ...seccionActual.subsecciones].map((sub) => (
                     <button
-                      key={id}
+                      key={sub.codigo}
                       type="button"
                       role="tab"
-                      aria-selected={activa}
+                      aria-selected={sub.codigo === subseccion}
                       onClick={() => {
                         setBusqueda('')
-                        setCategoria(id)
+                        setSubseccion(sub.codigo)
                       }}
-                      className={`inline-flex h-10 shrink-0 cursor-pointer items-center gap-2 rounded-xl px-3.5 text-sm font-semibold transition active:scale-95 short:h-9 ${
-                        activa
-                          ? 'bg-primary text-white shadow-md shadow-primary/30'
-                          : 'border border-line bg-surface text-muted hover:border-primary/50 hover:text-fg'
+                      className={`inline-flex h-8 max-w-[14rem] shrink-0 cursor-pointer items-center rounded-lg px-3 text-xs font-bold transition active:scale-95 ${
+                        sub.codigo === subseccion
+                          ? 'bg-primary/15 text-primary ring-1 ring-primary/50'
+                          : 'text-muted hover:bg-primary/5 hover:text-fg'
                       }`}
                     >
-                      <Icono className="size-4" />
-                      {etiqueta}
+                      <span className="truncate">{sub.nombre}</span>
                     </button>
-                  )
-                })}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             <ul className="grid min-h-0 flex-1 grid-cols-1 content-start gap-2.5 overflow-y-auto overscroll-contain px-4 pb-4 sm:grid-cols-2 md:grid-cols-1 lg:grid-cols-2 short:gap-2">
-              {visibles.length === 0 && (
+              {platos.isPending && seccion !== null && (
+                <li role="status" className="col-span-full py-10 text-center text-sm text-muted">
+                  Cargando productos...
+                </li>
+              )}
+              {platos.isError && (
+                <li role="alert" className="col-span-full py-10 text-center text-sm text-muted">
+                  No se pudieron cargar los productos.{' '}
+                  <button
+                    type="button"
+                    onClick={() => void platos.refetch()}
+                    className="cursor-pointer font-bold text-primary underline"
+                  >
+                    Reintentar
+                  </button>
+                </li>
+              )}
+              {platos.isSuccess && visibles.length === 0 && (
                 <li className="col-span-full py-10 text-center text-sm text-muted">
-                  No hay productos que coincidan con la búsqueda.
+                  No hay productos que coincidan.
                 </li>
               )}
               {visibles.map((plato, i) => {
-                const c = cantidades[plato.id] ?? 0
+                const c = elegidos[plato.id]?.cantidad ?? 0
                 return (
                   <li
                     key={plato.id}
@@ -219,7 +269,7 @@ function Contenido({ codigo, numero, alCerrar }: ContenidoProps) {
                   >
                     <div className="min-w-0 flex-1">
                       <h3 className="truncate text-sm font-bold">{plato.nombre}</h3>
-                      <p className="line-clamp-1 text-xs text-muted">{plato.detalle}</p>
+                      <p className="line-clamp-1 text-xs text-muted">Código {plato.id}</p>
                       <p className="mt-1 text-sm font-extrabold tabular-nums text-primary">
                         {formatoMoneda(plato.precio)}
                       </p>
@@ -274,15 +324,10 @@ function Contenido({ codigo, numero, alCerrar }: ContenidoProps) {
                   {formatoMoneda(total)}
                 </strong>
               </div>
-              <button
-                type="button"
-                disabled={!items.length}
-                onClick={enviar}
-                className="flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-club-pc to-club-tertiary font-bold text-white shadow-[0_10px_24px_rgba(43,83,184,.35)] transition hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none short:h-10"
-              >
-                <Send className="size-[18px]" />
-                Enviar a cocina
-              </button>
+              {botonEnviar(
+                'flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-club-pc to-club-tertiary font-bold text-white shadow-[0_10px_24px_rgba(43,83,184,.35)] transition hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none short:h-10',
+                'Enviar a cocina',
+              )}
             </div>
           </aside>
         </div>
@@ -314,15 +359,10 @@ function Contenido({ codigo, numero, alCerrar }: ContenidoProps) {
                 </strong>
               </span>
             </button>
-            <button
-              type="button"
-              disabled={!items.length}
-              onClick={enviar}
-              className="flex h-12 cursor-pointer items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-club-pc to-club-tertiary px-5 font-bold text-white shadow-[0_10px_24px_rgba(43,83,184,.35)] transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none short:h-10"
-            >
-              <Send className="size-[18px]" />
-              Enviar
-            </button>
+            {botonEnviar(
+              'flex h-12 cursor-pointer items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-club-pc to-club-tertiary px-5 font-bold text-white shadow-[0_10px_24px_rgba(43,83,184,.35)] transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none short:h-10',
+              'Enviar',
+            )}
           </div>
         </div>
       </section>

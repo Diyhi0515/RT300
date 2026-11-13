@@ -15,10 +15,13 @@ from .modules.auth.tokens import EmisorTokens
 from .modules.clientes.repository import SqlClientesRepository
 from .modules.clientes.service import ClientesService
 from .modules.comandas.administrar import AdministrarComandasService
+from .modules.comandas.armar import ArmarComandaService
+from .modules.comandas.catalogo_menu import CatalogoDesdeMenu
 from .modules.comandas.guardar import GuardarComandaService
 from .modules.comandas.repository import SqlComandasRepository
 from .modules.cuentas.repository import SqlCuentasRepository
 from .modules.cuentas.service import CuentasService
+from .modules.menu.cache import MenuRepoConCache
 from .modules.menu.repository import SqlMenuRepository
 from .modules.menu.service import MenuService
 from .modules.salon.repository import SqlSalonRepository
@@ -51,11 +54,16 @@ def clientes_service() -> ClientesService:
 
 
 def menu_service() -> MenuService:
-    return MenuService(SqlMenuRepository(get_db()))
+    return MenuService(MenuRepoConCache(SqlMenuRepository(get_db()), current_app.extensions["cache_menu"]))
 
 
 def guardar_comanda_service() -> GuardarComandaService:
     return GuardarComandaService(SqlComandasRepository(get_db()), _uow(), _gateway())
+
+
+def armar_comanda_service() -> ArmarComandaService:
+    repo = SqlComandasRepository(get_db())
+    return ArmarComandaService(repo, CatalogoDesdeMenu(menu_service()), GuardarComandaService(repo, _uow(), _gateway()))
 
 
 def administrar_comandas_service() -> AdministrarComandasService:

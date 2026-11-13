@@ -1,0 +1,117 @@
+{
+  "cuentas": [
+    {
+      "cage": 12000,
+      "cliente": "CLIENTE 1",
+      "estc": 1,
+      "impt": 172,
+      "lineas": [
+        {
+          "cant": 1,
+          "cart": "14002",
+          "descripcion": "POLLO A LA PLANCHA",
+          "impt": 70,
+          "pvta": 70
+        },
+        {
+          "cant": 2,
+          "cart": "5104005",
+          "descripcion": "GASEOSAS V/S COCA, FANTA, SPRITE 500 ML.",
+          "impt": 26,
+          "pvta": 13
+        },
+        {
+          "cant": 2,
+          "cart": "5201005",
+          "descripcion": "CERVEZA HUARI GRANDE  620 ML.",
+          "impt": 60,
+          "pvta": 30
+        },
+        {
+          "cant": 2,
+          "cart": "8051003",
+          "descripcion": "CUÑAPE",
+          "impt": 16,
+          "pvta": 8
+        }
+      ],
+      "ncta": 3,
+      "ndid": "0",
+      "nombre": "NOMBRE 2",
+      "nruc": "0"
+    },
+    {
+      "cage": 12000,
+      "cliente": "CLIENTE 3",
+      "estc": 1,
+      "impt": 31,
+      "lineas": [
+        {
+          "cant": 1,
+          "cart": "35013",
+          "descripcion": "CAFE AMERICANO",
+          "impt": 15,
+          "pvta": 15
+        },
+        {
+          "cant": 2,
+          "cart": "8051003",
+          "descripcion": "CUÑAPE",
+          "impt": 16,
+          "pvta": 8
+        }
+      ],
+      "ncta": 4,
+      "ndid": "0",
+      "nombre": "NOMBRE 4",
+      "nruc": "0"
+    },
+    {
+      "cage": 12000,
+      "cliente": "CLIENTE 5",
+      "estc": 1,
+      "impt": 168,
+      "lineas": [
+        {
+          "cant": 1,
+          "cart": "15014",
+          "descripcion": "TRUCHA CON ALCAPARRAS",
+          "impt": 120,
+          "pvta": 120
+        },
+        {
+          "cant": 1,
+          "cart": "32025",
+          "descripcion": "BALON DE PAPAYA",
+          "impt": 15,
+          "pvta": 15
+        },
+        {
+          "cant": 1,
+          "cart": "33017",
+          "descripcion": "MIX DE FRUTAS",
+          "impt": 8,
+          "pvta": 8
+        },
+        {
+          "cant": 1,
+          "cart": "5103010",
+          "descripcion": "ENERGIZANTE SANTE SPORT 500 ML",
+          "impt": 12,
+          "pvta": 12
+        },
+        {
+          "cant": 1,
+          "cart": "5104005",
+          "descripcion": "GASEOSAS V/S COCA, FANTA, SPRITE 500 ML.",
+          "impt": 13,
+          "pvta": 13
+        }
+      ],
+      "ncta": 6,
+      "ndid": "0",
+      "nombre": "NOMBRE 6",
+      "nruc": "0"
+    }
+  ]
+}

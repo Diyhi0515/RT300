@@ -1,0 +1,64 @@
+{
+  "platos": [
+    {
+      "cart": "5101004",
+      "csme": 1,
+      "cssm": 1,
+      "descripcion": "AGUA C/SIN GAS MENDOCINA 600 ML",
+      "imagen": "",
+      "mfra": "N",
+      "moneda": "Bs.",
+      "pvta": 8
+    },
+    {
+      "cart": "5101002",
+      "csme": 1,
+      "cssm": 1,
+      "descripcion": "AGUA C/SIN GAS VITAL 600 ML",
+      "imagen": "",
+      "mfra": "N",
+      "moneda": "Bs.",
+      "pvta": 10
+    },
+    {
+      "cart": "5101008",
+      "csme": 1,
+      "cssm": 1,
+      "descripcion": "AGUA TONICA GINGER ALE 1000 ML",
+      "imagen": "",
+      "mfra": "N",
+      "moneda": "Bs.",
+      "pvta": 35
+    },
+    {
+      "cart": "5101024",
+      "csme": 1,
+      "cssm": 1,
+      "descripcion": "AGUA TONICA LA CABAÑA",
+      "imagen": "",
+      "mfra": "N",
+      "moneda": "Bs.",
+      "pvta": 10
+    },
+    {
+      "cart": "5101025",
+      "csme": 1,
+      "cssm": 1,
+      "descripcion": "AGUA TONICA SCHWEPPES DE 990 ML",
+      "imagen": "",
+      "mfra": "S",
+      "moneda": "Bs.",
+      "pvta": 25
+    },
+    {
+      "cart": "5103018",
+      "csme": 1,
+      "cssm": 2,
+      "descripcion": "APEGO DE 300 ML",
+      "imagen": "",
+      "mfra": "N",
+      "moneda": "Bs.",
+      "pvta": 20
+    }
+  ]
+}

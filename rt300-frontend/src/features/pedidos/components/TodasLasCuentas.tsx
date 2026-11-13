@@ -17,6 +17,7 @@ interface TodasLasCuentasProps {
   cuentas: Cuenta[]
   activa: number | undefined
   puedeAgregar: boolean
+  puedeEliminar: (numero: number) => boolean
   alElegir: (numero: number) => void
   alActualizar: (numero: number, datos: DatosCuenta) => void
   alEditarCuentas: () => void
@@ -53,6 +54,7 @@ export function TodasLasCuentas({
   cuentas,
   activa,
   puedeAgregar,
+  puedeEliminar,
   alElegir,
   alActualizar,
   alEditarCuentas,
@@ -147,7 +149,7 @@ export function TodasLasCuentas({
                   </span>
                 </span>
               </button>
-              {cuentas.length > 1 && (
+              {puedeEliminar(c.numero) && (
                 <button
                   type="button"
                   onClick={() => alEliminar(c.numero)}

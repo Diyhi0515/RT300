@@ -39,3 +39,14 @@ def test_no_permite_salirse_de_la_carpeta(tmp_path):
     carpeta.mkdir()
     r = images.servir("../secreto.txt", 480, str(carpeta), str(tmp_path / "c"))
     assert r.headers.get("X-Placeholder") == "1"
+
+
+def test_si_la_cache_no_es_escribible_se_sirve_igual_sin_guardar(tmp_path):
+    origen = tmp_path / "img"
+    origen.mkdir()
+    Image.new("RGB", (800, 600), "green").save(origen / "plato.jpg")
+    cache_bloqueada = tmp_path / "es-un-archivo"
+    cache_bloqueada.write_text("no es una carpeta")          # mkdir falla: simula un volumen sin permiso
+    r = images.servir("plato.jpg", 320, str(origen), str(cache_bloqueada))
+    assert r.mimetype == "image/webp" and r.headers.get("X-Placeholder") is None
+    assert r.get_data()[:4] == b"RIFF"

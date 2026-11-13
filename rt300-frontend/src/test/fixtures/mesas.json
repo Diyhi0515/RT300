@@ -1,0 +1,72 @@
+{
+  "mesas": [
+    {
+      "apertura": null,
+      "area": 1,
+      "capacidad": 6,
+      "comensales": null,
+      "consumo": 0,
+      "cuentas": 0,
+      "cven": null,
+      "descripcion": "MESA 2",
+      "estado": 1,
+      "folio": 0,
+      "mesa": "HPB02",
+      "mozo": null,
+      "posx": 2,
+      "posy": 1,
+      "stat": 1
+    },
+    {
+      "apertura": "2026-07-24T15:39:43",
+      "area": 1,
+      "capacidad": 6,
+      "comensales": 50,
+      "consumo": 2084,
+      "cuentas": 50,
+      "cven": 12018,
+      "descripcion": "MESA 1",
+      "estado": 3,
+      "folio": 252438,
+      "mesa": "HPB01",
+      "mozo": "MOZO 1",
+      "posx": 1,
+      "posy": 1,
+      "stat": 1
+    },
+    {
+      "apertura": "2026-07-24T15:39:43",
+      "area": 1,
+      "capacidad": 6,
+      "comensales": 50,
+      "consumo": 2084,
+      "cuentas": 50,
+      "cven": 12018,
+      "descripcion": "MESA 1",
+      "estado": 3,
+      "folio": 252438,
+      "mesa": "HPB01",
+      "mozo": "MOZO 2",
+      "posx": 1,
+      "posy": 1,
+      "stat": 1
+    },
+    {
+      "apertura": null,
+      "area": 1,
+      "capacidad": 6,
+      "comensales": null,
+      "consumo": 0,
+      "cuentas": 0,
+      "cven": null,
+      "descripcion": "MESA 2",
+      "estado": 1,
+      "folio": 0,
+      "mesa": "HPB02",
+      "mozo": null,
+      "posx": 2,
+      "posy": 1,
+      "stat": 1
+    }
+  ]
+}

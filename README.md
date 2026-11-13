@@ -5,8 +5,8 @@ y la misma lógica de negocio del sistema PHP anterior (`RT-300WEB`), pero más 
 
 | Carpeta | Qué es | Estado |
 |---|---|---|
-| [`rt300-backend/`](rt300-backend/README.md) | API REST en Flask (37 endpoints, JWT, arquitectura limpia) | Completa y probada con el gateway falso |
-| [`rt300-frontend/`](rt300-frontend/src/features/auth/README.md) | React + Vite + TypeScript (PWA) | Login conectado al backend; faltan las demás pantallas |
+| [`rt300-backend/`](rt300-backend/README.md) | API REST en Flask (40 endpoints, JWT, arquitectura limpia) | Completa y probada con el gateway falso |
+| [`rt300-frontend/`](rt300-frontend/src/features/pedidos/README.md) | React + Vite + TypeScript (PWA) | Login, mesas, cuentas y comanda conectados al backend ([login](rt300-frontend/src/features/auth/README.md), [pedidos](rt300-frontend/src/features/pedidos/README.md)) |
 | [`docs/`](docs/) | Arquitectura, diseño, puesta en marcha, registro de cambios, colección Bruno | Al día |
 | `docker/`, `docker-compose.yml` | SQL Server 2017 con restauración del `.bak`, backend y frontend | Funcionando |
 | `img/Restaurantes/` | Imágenes de platos del sistema antiguo | Copiada |
