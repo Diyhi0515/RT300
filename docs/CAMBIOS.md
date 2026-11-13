@@ -48,7 +48,7 @@ Sin cambios de esquema de BD ni de flujo de negocio. Guía para probar: [04-prue
 ### Pruebas
 | Dónde | Cantidad | Cómo |
 |---|---|---|
-| Backend unitarias | 143 | `docker compose exec backend python -m pytest tests/unit -q` |
+| Backend unitarias | 150 | `docker compose exec backend python -m pytest tests/unit -q` |
 | Backend integración (solo lectura) | 11 | `RT300_INTEGRATION=1 ... pytest tests/integration` |
 | Front (Vitest + Testing Library + msw) | 81 | `npm test` |
 
@@ -65,13 +65,26 @@ Front: mapeos, cálculos, contrato con el backend (respuestas reales anonimizada
 - **CSRF:** `/auth/refresh` y `/auth/logout` exigen `X-Requested-With: rt300` (403 `CSRF` sin ella); CORS con credenciales solo para `CORS_ORIGINS`; logout nunca falla por un token vencido y revoca acceso y renovación.
 - **Contrato:** el login ya no devuelve `refresh_token`; logout sin cuerpo. La colección de Bruno se actualizó (Refresh sin auth y con la cabecera).
 - **CSP y cabeceras del front** en `docker/proxy/Caddyfile.prod` (perfil `produccion`, puerto 8444): `script-src 'self'` sin inline, etc. Verificada en el navegador sin violaciones. El script del tema pasó a `public/tema-inicial.js`. Ver [03 §7.2](03-puesta-en-marcha.md).
-- Pruebas: backend 143 unitarias; front 79.
+- Pruebas: backend 150 unitarias; front 79.
 - **Limitación de la prueba:** el service worker del PWA no se pudo comprobar en el navegador integrado (no registra service workers, con o sin CSP); la CSP lo permite (`worker-src 'self'`). La prueba de la CSP se hizo por HTTP local con la misma política (sin `upgrade-insecure-requests`), porque el navegador integrado no confía en el certificado local de Caddy.
 
 ### Corrección: cuentas no pueden superar a comensales
 - Yo había quitado esta regla creyendo que el sistema antiguo no la tenía. **Sí la tiene** (`PHJ/RT300a.js`, validación al ocupar y al modificar la mesa; solo en el navegador, el PHP no la comprobaba). Se restauró y ahora además la exige el servidor: `422 CUENTAS_MAYOR_COMENSALES` al ocupar y al modificar (y `COMENSALES_INVALIDOS` si hay menos de 1 comensal), después de comprobar el acceso al local.
 - **Auditoría completa de restricciones** del sistema antiguo (tabla en [`features/pedidos/README.md`](../rt300-frontend/src/features/pedidos/README.md)): todas se cumplen en el servidor; la única que faltaba además de esta era el diálogo "Confirma: Guardar Comanda?", ya agregado en el front ("¿Enviar la comanda?").
 - Front: el contador de cuentas no pasa del número de comensales, los comensales no bajan del número de cuentas, y "agregar cuenta" avisa si ya hay tantas cuentas como comensales. Pruebas nuevas: 4 en el backend y 1 en el front.
+
+### Corrección: lista pública de usuarios del acceso rápido
+- `GET /auth/usuarios` devolvía **89** usuarios; el `index.php` antiguo solo listaba **34**: habilitado (`adusrmrcb = 0`), con clave y marcado en `rturt.rturtmtab = 1`. Se había perdido el filtro `rturtmtab` al migrar. Restaurado; prueba de integración que compara con la consulta original.
+- Sigue siendo una ruta pública, igual que en el sistema antiguo (devuelve solo `usuario` y `nombre`, con límite de 30/min). Reducirla más (por red del club o quitando el acceso rápido) es una decisión pendiente.
+
+### Auditoría de filtros y reglas del sistema antiguo (2026-11-13)
+Se comparó, consulta por consulta, el SQL del PHP (`index.php`, `RT300a/b/c/303.php`) con los repositorios nuevos. **Coinciden**: login (todas las comprobaciones), mesas y áreas (`stat = 1`, `mrcb = 0`), cuentas (`mrcb = 0`), comandas vigentes (`esco = 1`, `mrcb = 0`), menú (secciones, subsecciones, platos con la unión de `rtacp` y `rtalbmprd = 'N'`, extras, textos), clientes, estado de cuenta y las comprobaciones de guardar comanda. Se encontraron y corrigieron:
+- **Lista del acceso rápido** (filtro `rturtmtab = 1`): ver sección anterior.
+- **Eliminar y reimprimir comandas:** el sistema antiguo dejaba elegir solo comandas vigentes del folio y un motivo de la tabla, y el servicio de comandas lo volvía a comprobar. Aquí no se comprobaba nada antes de escribir: se podía mandar el número de una comanda ajena al folio. Ahora el servidor exige que los productos sean de comandas vigentes del folio (`ITEMS_NO_VIGENTES`), que el motivo exista (`MOTIVO_INVALIDO`) y que la mesa sea la del folio (`MESA_NO_COINCIDE`), antes de registrar nada.
+- **Imprimir cuenta:** solo se imprime una cuenta abierta (`CUENTA_NO_ABIERTA`), como en la lista del PHP; antes bastaba con que el folio estuviera abierto.
+- Pruebas: 150 unitarias en el backend.
+
+Diferencias a propósito (más estrictas o distintas, no se perdió nada): la cantidad por producto se limita a 99; el login da un mismo mensaje para clave faltante, usuario inexistente o clave errónea; la sesión es un token de 15 min renovable por 1 día (el PHP usaba una sesión de 24 h con renovación por uso).
 
 ### Pendiente / decisiones abiertas
 `GET /auth/usuarios` sigue público; roles reales para autorizar eliminar comanda; hash de clave fuerte (requiere tabla propia); servicio SOAP real sin probar (192.168.0.2 no es alcanzable desde esta PC).

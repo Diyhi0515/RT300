@@ -8,11 +8,13 @@ from .ports import AccesoPedidos, Credencial
 
 class SqlAuthRepository(SqlRepository):
     def usuarios_de_pedidos(self) -> list[dict]:
+        """Lista del acceso rápido. Mismo filtro que el index.php antiguo: habilitado, con clave y marcado en rturt.rturtmtab = 1."""
         return self._rows(
             """SELECT a.adusrusrn AS usuario, a.adusrnomb AS nombre
                  FROM adusr a
-                WHERE a.adusrmrcb <> 1
-                  AND EXISTS (SELECT 1 FROM rturt r WHERE r.rturtuser = a.adusrusrn)
+                WHERE a.adusrmrcb = 0
+                  AND a.adusrclav IS NOT NULL
+                  AND EXISTS (SELECT 1 FROM rturt r WHERE r.rturtuser = a.adusrusrn AND r.rturtmtab = 1)
                 ORDER BY a.adusrnomb""")
 
     def credencial(self, usuario: str) -> Credencial | None:

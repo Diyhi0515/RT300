@@ -31,6 +31,8 @@ class CuentasService:
         exigir_local(u, self._repo.local_de_folio(nfol))
         if not self._repo.folio_abierto(nfol):
             raise NotFound(f"NO EXISTE FOLIO: {nfol}", "FOLIO_NO_EXISTE")
+        if ncta not in {int(c["ncta"]) for c in self._repo.cuentas_abiertas(nfol)}:
+            raise NotFound(f"No se encontro la Cta.: {ncta} abierta en el Folio: {nfol}", "CUENTA_NO_ABIERTA")
         r = invocar(self._printer.estado_cuenta, EstadoCuentaReq(
             nfol=nfol, ncta=ncta, tped=1, mesa=mesa, cven=cven, caco=caco, calm=str(u.calm), cloc=str(u.cloc), usrn=u.usuario))
         if not r.ok:

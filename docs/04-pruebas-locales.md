@@ -59,11 +59,11 @@ Debes ver el módulo **Administración** en `/inicio`; dentro, el sidebar con Pa
 ## 4. Pruebas automáticas
 
 ```bash
-# Backend: 143 pruebas unitarias (sin BD) y estilo
+# Backend: 150 pruebas unitarias (sin BD) y estilo
 docker compose exec backend python -m pytest tests/unit -q
 docker compose exec backend ruff check app tests
 
-# Backend contra la BD de Docker (11 pruebas, solo lectura)
+# Backend contra la BD de Docker (12 pruebas, solo lectura)
 docker compose exec -T -e RT300_INTEGRATION=1 backend python -m pytest tests/integration -q
 
 # Front: tipos, estilo, pruebas y build

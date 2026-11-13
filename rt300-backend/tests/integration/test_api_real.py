@@ -125,3 +125,23 @@ def test_cerrar_sesion_revoca_el_token(cliente):
     cliente.post("/api/v1/auth/logout", headers={**h, **csrf})
     assert cliente.get("/api/v1/auth/me", headers=h).get_json()["error"]["code"] == "TOKEN_REVOCADO"
     assert cliente.post("/api/v1/auth/refresh", headers=csrf).status_code == 401
+
+
+def test_el_acceso_rapido_lista_solo_los_usuarios_que_listaba_el_sistema_antiguo(cliente):
+    """Mismo filtro que el index.php antiguo: habilitado, con clave y marcado en rturt.rturtmtab = 1."""
+    from sqlalchemy import text
+
+    from app.core.db import get_db
+
+    listados = {u["usuario"] for u in cliente.get("/api/v1/auth/usuarios").get_json()["usuarios"]}
+    with cliente.application.app_context():
+        esperados = {
+            str(f[0]).strip()
+            for f in get_db().execute(
+                text(
+                    "SELECT adusrusrn FROM rturt, adusr WHERE rturtuser = adusrusrn "
+                    "AND adusrclav IS NOT NULL AND adusrmrcb = 0 AND rturtmtab = 1"
+                )
+            )
+        }
+    assert listados == esperados and listados
