@@ -16,6 +16,7 @@ class Credencial:
     cloc: int | None
     calm: int | None
     cven: str          # código de mesero en la agenda
+    caja: str = ""     # adusrcaja
 
 
 @dataclass(frozen=True)
@@ -34,3 +35,4 @@ class AuthRepo(Protocol):
     def mesero_deshabilitado(self, cven: str) -> bool | None: ...   # None = no existe en la agenda
     def hay_parametros_restaurant(self) -> bool: ...
     def nombre_local(self, cloc: int) -> str: ...
+    def registradora(self, usuario: str, cloc: int, nreg_rturt: int) -> int: ...

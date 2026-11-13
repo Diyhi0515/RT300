@@ -135,7 +135,7 @@ la migración a un hash fuerte requiere una tabla propia y está pendiente de ap
 ## Pruebas y calidad
 
 ```bash
-docker compose exec backend python -m pytest tests/unit -q            # 150 pruebas, sin BD
+docker compose exec backend python -m pytest tests/unit -q            # 158 pruebas, sin BD
 docker compose exec -T -e RT300_INTEGRATION=1 backend python -m pytest tests/integration -q   # 12 pruebas, solo lectura, con la BD
 docker compose exec backend ruff check app tests                       # estilo y errores comunes
 ```

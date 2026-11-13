@@ -12,7 +12,6 @@ from .schemas import (
     ComandaGuardadaOut,
     EliminarComandaIn,
     EnviarComandaIn,
-    GuardarComandaIn,
     MotivosOut,
     ReimprimirComandaIn,
     ReintentarIn,
@@ -21,17 +20,10 @@ from .schemas import (
 bp = Blueprint("comandas", __name__)
 
 
-@bp.post("/comandas")
-@autenticado
-def guardar():
-    b = GuardarComandaIn.model_validate(request.get_json(silent=True) or {})
-    return responder(ComandaGuardadaOut, guardar_comanda_service().guardar(usuario_actual(), b), 201)
-
-
 @bp.post("/folios/<int:nfol>/cuentas/<int:ncta>/comandas")
 @autenticado
 def enviar(nfol: int, ncta: int):
-    """Camino normal para el frontend: solo plato y cantidad; el servidor arma precios e insumos."""
+    """Único camino para guardar una comanda: el cliente elige, el servidor valida y arma precios, insumos y textos."""
     b = EnviarComandaIn.model_validate(request.get_json(silent=True) or {})
     return responder(ComandaGuardadaOut, armar_comanda_service().enviar(usuario_actual(), nfol, ncta, b), 201)
 

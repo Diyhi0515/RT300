@@ -26,6 +26,7 @@ import {
 } from '../hooks'
 import { usePedidos } from '../store'
 import type { DatosCuenta, MesaDetalle } from '../types'
+import { MAXIMO_COMENSALES, MAXIMO_CUENTAS } from '../limites'
 import { ConfirmarAccion } from './ConfirmarAccion'
 import { Contador } from './Contador'
 import { TodasLasCuentas } from './TodasLasCuentas'
@@ -36,7 +37,6 @@ interface ResumenMesaProps {
 
 const COLUMNAS = 'grid-cols-[minmax(0,1fr)_2rem_3.6rem_4.2rem]'
 
-const MAXIMO_CUENTAS = 50
 
 const accion =
   'flex h-11 cursor-pointer items-center justify-center gap-2 rounded-xl border border-line bg-surface px-3 text-sm font-semibold transition hover:border-primary/50 hover:bg-primary/5 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 short:h-10'
@@ -196,7 +196,7 @@ export function ResumenMesa({ mesa }: ResumenMesaProps) {
             etiqueta="Comensales"
             valor={comensales}
             minimo={Math.max(1, cuentas)}
-            maximo={Math.max(mesa.capacidad + 4, 12, mesa.comensales, cuentas)}
+            maximo={MAXIMO_COMENSALES}
             alCambiar={setComensales}
           />
           <Contador

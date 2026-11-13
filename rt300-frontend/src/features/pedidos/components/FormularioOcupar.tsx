@@ -4,14 +4,13 @@ import { useSesion } from '@/features/auth'
 import { vibrar } from '@/lib/vibrar'
 import { notificar } from '@/shared/avisos/almacen'
 import { useOcuparMesa } from '../hooks'
+import { MAXIMO_COMENSALES, MAXIMO_CUENTAS } from '../limites'
 import type { MesaPlano } from '../types'
 import { Contador } from './Contador'
 
 interface FormularioOcuparProps {
   mesa: MesaPlano
 }
-
-const MAXIMO_CUENTAS = 20
 
 const primario =
   'flex h-12 w-full cursor-pointer items-center justify-center rounded-xl bg-gradient-to-r from-club-pc to-club-tertiary text-base font-bold text-white shadow-[0_10px_24px_rgba(43,83,184,.35)] transition hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 short:h-10 short:text-sm'
@@ -50,7 +49,7 @@ export function FormularioOcupar({ mesa }: FormularioOcuparProps) {
         detalle={`Capacidad de ${mesa.capacidad}`}
         valor={comensales}
         minimo={Math.max(1, cuentas)}
-        maximo={Math.max(mesa.capacidad + 4, 12)}
+        maximo={MAXIMO_COMENSALES}
         alCambiar={setComensales}
       />
       <Contador

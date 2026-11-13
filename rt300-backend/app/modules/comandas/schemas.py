@@ -2,7 +2,7 @@
 sistema anterior (rtcda, rttac, rttco, rtcia, rtcic) para que los dueños los reconozcan."""
 from __future__ import annotations
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from ...core.respuesta import Salida
 
@@ -88,17 +88,48 @@ class GuardarComandaIn(_Base):
     rtcic: list[ComponenteInsumo] = []
 
 
+class TextoRef(_Base):
+    """Un texto predefinido (rttxt): el texto en sí lo pone el servidor."""
+
+    pref: int
+    corr: int = Field(ge=1)
+
+
+class AjusteInsumo(_Base):
+    """Cambio sobre un insumo del plato: quitarlo o reemplazarlo por uno de sus alternativos (rtial)."""
+
+    cins: str = Field(min_length=1, max_length=30)
+    quitar: bool = False
+    alternativo: str | None = Field(default=None, max_length=30)
+
+    @model_validator(mode="after")
+    def _una_sola_accion(self) -> AjusteInsumo:
+        if self.quitar == (self.alternativo is not None):
+            raise ValueError("Indique quitar el insumo o un alternativo, no ambos ni ninguno.")
+        return self
+
+
+class ExtraIn(_Base):
+    cart: str = Field(min_length=1, max_length=30)
+    cant: int = Field(default=1, ge=1, le=99)
+
+
 class ItemEnviarIn(_Base):
-    """Lo único que decide el garzón: qué plato y cuántos. El precio, el centro de producción y los insumos salen de la base."""
+    """Lo que decide el garzón sobre un plato. El precio, los insumos y los textos salen de la base: aquí solo se eligen."""
 
     cart: str = Field(min_length=1, max_length=30)
     cant: int = Field(ge=1, le=99)
     glos: str = Field(default="", max_length=100)
+    ccpd: int | None = Field(default=None, description="Centro de producción alterno; si no se envía, el del local")
+    textos: list[TextoRef] = Field(default_factory=list, max_length=20)
+    insumos: list[AjusteInsumo] = Field(default_factory=list, max_length=50)
+    extras: list[ExtraIn] = Field(default_factory=list, max_length=20)
 
 
 class EnviarComandaIn(_Base):
     glos: str = Field(default="", max_length=200)
     items: list[ItemEnviarIn] = Field(min_length=1, max_length=100)
+    textos: list[TextoRef] = Field(default_factory=list, max_length=20)
 
 
 class ReintentarIn(_Base):

@@ -37,6 +37,12 @@ class CatalogoFalso:
         self.pedidas.append((cart, ctx, cpxc))
         return self.fichas[cart]
 
+    def alternativos(self, cins): return []
+    def extras_del_plato(self, csme, cssm): return {}
+    def textos_del_plato(self, cart): return {}
+    def textos_de_comanda(self): return {}
+    def centros_de_produccion(self, u, cart): return set()
+
 
 class GuardarFalso:
     def __init__(self):

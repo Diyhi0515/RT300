@@ -15,6 +15,7 @@ class Usuario:
     nreg: int   # registradora
     rol: str
     cven: int = 0   # código de mesero en la agenda (gbage); 0 si el usuario no tiene
+    caja: str = ""  # adusrcaja: solo quien tiene caja puede asignar otro mesero (regla del sistema antiguo)
 
     def claims(self) -> dict:
         """Lo que viaja en el JWT (nunca la clave)."""
@@ -25,4 +26,5 @@ class Usuario:
         return cls(
             usuario=c["usuario"], nombre=c.get("nombre", ""), cloc=int(c["cloc"]), calm=int(c["calm"]),
             cmon=int(c["cmon"]), nreg=int(c.get("nreg") or 0), rol=c.get("rol", "garzon"), cven=int(c.get("cven") or 0),
+            caja=str(c.get("caja") or ""),
         )

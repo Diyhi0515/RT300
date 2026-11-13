@@ -59,6 +59,9 @@ class SqlSalonRepository(MesaQueries):
                                     v.gbvenfpag, v.gbvencmon, v.gbvenfulq
                                FROM gbven v JOIN gbage g ON v.gbvencage = g.gbagecage ORDER BY v.gbvencage""")
 
+    def es_vendedor(self, cven: int) -> bool:
+        return self._one("SELECT 1 AS x FROM gbven v JOIN gbage g ON v.gbvencage = g.gbagecage WHERE v.gbvencage = :c", c=cven) is not None
+
     def mesas_por_area(self, caco: int) -> list[dict]:
         """Mesas del área con lo que muestra el plano: capacidad y, si está ocupada, el folio con comensales, mozo,
         apertura, nº de cuentas y consumo (todo en una consulta, sin una llamada por mesa)."""

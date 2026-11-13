@@ -364,7 +364,7 @@ Las credenciales `prueba/prueba` son solo para el contenedor de pruebas local.
 
 | Nivel | Qué prueba | Cómo | Estado |
 |---|---|---|---|
-| Unitarias | `services` con repositorios, gateway y UoW falsos | `docker compose exec backend python -m pytest tests/unit` | **150 pruebas** (servicios, auth, tokens, salón, clientes, comandas, acceso por local, gateway SOAP, imágenes, caché, configuración, API HTTP completa) |
+| Unitarias | `services` con repositorios, gateway y UoW falsos | `docker compose exec backend python -m pytest tests/unit` | **158 pruebas** (servicios, auth, tokens, salón, clientes, comandas, acceso por local, gateway SOAP, imágenes, caché, configuración, API HTTP completa) |
 | Integración | Repositorios y endpoints contra la BD de Docker (solo lectura) | `RT300_INTEGRATION=1 pytest tests/integration` | **12 pruebas** |
 | API | Rutas, permisos, cabeceras, límites, errores | `flask test client` (en unitarias) + colección Bruno | hecho |
 | Calidad | Estilo, errores comunes, seguridad estática | `ruff check app tests` | sin hallazgos |

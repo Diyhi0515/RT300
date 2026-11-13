@@ -18,19 +18,29 @@ class SqlAuthRepository(SqlRepository):
                 ORDER BY a.adusrnomb""")
 
     def credencial(self, usuario: str) -> Credencial | None:
-        r = self._one("SELECT adusrusrn, adusrnomb, adusrclav, adusrmrcb, adusrcloc, adusrcalm, adusrcven "
+        r = self._one("SELECT adusrusrn, adusrnomb, adusrclav, adusrmrcb, adusrcloc, adusrcalm, adusrcven, adusrcaja "
                       "FROM adusr WHERE adusrusrn = :u", u=usuario)
         if r is None:
             return None
         return Credencial(usuario=clean(r["adusrusrn"]), nombre=clean(r["adusrnomb"]), clave_guardada=clean(r["adusrclav"]),
                           deshabilitado=to_int(r["adusrmrcb"]) == 1, cloc=to_int(r["adusrcloc"]),
-                          calm=to_int(r["adusrcalm"]), cven=clean(r["adusrcven"]))
+                          calm=to_int(r["adusrcalm"]), cven=clean(r["adusrcven"]), caja=clean(r["adusrcaja"]))
 
     def acceso_pedidos(self, usuario: str) -> AccesoPedidos | None:
         r = self._one("SELECT rturttpin, rturtnreg FROM rturt WHERE rturtuser = :u", u=usuario)
         if r is None:
             return None
         return AccesoPedidos(tipo_pedido_inicial=clean(r["rturttpin"]), nreg=to_int(r["rturtnreg"], 0) or 0)
+
+    def registradora(self, usuario: str, cloc: int, nreg_rturt: int) -> int:
+        """Misma resolución que el index.php antiguo: la caja que el usuario tiene en uso (vtcre) o la de rturt, y solo
+        vale si esa caja existe en el local del usuario; si no, 0."""
+        en_uso = self._one("SELECT TOP 1 vtcrenreg FROM vtcre WHERE vtcremuso = 'S' AND vtcreuser = :u", u=usuario)
+        candidata = to_int(en_uso["vtcrenreg"]) if en_uso else nreg_rturt
+        if candidata is None:
+            return 0
+        existe = self._one("SELECT 1 AS x FROM vtcre WHERE vtcrenreg = :n AND vtcrecloc = :l", n=candidata, l=cloc)
+        return candidata if existe else 0
 
     def moneda_de_venta(self) -> int | None:
         r = self._one("SELECT TOP 1 gbrnemvta FROM gbrne")

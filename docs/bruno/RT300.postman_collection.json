@@ -798,37 +798,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"glos\": \"\",\n  \"items\": [\n    {\n      \"cart\": \"5101004\",\n      \"cant\": 2\n    },\n    {\n      \"cart\": \"12013\",\n      \"cant\": 1,\n      \"glos\": \"sin sal\"\n    }\n  ]\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          }
-        },
-        {
-          "name": "Guardar comanda",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/comandas",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "comandas"
-              ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"nfol\": 0,\n  \"ncta\": 1,\n  \"glos\": \"prueba\",\n  \"rtcda\": [\n    {\n      \"cart\": \"5101004\",\n      \"desc\": \"AGUA\",\n      \"cant\": 1,\n      \"pvta\": 8,\n      \"item\": 1,\n      \"impt\": 8,\n      \"cmon\": 1,\n      \"ccpd\": 0\n    }\n  ],\n  \"rttac\": [],\n  \"rttco\": [],\n  \"rtcia\": [],\n  \"rtcic\": []\n}",
+              "raw": "{\n  \"glos\": \"\",\n  \"textos\": [],\n  \"items\": [\n    {\n      \"cart\": \"5101004\",\n      \"cant\": 2,\n      \"ccpd\": null,\n      \"textos\": [\n        {\n          \"pref\": 1,\n          \"corr\": 6\n        }\n      ],\n      \"insumos\": [\n        {\n          \"cins\": \"30001\",\n          \"quitar\": true\n        }\n      ],\n      \"extras\": []\n    }\n  ]\n}",
               "options": {
                 "raw": {
                   "language": "json"
