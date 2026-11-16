@@ -3,6 +3,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   actualizarCuenta,
   buscarClientes,
+  compactarCuentas,
+  eliminarCuentas,
   enviarComanda,
   habilitarMesa,
   imprimirCuenta,
@@ -32,7 +34,7 @@ export const claves = {
   folio: (folio: number) => ['salon', 'folio', folio] as const,
   secciones: ['menu', 'secciones'] as const,
   platos: (seccion: number, subseccion: number) => ['menu', 'platos', seccion, subseccion] as const,
-  clientes: (filtro: FiltroClientes) => ['clientes', filtro] as const,
+  clientes: (filtro: FiltroClientes | null) => ['clientes', filtro] as const,
 }
 
 export const useParametros = () =>
@@ -116,7 +118,7 @@ export const usePlatos = (seccion: number | null, subseccion: number) =>
 
 export const useClientes = (filtro: FiltroClientes | null) =>
   useQuery({
-    queryKey: claves.clientes(filtro ?? {}),
+    queryKey: claves.clientes(filtro),
     queryFn: () => buscarClientes(filtro as FiltroClientes),
     enabled: filtro !== null,
     staleTime: 60_000,
@@ -166,6 +168,24 @@ export const useActualizarCuenta = () => {
     }: DatosActualizarCuenta & { folio: number; cuenta: number }) =>
       actualizarCuenta(folio, cuenta, datos),
     onSuccess: (_datos, { folio }) => refrescar(folio),
+  })
+}
+
+export const useEliminarCuentas = () => {
+  const refrescar = useRefrescar()
+  return useMutation({
+    mutationFn: ({ folio, mesa, cuentas }: { folio: number; mesa: string; cuentas: number[] }) =>
+      eliminarCuentas(folio, mesa, cuentas),
+    onSuccess: (_datos, { folio }) => refrescar(folio),
+  })
+}
+
+export const useCompactarCuentas = () => {
+  const refrescar = useRefrescar()
+  return useMutation({
+    mutationFn: ({ folio, mesa }: { folio: number; mesa: string }) => compactarCuentas(folio, mesa),
+    onSuccess: (_datos, { folio }) => refrescar(folio),
+    meta: { silent: true, silentError: true },
   })
 }
 

@@ -105,7 +105,7 @@ export function MenuAdminPage() {
             <input
               type="search"
               value={busqueda}
-              onChange={(e) => setBusqueda(e.target.value)}
+              onChange={(e) => setBusqueda(e.target.value.toUpperCase())}
               placeholder={`Buscar en ${actual?.nombre.toLowerCase() ?? 'la sección'}`}
               className={`${campo} pl-9 pr-3 [&::-webkit-search-cancel-button]:hidden`}
             />

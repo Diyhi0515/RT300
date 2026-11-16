@@ -215,7 +215,7 @@
 @keyframes rise {
   from {
     opacity: 0;
-    transform: translateY(16px);
+    transform: translateY(10px);
   }
   to {
     opacity: 1;
@@ -235,7 +235,7 @@
 @keyframes pop {
   from {
     opacity: 0;
-    transform: translateY(12px) scale(0.94);
+    transform: translateY(6px) scale(0.97);
   }
   to {
     opacity: 1;
@@ -270,11 +270,11 @@
 @keyframes chip-in {
   from {
     opacity: 0;
-    transform: translateY(10px) scale(0.94);
+    transform: translateY(6px);
   }
   to {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: translateY(0);
   }
 }
 
@@ -290,10 +290,10 @@
 
 @keyframes barrido {
   0% {
-    left: -40%;
+    transform: translateX(-100%);
   }
   100% {
-    left: 100%;
+    transform: translateX(250%);
   }
 }
 
@@ -320,7 +320,7 @@
 @keyframes entrar-lado {
   from {
     opacity: 0;
-    transform: translateX(14px);
+    transform: translateX(8px);
   }
   to {
     opacity: 1;

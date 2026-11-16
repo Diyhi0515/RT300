@@ -133,12 +133,12 @@ function Contenido({ codigo, numero, alCerrar }: ContenidoProps) {
   )
 
   return (
-    <div className="fixed inset-0 z-[70] flex animate-[fade_0.2s_ease-out] items-stretch justify-center bg-black/60 backdrop-blur-sm md:items-center md:p-6 short:md:p-3">
+    <div className="fixed inset-0 z-[70] flex animate-[fade_0.15s_ease-out] items-stretch justify-center bg-black/60 escritorio:backdrop-blur-sm md:items-center md:p-6 short:md:p-3">
       <section
         role="dialog"
         aria-modal="true"
         aria-label="Nueva comanda"
-        className="flex h-full w-full animate-[pop_0.25s_cubic-bezier(0.2,1.1,0.4,1)] flex-col overflow-hidden bg-bg text-fg md:h-[min(780px,100%)] md:max-w-5xl md:rounded-3xl md:border md:border-line md:shadow-[0_30px_80px_rgba(0,0,0,.45)]"
+        className="flex h-full w-full animate-[pop_0.16s_cubic-bezier(0.2,0.9,0.3,1)] flex-col overflow-hidden bg-bg text-fg md:h-[min(780px,100%)] md:max-w-5xl md:rounded-3xl md:border md:border-line md:shadow-[0_30px_80px_rgba(0,0,0,.45)]"
       >
         <header className="relative flex shrink-0 items-center gap-3 overflow-hidden bg-header px-4 pb-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] text-white md:pt-3 short:py-2">
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_10%_0%,rgba(43,83,184,0.3),transparent_50%)]" />
@@ -172,7 +172,7 @@ function Contenido({ codigo, numero, alCerrar }: ContenidoProps) {
                 <input
                   type="search"
                   value={busqueda}
-                  onChange={(e) => setBusqueda(e.target.value)}
+                  onChange={(e) => setBusqueda(e.target.value.toUpperCase())}
                   placeholder="Buscar en esta sección"
                   className="h-11 w-full rounded-xl border border-line bg-surface pl-9 pr-3 text-base outline-none transition placeholder:text-muted focus:border-primary focus:ring-4 focus:ring-primary/10 short:h-10 [&::-webkit-search-cancel-button]:hidden"
                 />
@@ -262,8 +262,8 @@ function Contenido({ codigo, numero, alCerrar }: ContenidoProps) {
                 return (
                   <li
                     key={plato.id}
-                    style={{ animationDelay: `${Math.min(i, 10) * 30}ms` }}
-                    className={`flex animate-[chip-in_0.3s_ease-out_both] items-center gap-3 rounded-2xl border p-3 transition duration-200 short:p-2 ${
+                    style={{ animationDelay: `${Math.min(i, 8) * 15}ms` }}
+                    className={`flex animate-[chip-in_0.16s_ease-out_both] items-center gap-3 rounded-2xl border p-3 transition duration-200 short:p-2 ${
                       c > 0
                         ? 'border-primary/60 bg-primary/[0.07] shadow-[0_8px_20px_rgba(43,83,184,.12)]'
                         : 'border-line bg-surface'
@@ -336,7 +336,7 @@ function Contenido({ codigo, numero, alCerrar }: ContenidoProps) {
 
         <div className="relative shrink-0 border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] md:hidden">
           {verResumen && (
-            <div className="max-h-[40dvh] animate-[subir_0.2s_ease-out] overflow-y-auto border-b border-line">
+            <div className="max-h-[40dvh] animate-[subir_0.18s_ease-out] overflow-y-auto border-b border-line">
               {resumen}
             </div>
           )}

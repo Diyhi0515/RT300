@@ -65,7 +65,7 @@ export function ModalAviso({
           className="flex flex-col items-center gap-3 px-6 pb-8 text-center short:flex-1 short:justify-center short:gap-2 short:px-6 short:py-5"
         >
           <span
-            className={`relative z-10 -mt-10 grid size-[76px] short:mt-0 short:size-14 animate-[pop_0.35s_cubic-bezier(0.2,1.2,0.4,1)] place-items-center rounded-3xl shadow-lg ring-4 ring-surface ${t.solid}`}
+            className={`relative z-10 -mt-10 grid size-[76px] short:mt-0 short:size-14 animate-[pop_0.16s_cubic-bezier(0.2,0.9,0.3,1)] place-items-center rounded-3xl shadow-lg ring-4 ring-surface ${t.solid}`}
           >
             <Icon className="size-9 short:size-7" strokeWidth={2} aria-hidden />
           </span>

@@ -44,8 +44,8 @@ export function TarjetaModulo({
       type="button"
       onClick={alAbrir}
       aria-disabled={!disponible}
-      style={{ animationDelay: `${indice * 90}ms` }}
-      className={`group relative flex h-[230px] w-full animate-[chip-in_0.45s_ease-out_both] cursor-pointer flex-col justify-between overflow-hidden rounded-[28px] border border-line p-5 text-left shadow-[0_14px_34px_rgba(1,21,38,.1)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_22px_44px_rgba(1,21,38,.16)] active:scale-[0.98] short:h-[180px] short:p-4 ${FONDO[tono]}`}
+      style={{ animationDelay: `${indice * 40}ms` }}
+      className={`group relative flex h-[230px] w-full animate-[chip-in_0.16s_ease-out_both] cursor-pointer flex-col justify-between overflow-hidden rounded-[28px] border border-line p-5 text-left shadow-[0_14px_34px_rgba(1,21,38,.1)] transition duration-200 hover:-translate-y-1 hover:shadow-[0_22px_44px_rgba(1,21,38,.16)] active:scale-[0.98] short:h-[180px] short:p-4 ${FONDO[tono]}`}
     >
       <Icono
         aria-hidden

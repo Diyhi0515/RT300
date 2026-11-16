@@ -20,13 +20,13 @@ export function BarraLateral({ abierta, alCerrar }: BarraLateralProps) {
       <div
         aria-hidden
         onClick={alCerrar}
-        className={`fixed inset-0 z-[55] bg-black/60 backdrop-blur-sm transition-opacity duration-300 lg:hidden ${
+        className={`fixed inset-0 z-[55] bg-black/60 escritorio:backdrop-blur-sm transition-opacity duration-200 lg:hidden ${
           abierta ? 'opacity-100' : 'pointer-events-none opacity-0'
         }`}
       />
       <aside
         aria-label="Administración"
-        className={`fixed inset-y-0 left-0 z-[56] flex w-72 flex-col border-r border-line bg-surface pt-[env(safe-area-inset-top)] transition-transform duration-300 lg:sticky lg:top-[72px] lg:z-auto lg:h-[calc(100dvh-72px)] lg:w-64 lg:shrink-0 lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-[56] flex w-72 flex-col border-r border-line bg-surface pt-[env(safe-area-inset-top)] transition-transform duration-200 lg:sticky lg:top-[72px] lg:z-auto lg:h-[calc(100dvh-72px)] lg:w-64 lg:shrink-0 lg:translate-x-0 ${
           abierta ? 'translate-x-0' : '-translate-x-full'
         }`}
       >

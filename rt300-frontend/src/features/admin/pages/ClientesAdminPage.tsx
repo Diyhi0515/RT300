@@ -34,7 +34,7 @@ export function ClientesAdminPage() {
         <input
           type="search"
           value={texto}
-          onChange={(e) => setTexto(e.target.value)}
+          onChange={(e) => setTexto(e.target.value.toUpperCase())}
           placeholder="Nombre o código del cliente"
           className="h-11 w-full rounded-xl border border-line bg-surface pl-9 pr-3 text-base outline-none transition placeholder:text-muted focus:border-primary focus:ring-4 focus:ring-primary/10 [&::-webkit-search-cancel-button]:hidden"
         />

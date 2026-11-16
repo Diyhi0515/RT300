@@ -65,7 +65,7 @@ export function CuadriculaMesas({ ayuda, alElegir }: CuadriculaMesasProps) {
           <input
             type="search"
             value={busqueda}
-            onChange={(e) => setBusqueda(e.target.value)}
+            onChange={(e) => setBusqueda(e.target.value.toUpperCase())}
             placeholder="Buscar mesa o zona"
             className="h-10 w-full rounded-xl border border-line bg-bg pl-9 pr-9 text-base outline-none transition placeholder:text-muted focus:border-primary focus:ring-4 focus:ring-primary/10 [&::-webkit-search-cancel-button]:hidden"
           />
@@ -141,8 +141,8 @@ export function CuadriculaMesas({ ayuda, alElegir }: CuadriculaMesasProps) {
               key={m.codigo}
               type="button"
               onClick={() => alElegir(m)}
-              style={{ animationDelay: `${Math.min(i, 18) * 25}ms` }}
-              className={`flex animate-[chip-in_0.35s_ease-out_both] cursor-pointer flex-col gap-2 rounded-2xl border bg-surface p-3 text-left transition duration-200 hover:-translate-y-0.5 hover:shadow-lg active:scale-95 short:gap-1 short:p-2 ${BORDE[m.estado]}`}
+              style={{ animationDelay: `${Math.min(i, 8) * 15}ms` }}
+              className={`flex animate-[chip-in_0.16s_ease-out_both] cursor-pointer flex-col gap-2 rounded-2xl border bg-surface p-3 text-left transition duration-200 hover:-translate-y-0.5 hover:shadow-lg active:scale-95 short:gap-1 short:p-2 ${BORDE[m.estado]}`}
             >
               <span className="flex items-start justify-between gap-2">
                 <strong className="text-2xl font-bold leading-none tabular-nums short:text-xl">

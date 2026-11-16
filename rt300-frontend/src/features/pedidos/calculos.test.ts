@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { cantidadItems, estadoCuenta, resumenMesas, tiempoCorto, totalCuenta, totalItems, totalMesa } from './calculos'
+import { cantidadItems, estadoCuenta, filtrarCuentas, ordenarCuentas, iniciales, resumenMesas, tiempoCorto, totalCuenta, totalItems, totalMesa } from './calculos'
 import type { Cuenta, ItemComanda, MesaPlano } from './types'
 
 const linea = (cantidad: number, precio: number) => ({ id: `${cantidad}-${precio}`, platoId: 'A', nombre: 'A', cantidad, precio })
@@ -90,5 +90,71 @@ describe('tiempoCorto', () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date('2026-11-13T12:00:00'))
     expect(tiempoCorto(Date.now() + 60_000)).toBe('Ahora')
+  })
+})
+
+describe('iniciales', () => {
+  it('toma la primera letra de las dos primeras palabras, en mayúscula', () => {
+    expect(iniciales('Asbun Rojas Jorge Antonio')).toBe('AR')
+    expect(iniciales('AÑEZ AGUILERA BLANCA')).toBe('AA')
+  })
+
+  it('con una sola palabra devuelve una letra y con nombre vacío un signo', () => {
+    expect(iniciales('cabrera')).toBe('C')
+    expect(iniciales('   ')).toBe('?')
+  })
+
+  it('ignora signos sueltos y espacios repetidos', () => {
+    expect(iniciales('  - ñuñez   (de) perez')).toBe('ÑD')
+  })
+})
+
+describe('filtrarCuentas', () => {
+  const cuentas: Cuenta[] = [
+    { numero: 1, nombre: 'ÑUÑEZ PEREZ', codigoCliente: '1018', nit: '2974484016', liquidada: false, lineas: [] },
+    { numero: 12, nombre: 'CONTABILIDAD', liquidada: false, lineas: [] },
+    { numero: 20, nombre: 'AGUILERA', codigoCliente: '17355', liquidada: false, lineas: [] },
+  ]
+
+  it('sin texto devuelve todas', () => {
+    expect(filtrarCuentas(cuentas, '  ')).toHaveLength(3)
+  })
+
+  it('busca por número, nombre sin importar tildes, código de cliente y NIT', () => {
+    expect(filtrarCuentas(cuentas, '12').map((c) => c.numero)).toEqual([12])
+    expect(filtrarCuentas(cuentas, 'nunez').map((c) => c.numero)).toEqual([1])
+    expect(filtrarCuentas(cuentas, '17355').map((c) => c.numero)).toEqual([20])
+    expect(filtrarCuentas(cuentas, '2974').map((c) => c.numero)).toEqual([1])
+  })
+
+  it('sin coincidencias devuelve una lista vacía', () => {
+    expect(filtrarCuentas(cuentas, 'zzz')).toEqual([])
+  })
+})
+
+describe('ordenarCuentas', () => {
+  const cuenta = (numero: number, nombre: string, codigoCliente?: string): Cuenta => ({
+    numero,
+    nombre,
+    codigoCliente,
+    liquidada: false,
+    lineas: [],
+  })
+
+  it('primero las cuentas con cliente en orden alfabético y luego las comunes por número', () => {
+    const cuentas = [
+      cuenta(1, 'CONTABILIDAD'),
+      cuenta(2, 'ZAPATA', '30'),
+      cuenta(3, 'ÁLVAREZ', '10'),
+      cuenta(4, 'CONTABILIDAD'),
+      cuenta(5, 'MENDEZ', '20'),
+    ]
+    expect(ordenarCuentas(cuentas).map((c) => c.numero)).toEqual([3, 5, 2, 1, 4])
+  })
+
+  it('no modifica la lista original y desempata por número', () => {
+    const cuentas = [cuenta(9, 'RAMOS', '1'), cuenta(2, 'RAMOS', '2')]
+    expect(ordenarCuentas(cuentas).map((c) => c.numero)).toEqual([2, 9])
+    expect(cuentas.map((c) => c.numero)).toEqual([9, 2])
   })
 })

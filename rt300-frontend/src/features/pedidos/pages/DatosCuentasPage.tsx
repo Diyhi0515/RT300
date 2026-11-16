@@ -1,27 +1,35 @@
 import { useEffect, useState } from 'react'
-import { ArrowLeft, Check, Hash, Search, Store, UserRoundSearch, Users } from 'lucide-react'
+import { ArrowLeft, Check, Hash, Search, Store, UserRoundSearch, UserRoundPen } from 'lucide-react'
 import { Link, Navigate, useParams } from 'react-router-dom'
 import { useSesion } from '@/features/auth'
-import { formatoMoneda } from '@/features/salon/formato'
 import { vibrar } from '@/lib/vibrar'
 import { notificar } from '@/shared/avisos/almacen'
 import { buscarClientes } from '../api'
-import { totalCuenta } from '../calculos'
-import { useActualizarCuenta, useClientes, useMesaDetalle } from '../hooks'
+import { ListadoClientes } from '../components/ListadoClientes'
+import { SelectorCuentas } from '../components/SelectorCuentas'
+import { TablaCuentasMesa } from '../components/TablaCuentasMesa'
+import { useActualizarCuenta, useMesaDetalle } from '../hooks'
 import { mapearCliente } from '../mapeos'
 import { usePedidos } from '../store'
 import type { ClienteRegistrado, Cuenta, MesaDetalle } from '../types'
 
+type Vista = 'datos' | 'clientes'
+
 const campo =
-  'h-11 w-full rounded-xl border border-line bg-surface px-3 text-sm font-medium outline-none transition focus:border-club-pc focus:ring-2 focus:ring-club-pc/25'
+  'h-12 w-full rounded-xl border border-line bg-surface px-3 text-base font-medium outline-none transition focus:border-club-pc focus:ring-2 focus:ring-club-pc/25 lg:h-11 lg:text-sm'
 
 const etiqueta = 'text-[11px] font-extrabold uppercase tracking-wide text-club-primary'
 
 const botonSecundario =
-  'inline-flex h-11 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-xl border border-line bg-surface px-4 text-sm font-semibold transition hover:border-club-pc/50 hover:bg-club-pc/5 active:scale-95'
+  'inline-flex h-12 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-xl border border-line bg-surface px-3.5 text-sm font-semibold transition hover:border-club-pc/50 hover:bg-club-pc/5 active:scale-95 sm:px-4 lg:h-11'
 
 const botonPrimario =
-  'inline-flex h-11 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-club-pc to-club-tertiary px-5 text-sm font-bold text-white shadow-[0_8px_20px_rgba(43,83,184,.3)] transition hover:brightness-110 active:scale-95'
+  'inline-flex h-12 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-club-pc to-club-tertiary px-5 text-sm font-bold text-white shadow-[0_8px_20px_rgba(43,83,184,.3)] transition hover:brightness-110 active:scale-95 lg:h-11'
+
+const pestanas: { id: Vista; texto: string; icono: typeof UserRoundPen }[] = [
+  { id: 'datos', texto: 'Datos de la cuenta', icono: UserRoundPen },
+  { id: 'clientes', texto: 'Clientes', icono: UserRoundSearch },
+]
 
 export function DatosCuentasPage() {
   const { codigo } = useParams()
@@ -54,35 +62,28 @@ function Contenido({ mesa }: ContenidoProps) {
   const [nombre, setNombre] = useState(inicial?.nombre ?? '')
   const [codigoCliente, setCodigoCliente] = useState(inicial?.codigoCliente ?? '')
   const [nit, setNit] = useState(inicial?.nit ?? '')
-  const [filtroNombre, setFiltroNombre] = useState('')
-  const [filtroCodigo, setFiltroCodigo] = useState('')
-  const [aplicado, setAplicado] = useState({ nombre: '', codigo: '' })
+  const [vista, setVista] = useState<Vista>('datos')
+  const [clienteCargado, setClienteCargado] = useState<string | null>(null)
 
   useEffect(() => {
     window.scrollTo(0, 0)
   }, [])
 
-  const filtro =
-    aplicado.codigo.trim() || aplicado.nombre.trim().length >= 2
-      ? {
-          nombre: aplicado.nombre.trim() || undefined,
-          codigo: Number(aplicado.codigo.trim()) || undefined,
-        }
-      : null
-  const consulta = useClientes(filtro)
-  const listado = consulta.data ?? []
-
   const elegirCuenta = (c: Cuenta) => {
     setNumero(c.numero)
-    setNombre(c.nombre)
+    setNombre(c.nombre.toUpperCase())
     setCodigoCliente(c.codigoCliente ?? '')
     setNit(c.nit ?? '')
+    setClienteCargado(null)
   }
 
   const aplicarCliente = (cliente: ClienteRegistrado) => {
     setCodigoCliente(cliente.codigo)
-    setNombre(cliente.nombre)
+    setNombre(cliente.nombre.toUpperCase())
     setNit(cliente.nit)
+    setClienteCargado(cliente.nombre.toUpperCase())
+    setVista('datos')
+    window.scrollTo({ top: 0, behavior: 'smooth' })
     vibrar('toque')
   }
 
@@ -101,7 +102,7 @@ function Contenido({ mesa }: ContenidoProps) {
   }
 
   const modificar = async () => {
-    const limpio = nombre.trim()
+    const limpio = nombre.trim().toUpperCase()
     if (!limpio) {
       notificar.advertencia('Escribe el nombre de la cuenta.', 'Falta el nombre')
       return
@@ -118,34 +119,47 @@ function Contenido({ mesa }: ContenidoProps) {
     } catch {
       return
     }
+    setClienteCargado(null)
     vibrar('exito')
     notificar.exito(`Se actualizó la cuenta ${numero}.`, `Mesa ${mesa.codigo}`)
   }
 
   return (
-    <div className="space-y-5 short:space-y-3">
-      <header className="flex flex-wrap items-center gap-3">
-        <Link
-          to="/pedidos"
-          onClick={() => {
-            mostrarMesa(mesa.codigo, mesa.areaId)
-            abrirCuenta(numero)
-          }}
-          aria-label="Volver a pedidos"
-          className="grid size-11 shrink-0 place-items-center rounded-xl border border-line bg-surface text-muted transition hover:border-club-pc/50 hover:text-fg active:scale-95"
-        >
-          <ArrowLeft className="size-5" />
-        </Link>
-        <div className="min-w-0 flex-1">
-          <h1 className="text-2xl font-bold tracking-[-0.02em] sm:text-[28px] short:text-xl">
-            Datos cuentas
-          </h1>
-          <p className="text-sm text-muted">Edita el cliente, el NIT y el nombre de cada cuenta.</p>
+    <div className="space-y-4 sm:space-y-5 short:space-y-3">
+      <header className="space-y-3">
+        <div className="flex items-center gap-3">
+          <Link
+            to="/pedidos"
+            onClick={() => {
+              mostrarMesa(mesa.codigo, mesa.areaId)
+              abrirCuenta(numero)
+            }}
+            aria-label="Volver a pedidos"
+            className="grid size-11 shrink-0 place-items-center rounded-xl border border-line bg-surface text-muted transition hover:border-club-pc/50 hover:text-fg active:scale-95"
+          >
+            <ArrowLeft className="size-5" />
+          </Link>
+          <div className="min-w-0 flex-1">
+            <h1 className="text-xl font-bold leading-tight tracking-[-0.02em] sm:text-[28px] short:text-xl">
+              Datos cuentas
+            </h1>
+            <p className="text-xs text-muted sm:text-sm">Cliente, NIT y nombre de cada cuenta</p>
+          </div>
+          <div className="hidden flex-wrap gap-2 text-xs font-bold md:flex">
+            <span className="inline-flex items-center gap-1.5 rounded-lg bg-club-pc/10 px-2.5 py-1.5 text-club-primary">
+              <Store className="size-3.5" aria-hidden />
+              {perfil?.local ?? 'Local'}
+            </span>
+            <span className="inline-flex items-center gap-1.5 rounded-lg bg-club-pc/10 px-2.5 py-1.5 text-club-primary">
+              <Hash className="size-3.5" aria-hidden />
+              Mesa {mesa.codigo}
+            </span>
+          </div>
         </div>
-        <div className="flex flex-wrap gap-2 text-xs font-bold">
-          <span className="inline-flex items-center gap-1.5 rounded-lg bg-club-pc/10 px-2.5 py-1.5 text-club-primary">
-            <Store className="size-3.5" aria-hidden />
-            {perfil?.local ?? 'Local'}
+        <div className="flex flex-wrap gap-2 text-xs font-bold md:hidden">
+          <span className="inline-flex min-w-0 items-center gap-1.5 rounded-lg bg-club-pc/10 px-2.5 py-1.5 text-club-primary">
+            <Store className="size-3.5 shrink-0" aria-hidden />
+            <span className="truncate">{perfil?.local ?? 'Local'}</span>
           </span>
           <span className="inline-flex items-center gap-1.5 rounded-lg bg-club-pc/10 px-2.5 py-1.5 text-club-primary">
             <Hash className="size-3.5" aria-hidden />
@@ -154,8 +168,38 @@ function Contenido({ mesa }: ContenidoProps) {
         </div>
       </header>
 
+      <div
+        role="tablist"
+        aria-label="Secciones"
+        className="grid grid-cols-2 gap-1 rounded-2xl bg-bg p-1 md:hidden"
+      >
+        {pestanas.map(({ id, texto, icono: Icono }) => (
+          <button
+            key={id}
+            type="button"
+            role="tab"
+            aria-selected={vista === id}
+            onClick={() => setVista(id)}
+            className={`inline-flex h-11 cursor-pointer items-center justify-center gap-2 rounded-xl text-sm font-bold transition active:scale-95 ${
+              vista === id
+                ? 'bg-gradient-to-r from-club-pc to-club-tertiary text-white shadow-[0_4px_12px_rgba(43,83,184,.3)]'
+                : 'text-muted hover:text-fg'
+            }`}
+          >
+            <Icono className="size-4" aria-hidden />
+            {texto}
+          </button>
+        ))}
+      </div>
+
       <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_380px]">
-        <div className="space-y-4">
+        <div
+          className={`min-w-0 space-y-4 ${vista === 'datos' ? '' : 'hidden md:block md:space-y-4'}`}
+        >
+          <div className="lg:hidden">
+            <SelectorCuentas cuentas={mesa.cuentas} seleccionada={numero} alElegir={elegirCuenta} />
+          </div>
+
           <form
             onSubmit={(e) => {
               e.preventDefault()
@@ -163,8 +207,17 @@ function Contenido({ mesa }: ContenidoProps) {
             }}
             className="space-y-4 rounded-3xl border border-line bg-surface p-4 shadow-[0_12px_32px_rgba(1,21,38,.06)] sm:p-5"
           >
-            <div className="grid gap-3 sm:grid-cols-[8rem_minmax(0,1fr)]">
-              <label className="space-y-1.5">
+            {clienteCargado && (
+              <p
+                role="status"
+                className="rounded-xl bg-success/12 px-3 py-2 text-xs font-semibold text-emerald-800 dark:text-emerald-300"
+              >
+                Se cargó {clienteCargado} en la cuenta {numero}. Revisa y pulsa Modificar para
+                guardar.
+              </p>
+            )}
+            <div className="grid gap-3 lg:grid-cols-[8rem_minmax(0,1fr)]">
+              <label className="hidden space-y-1.5 lg:block">
                 <span className={etiqueta}>No. cuenta</span>
                 <select
                   value={numero}
@@ -181,46 +234,71 @@ function Contenido({ mesa }: ContenidoProps) {
                   ))}
                 </select>
               </label>
-              <label className="space-y-1.5">
-                <span className={etiqueta}>Código cliente</span>
-                <span className="flex gap-2">
+              <div className="space-y-1.5">
+                <label htmlFor="datos-cuenta-codigo" className={etiqueta}>
+                  Código cliente
+                </label>
+                <div className="flex gap-2">
                   <input
+                    id="datos-cuenta-codigo"
                     value={codigoCliente}
-                    onChange={(e) => setCodigoCliente(e.target.value)}
+                    onChange={(e) => {
+                      setCodigoCliente(e.target.value)
+                      setClienteCargado(null)
+                    }}
                     className={campo}
-                    inputMode="text"
+                    inputMode="numeric"
                     autoComplete="off"
                   />
-                  <button type="button" onClick={() => void buscarCodigo()} className={botonSecundario}>
+                  <button
+                    type="button"
+                    onClick={() => void buscarCodigo()}
+                    aria-label="Buscar cliente por código"
+                    className={botonSecundario}
+                  >
                     <Search className="size-4" />
-                    Buscar
+                    <span className="hidden sm:inline">Buscar</span>
                   </button>
-                </span>
-              </label>
+                </div>
+              </div>
             </div>
             <div className="grid gap-3 sm:grid-cols-[12rem_minmax(0,1fr)]">
-              <label className="space-y-1.5">
-                <span className={etiqueta}>NIT / CI</span>
+              <div className="space-y-1.5">
+                <label htmlFor="datos-cuenta-nit" className={etiqueta}>
+                  NIT / CI
+                </label>
                 <input
+                  id="datos-cuenta-nit"
                   value={nit}
                   onChange={(e) => setNit(e.target.value)}
                   className={campo}
                   inputMode="numeric"
                   autoComplete="off"
                 />
-              </label>
-              <label className="space-y-1.5">
-                <span className={etiqueta}>Nombre</span>
+              </div>
+              <div className="space-y-1.5">
+                <label htmlFor="datos-cuenta-nombre" className={etiqueta}>
+                  Nombre
+                </label>
                 <input
+                  id="datos-cuenta-nombre"
                   value={nombre}
                   maxLength={40}
-                  onChange={(e) => setNombre(e.target.value)}
+                  onChange={(e) => setNombre(e.target.value.toUpperCase())}
                   className={campo}
                   autoComplete="off"
                 />
-              </label>
+              </div>
             </div>
-            <div className="flex justify-end">
+            <div className="grid gap-2 sm:flex sm:justify-end">
+              <button
+                type="button"
+                onClick={() => setVista('clientes')}
+                className={`${botonSecundario} md:hidden`}
+              >
+                <UserRoundSearch className="size-4" />
+                Buscar en la lista de clientes
+              </button>
               <button
                 type="submit"
                 disabled={actualizar.isPending}
@@ -232,155 +310,18 @@ function Contenido({ mesa }: ContenidoProps) {
             </div>
           </form>
 
-          <section
-            aria-label="Cuentas de la mesa"
-            className="overflow-hidden rounded-3xl border border-line bg-surface shadow-[0_12px_32px_rgba(1,21,38,.06)]"
-          >
-            <div className="flex items-center justify-between gap-2 px-4 pb-2 pt-4 sm:px-5">
-              <h2 className="flex items-center gap-2 text-sm font-bold">
-                <Users className="size-4 text-club-primary" aria-hidden />
-                Cuentas de la mesa
-              </h2>
-              <span className="rounded-md bg-line/60 px-1.5 py-0.5 text-[11px] font-bold tabular-nums text-muted">
-                {mesa.cuentas.length}
-              </span>
-            </div>
-            <div className="overflow-x-auto">
-              <div className="min-w-[34rem]">
-                <div className="grid grid-cols-[3.5rem_minmax(0,1.4fr)_5rem_6.5rem_5rem] gap-x-3 bg-club-pc/10 px-4 py-2 text-[10px] font-extrabold uppercase tracking-wide text-club-primary sm:px-5">
-                  <span>Cuenta</span>
-                  <span>Nombre</span>
-                  <span>Cliente</span>
-                  <span>NIT / CI</span>
-                  <span className="text-right">Total</span>
-                </div>
-                <ul className="max-h-[min(40dvh,22rem)] divide-y divide-line overflow-y-auto overscroll-contain">
-                  {mesa.cuentas.map((c) => {
-                    const activa = c.numero === numero
-                    return (
-                      <li key={c.numero}>
-                        <button
-                          type="button"
-                          onClick={() => elegirCuenta(c)}
-                          aria-pressed={activa}
-                          className={`grid w-full cursor-pointer grid-cols-[3.5rem_minmax(0,1.4fr)_5rem_6.5rem_5rem] items-center gap-x-3 px-4 py-2.5 text-left text-sm transition sm:px-5 ${
-                            activa ? 'bg-club-pc/10' : 'hover:bg-club-pc/5'
-                          }`}
-                        >
-                          <span
-                            className={`grid size-8 place-items-center rounded-lg text-sm font-extrabold tabular-nums ${
-                              activa
-                                ? 'bg-gradient-to-br from-club-pc to-club-tertiary text-white'
-                                : 'bg-line/60 text-muted'
-                            }`}
-                          >
-                            {c.numero}
-                          </span>
-                          <span className="truncate font-semibold">{c.nombre}</span>
-                          <span className="truncate text-muted">{c.codigoCliente || '-'}</span>
-                          <span className="truncate tabular-nums text-muted">{c.nit || '-'}</span>
-                          <span className="text-right font-bold tabular-nums">
-                            {formatoMoneda(totalCuenta(c))}
-                          </span>
-                        </button>
-                      </li>
-                    )
-                  })}
-                </ul>
-              </div>
-            </div>
-          </section>
+          <div className="hidden lg:block">
+            <TablaCuentasMesa
+              cuentas={mesa.cuentas}
+              seleccionada={numero}
+              alElegir={elegirCuenta}
+            />
+          </div>
         </div>
 
-        <section
-          aria-label="Listado de clientes"
-          className="space-y-3 rounded-3xl border border-line bg-surface p-4 shadow-[0_12px_32px_rgba(1,21,38,.06)] sm:p-5 lg:sticky lg:top-[88px]"
-        >
-          <h2 className="flex items-center gap-2 text-sm font-bold">
-            <UserRoundSearch className="size-4 text-club-primary" aria-hidden />
-            Listado de clientes
-          </h2>
-          <form
-            className="space-y-2.5"
-            onSubmit={(e) => {
-              e.preventDefault()
-              setAplicado({ nombre: filtroNombre, codigo: filtroCodigo })
-            }}
-          >
-            <label className="block space-y-1.5">
-              <span className={etiqueta}>Nombre</span>
-              <input
-                value={filtroNombre}
-                onChange={(e) => setFiltroNombre(e.target.value)}
-                className={campo}
-                autoComplete="off"
-              />
-            </label>
-            <label className="block space-y-1.5">
-              <span className={etiqueta}>Código</span>
-              <input
-                value={filtroCodigo}
-                onChange={(e) => setFiltroCodigo(e.target.value)}
-                className={campo}
-                autoComplete="off"
-              />
-            </label>
-            <div className="grid grid-cols-2 gap-2">
-              <button type="submit" className={botonPrimario}>
-                <Search className="size-4" />
-                Buscar
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setFiltroNombre('')
-                  setFiltroCodigo('')
-                  setAplicado({ nombre: '', codigo: '' })
-                }}
-                className={botonSecundario}
-              >
-                Limpiar
-              </button>
-            </div>
-          </form>
-          <div className="overflow-hidden rounded-2xl border border-line">
-            <div className="grid grid-cols-[minmax(0,1fr)_4rem] gap-x-2 bg-club-pc/10 px-3 py-2 text-[10px] font-extrabold uppercase tracking-wide text-club-primary">
-              <span>Nombre</span>
-              <span className="text-right">Código</span>
-            </div>
-            {filtro === null ? (
-              <p className="px-4 py-6 text-center text-sm text-muted">
-                Escribe un nombre (al menos 2 letras) o un código y pulsa Buscar.
-              </p>
-            ) : consulta.isPending ? (
-              <p role="status" className="px-4 py-6 text-center text-sm text-muted">
-                Buscando...
-              </p>
-            ) : listado.length === 0 ? (
-              <p className="px-4 py-6 text-center text-sm text-muted">Sin resultados.</p>
-            ) : (
-              <ul className="max-h-[min(36dvh,16rem)] divide-y divide-line overflow-y-auto overscroll-contain">
-                {listado.map((c) => (
-                  <li key={c.codigo}>
-                    <button
-                      type="button"
-                      onClick={() => aplicarCliente(c)}
-                      className="grid w-full cursor-pointer grid-cols-[minmax(0,1fr)_4rem] items-center gap-x-2 px-3 py-2.5 text-left text-sm transition hover:bg-club-pc/5 active:bg-club-pc/10"
-                    >
-                      <span className="min-w-0">
-                        <strong className="block truncate font-semibold">{c.nombre}</strong>
-                        <small className="text-[11px] text-muted">NIT {c.nit || '-'}</small>
-                      </span>
-                      <span className="text-right text-xs font-bold tabular-nums text-club-primary">
-                        {c.codigo}
-                      </span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </section>
+        <div className={`min-w-0 ${vista === 'clientes' ? '' : 'hidden md:block'}`}>
+          <ListadoClientes seleccionado={codigoCliente} alElegir={aplicarCliente} />
+        </div>
       </div>
     </div>
   )

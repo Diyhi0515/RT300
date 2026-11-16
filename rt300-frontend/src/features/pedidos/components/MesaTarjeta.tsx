@@ -38,8 +38,8 @@ export function MesaTarjeta({ mesa, seleccionada, indice, alElegir }: MesaTarjet
       onClick={() => alElegir(mesa.codigo)}
       aria-pressed={seleccionada}
       aria-label={`Mesa ${mesa.codigo}, ${estilo.etiqueta}, ${mesa.capacidad} sillas`}
-      style={{ animationDelay: `${Math.min(indice, 20) * 25}ms` }}
-      className={`flex min-h-[112px] animate-[chip-in_0.35s_ease-out_both] cursor-pointer flex-col justify-between rounded-2xl border-2 p-3.5 text-left transition duration-200 hover:-translate-y-0.5 hover:shadow-lg active:scale-[0.97] short:min-h-[92px] short:p-2.5 ${
+      style={{ animationDelay: `${Math.min(indice, 8) * 15}ms` }}
+      className={`flex min-h-[112px] animate-[chip-in_0.16s_ease-out_both] cursor-pointer flex-col justify-between rounded-2xl border-2 p-3.5 text-left transition duration-200 hover:-translate-y-0.5 hover:shadow-lg active:scale-[0.97] short:min-h-[92px] short:p-2.5 ${
         seleccionada
           ? 'border-primary bg-primary/10 shadow-[0_10px_26px_rgba(43,83,184,.28)]'
           : estilo.fondo

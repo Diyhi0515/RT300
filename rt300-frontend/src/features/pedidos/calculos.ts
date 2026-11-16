@@ -47,3 +47,41 @@ export const tiempoCorto = (marca: number) => {
   if (horas < 24) return `${horas}h ${minutos % 60}m`
   return `${Math.floor(horas / 24)}d ${horas % 24}h`
 }
+
+export const iniciales = (nombre: string) => {
+  const palabras = nombre
+    .trim()
+    .split(/\s+/)
+    .filter((palabra) => /\p{L}/u.test(palabra))
+  if (palabras.length === 0) return '?'
+  return palabras
+    .slice(0, 2)
+    .map((palabra) => (palabra.match(/\p{L}/u) as RegExpMatchArray)[0].toUpperCase())
+    .join('')
+}
+
+const sinAcentos = (texto: string) =>
+  texto
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+
+export const filtrarCuentas = (cuentas: Cuenta[], texto: string) => {
+  const buscado = sinAcentos(texto.trim())
+  if (!buscado) return cuentas
+  return cuentas.filter((cuenta) =>
+    [String(cuenta.numero), cuenta.nombre, cuenta.codigoCliente ?? '', cuenta.nit ?? ''].some((campo) =>
+      sinAcentos(campo).includes(buscado),
+    ),
+  )
+}
+
+export const ordenarCuentas = (cuentas: Cuenta[]) => {
+  const conCliente = cuentas
+    .filter((cuenta) => !!cuenta.codigoCliente)
+    .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es') || a.numero - b.numero)
+  const sinCliente = cuentas
+    .filter((cuenta) => !cuenta.codigoCliente)
+    .sort((a, b) => a.numero - b.numero)
+  return [...conCliente, ...sinCliente]
+}
