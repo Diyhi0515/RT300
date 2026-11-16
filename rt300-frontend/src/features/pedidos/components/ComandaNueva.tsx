@@ -369,7 +369,6 @@ function Contenido({ codigo, numero, alCerrar }: ContenidoProps) {
         </div>
       </section>
       <ConfirmarAccion
-        elevado
         abierto={confirmando}
         titulo="¿Enviar la comanda?"
         mensaje={`${cantidad} ${cantidad === 1 ? 'producto' : 'productos'} por ${formatoMoneda(total)} para la cuenta ${numero} de la mesa ${codigo}.`}

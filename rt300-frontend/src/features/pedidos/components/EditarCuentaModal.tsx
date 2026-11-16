@@ -100,11 +100,31 @@ export function EditarCuentaModal({ cuenta, alCerrar, alGuardar }: EditarCuentaM
     }
     peticion.current += 1
     setDesdeBarra(true)
-    if (valor.length > MAXIMO_DIGITOS_CODIGO) {
-      setEstado('inexistente')
-      return
+    void buscarDesdeBarraConDocumento(valor)
+  }
+
+  const buscarDesdeBarraConDocumento = async (valor: string) => {
+    const id = ++peticion.current
+    consultado.current = valor
+    setEstado('buscando')
+    try {
+      const porCodigo =
+        valor.length <= MAXIMO_DIGITOS_CODIGO ? await buscarClientes({ codigo: Number(valor) }) : []
+      const [cliente] = porCodigo.length ? porCodigo : await buscarClientes({ documento: valor })
+      if (peticion.current !== id) return
+      if (!cliente) {
+        setEstado('inexistente')
+        return
+      }
+      const datos = mapearCliente(cliente)
+      setCodigo(datos.codigo)
+      consultado.current = datos.codigo
+      setNombre(datos.nombre)
+      setNit(datos.nit)
+      setEstado('encontrado')
+    } catch {
+      if (peticion.current === id) setEstado('inexistente')
     }
-    void buscar(valor)
   }
 
   const guardar = async () => {
@@ -127,7 +147,7 @@ export function EditarCuentaModal({ cuenta, alCerrar, alGuardar }: EditarCuentaM
     estado === 'inexistente' && desdeBarra
       ? {
           texto:
-            'No hay un cliente con ese código. La búsqueda por NIT / CI aún no está disponible en el servidor.',
+            'No hay un cliente con ese código, NIT ni CI.',
           clase: 'text-danger',
         }
       : estado === 'reposo'

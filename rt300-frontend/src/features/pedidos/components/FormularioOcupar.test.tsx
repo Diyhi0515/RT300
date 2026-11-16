@@ -74,8 +74,10 @@ describe('FormularioOcupar', () => {
     await usuario.click(masCuentas)
     expect(masCuentas).toBeDisabled()
 
-    const menosComensales = screen.getByRole('button', { name: /menos comensales/i })
-    expect(menosComensales).toBeDisabled()
+    await usuario.click(screen.getByRole('button', { name: /menos comensales/i }))
+    expect(screen.getByText('Capacidad de 2')).toBeInTheDocument()
+    expect(masCuentas).toBeDisabled()
+    expect(screen.getByRole('button', { name: /menos cuentas/i })).toBeDisabled()
 
     await usuario.click(screen.getByRole('button', { name: /más comensales/i }))
     expect(masCuentas).toBeEnabled()

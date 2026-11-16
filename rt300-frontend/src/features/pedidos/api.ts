@@ -69,6 +69,7 @@ export const actualizarCuenta = async (
 export interface FiltroClientes {
   nombre?: string
   codigo?: number
+  documento?: string
 }
 
 export const buscarClientes = async (filtro: FiltroClientes) => {

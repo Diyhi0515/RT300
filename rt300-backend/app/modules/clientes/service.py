@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from ...core.acceso import exigir_local
-from ...core.errors import Conflict, NotFound
+from ...core.errors import Conflict, NotFound, ValidationFailed
 from ...core.sql import blank_to_none
 from ...domain.uow import UnitOfWork
 from ...domain.usuario import Usuario
@@ -24,6 +24,13 @@ class ClientesService:
 
     def buscar(self, nombre: str | None, cage: int | None) -> list[dict]:
         return self._repo.buscar_clientes((nombre or "").strip().upper() or None, cage or None)
+
+    def buscar_por_documento(self, documento: str) -> list[dict]:
+        """NIT o CI exacto, solo dígitos (3 a 15): es lo que escribe el garzón en la pantalla de la cuenta."""
+        limpio = documento.strip()
+        if not (limpio.isascii() and limpio.isdigit() and 3 <= len(limpio) <= 15):
+            raise ValidationFailed("El NIT o CI debe tener entre 3 y 15 dígitos.", "DOCUMENTO_INVALIDO")
+        return self._repo.buscar_por_documento(limpio)
 
     def actualizar_cuenta(self, u: Usuario, nfol: int, ncta: int, mesa: str, cage: int, nruc: str, nomb: str) -> str:
         exigir_local(u, self._repo.local_de_folio(nfol))
