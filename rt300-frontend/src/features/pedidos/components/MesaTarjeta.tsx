@@ -1,6 +1,6 @@
-import { Armchair, Clock, Users } from 'lucide-react'
+import { Armchair, Users } from 'lucide-react'
 import { formatoMonedaEntera } from '@/features/salon/formato'
-import { tiempoCorto, totalMesa } from '../calculos'
+import { totalMesa } from '../calculos'
 import type { EstadoMesaPlano, MesaPlano } from '../types'
 
 interface MesaTarjetaProps {
@@ -73,15 +73,9 @@ export function MesaTarjeta({ mesa, seleccionada, indice, alElegir }: MesaTarjet
               {mesa.comensales} {mesa.comensales === 1 ? 'comensal' : 'comensales'}
             </span>
           </span>
-          <span className="flex items-center justify-between gap-2">
-            <strong className="truncate text-sm font-extrabold tabular-nums text-fg">
-              {formatoMonedaEntera(totalMesa(mesa))}
-            </strong>
-            <span className="flex shrink-0 items-center gap-1 whitespace-nowrap text-xs font-bold tabular-nums text-primary">
-              <Clock className="size-3.5 shrink-0" aria-hidden />
-              {mesa.apertura ? tiempoCorto(mesa.apertura) : ''}
-            </span>
-          </span>
+          <strong className="truncate text-sm font-extrabold tabular-nums text-fg">
+            {formatoMonedaEntera(totalMesa(mesa))}
+          </strong>
         </span>
       ) : (
         <span className="mt-3 flex items-center justify-between gap-2 text-xs text-muted short:mt-1.5">

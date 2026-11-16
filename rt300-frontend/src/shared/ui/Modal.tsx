@@ -15,11 +15,13 @@ interface ModalProps {
 
 const estilosPanel = {
   default: 'border border-line bg-surface text-fg shadow-card',
+  axon: 'border border-line bg-surface text-fg shadow-card',
   club: 'bg-club-card text-club-text shadow-2xl shadow-club-pc/15 ring-1 ring-club-text/5 dark:bg-[linear-gradient(160deg,#18284b_0%,#111c35_55%,#0e1830_100%)] dark:shadow-[0_0_90px_-25px_rgba(79,124,255,0.55)] dark:ring-white/12',
 }
 
 const estilosCierre = {
   default: 'text-muted hover:bg-fg/5 hover:text-fg',
+  axon: 'text-white/70 hover:bg-white/10 hover:text-white',
   club: 'text-club-variant hover:bg-club-high hover:text-club-text',
 }
 

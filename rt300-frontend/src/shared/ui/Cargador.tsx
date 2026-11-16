@@ -1,3 +1,4 @@
+import { BandaAxon } from './BandaAxon'
 import { tonos, type Tono } from './tonos'
 
 type Tamano = 'sm' | 'md' | 'lg'
@@ -8,10 +9,10 @@ interface CargadorProps {
   size?: Tamano
 }
 
-const tamanos: Record<Tamano, { box: string; ring: string; core: string }> = {
-  sm: { box: 'size-10', ring: 'border-[3px]', core: 'inset-1.5' },
-  md: { box: 'size-16', ring: 'border-4', core: 'inset-2.5' },
-  lg: { box: 'size-24', ring: 'border-[5px]', core: 'inset-3.5' },
+const tamanos: Record<Tamano, { ficha: string; barra: string }> = {
+  sm: { ficha: 'size-10 rounded-xl', barra: 'w-16' },
+  md: { ficha: 'size-16 rounded-2xl', barra: 'w-28' },
+  lg: { ficha: 'size-24 rounded-3xl', barra: 'w-40' },
 }
 
 export function Cargador({ tone = 'info', label, size = 'md' }: CargadorProps) {
@@ -19,16 +20,18 @@ export function Cargador({ tone = 'info', label, size = 'md' }: CargadorProps) {
   const s = tamanos[size]
   return (
     <div role="status" aria-live="polite" className="flex flex-col items-center gap-4">
-      <div className={`relative ${s.box} ${t.text}`}>
-        <span className={`absolute inset-0 rounded-full ${s.ring} border-current opacity-15`} />
+      <div
+        className={`grid shrink-0 animate-[breathe_1.6s_ease-in-out_infinite] place-items-center overflow-hidden bg-white shadow-[0_10px_30px_-8px_rgba(27,142,242,0.55)] ring-1 ring-black/5 ${s.ficha}`}
+      >
+        <img src="/logo-icono.webp" alt="" className="size-full object-contain p-[6%]" />
+      </div>
+      <div
+        className={`relative h-1.5 overflow-hidden rounded-full bg-fg/10 ${s.barra}`}
+        aria-hidden
+      >
         <span
-          className={`absolute inset-0 animate-spin rounded-full ${s.ring} border-transparent border-t-current border-r-current`}
+          className={`absolute inset-y-0 w-2/5 animate-[barrido_1.3s_ease-in-out_infinite] rounded-full ${t.bar}`}
         />
-        <span
-          className={`absolute ${s.core} animate-[breathe_1.6s_ease-in-out_infinite] overflow-hidden rounded-full bg-white`}
-        >
-          <img src="/logo-icono.webp" alt="" className="size-full object-contain p-[7%]" />
-        </span>
       </div>
       {label ? (
         <p className="text-sm font-semibold text-fg">{label}</p>
@@ -41,8 +44,11 @@ export function Cargador({ tone = 'info', label, size = 'md' }: CargadorProps) {
 
 export function CargadorPantalla({ tone, label = 'Cargando…' }: { tone?: Tono; label?: string }) {
   return (
-    <div className="grid min-h-[var(--alto-app,100dvh)] place-items-center bg-bg">
-      <Cargador tone={tone} label={label} size="lg" />
+    <div className="flex min-h-[var(--alto-app,100dvh)] flex-col bg-bg">
+      <BandaAxon className="h-28 short:h-20" />
+      <div className="grid flex-1 place-items-center">
+        <Cargador tone={tone} label={label} size="lg" />
+      </div>
     </div>
   )
 }

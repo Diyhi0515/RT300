@@ -3,7 +3,13 @@ import { fileURLToPath, URL } from 'node:url'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
-import { defineConfig, type Plugin } from 'vite'
+import { defineConfig, loadEnv, type Plugin } from 'vite'
+
+const carpetaGeneral = fileURLToPath(new URL('..', import.meta.url))
+
+for (const [clave, valor] of Object.entries(loadEnv('', carpetaGeneral, 'VITE_'))) {
+  process.env[clave] ??= valor
+}
 
 const normalize = (path: string) => path.split('\\').join('/')
 
@@ -46,6 +52,12 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
+      useCredentials: true,
+      devOptions: {
+        enabled: true,
+        type: 'module',
+        navigateFallbackAllowlist: [/^\/$/],
+      },
       includeAssets: ['icono-pestana-32.png'],
       manifest: {
         name: 'RT - AXON',
