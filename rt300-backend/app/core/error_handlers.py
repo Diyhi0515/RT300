@@ -27,7 +27,7 @@ def _body(code: str, message: str, extra: dict | None = None) -> dict:
 def register_error_handlers(app: Flask) -> None:
     @app.errorhandler(DomainError)
     def _domain(e: DomainError):
-        return jsonify(_body(e.code, e.message)), e.status
+        return jsonify(_body(e.code, e.message, e.detalle or None)), e.status
 
     @app.errorhandler(ValidationError)
     def _pydantic(e: ValidationError):

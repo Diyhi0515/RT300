@@ -112,6 +112,36 @@ check("eliminar: productos que no son del folio", codigo(r)[1] in ("ITEMS_NO_VIG
 r = c.post("/api/v1/comandas/eliminar", headers=h, json={**cuerpo, "cont": "mala"})
 check("eliminar: clave de autorizador incorrecta", codigo(r)[1] == "AUTORIZADOR_INVALIDO", str(codigo(r)))
 
+# 7b. eliminar cuentas (una, varias, todo o nada, siempre queda una)
+r = c.patch(f"/api/v1/salon/folios/{folio}", headers=h, json={"ccom": 5, "ncta": 5})
+check("preparar 5 cuentas para eliminar", r.status_code == 200, str(codigo(r)))
+
+
+def numeros_de_cuentas():
+    cuentas = c.get(f"/api/v1/salon/folios/{folio}/detalle", headers=h).get_json()["cuentas"]
+    return sorted(int(x["ncta"]) for x in cuentas)
+
+
+r = c.delete(f"/api/v1/folios/{folio}/cuentas/2", headers=h, json={"mesa": mesa})
+check("eliminar una cuenta del medio (DELETE)", r.status_code == 200 and r.get_json()["eliminadas"] == [2], str(r.get_json()))
+check("quedan las demás con su número", numeros_de_cuentas() == [1, 3, 4, 5], str(numeros_de_cuentas()))
+r = c.delete(f"/api/v1/folios/{folio}/cuentas/9?mesa={mesa}", headers=h)
+falla = (r.get_json() or {}).get("error", {})
+check("eliminar una cuenta inexistente (mesa en query)", codigo(r) == (404, "CUENTA_NO_EXISTE") and falla.get("ncta") == 9, str(falla))
+r = c.post(f"/api/v1/folios/{folio}/cuentas/eliminar", headers=h, json={"mesa": mesa, "cuentas": [3, 9]})
+check("varias: una falla y no se elimina ninguna", r.status_code == 404 and numeros_de_cuentas() == [1, 3, 4, 5], str(numeros_de_cuentas()))
+r = c.post(f"/api/v1/folios/{folio}/cuentas/eliminar", headers=h, json={"mesa": "OTRA", "cuentas": [3]})
+check("varias: mesa que no es del folio", r.status_code in (404, 409), str(codigo(r)))
+r = c.post(f"/api/v1/folios/{folio}/cuentas/eliminar", headers=h, json={"mesa": mesa, "cuentas": [3, 4]})
+check("eliminar varias a la vez", r.status_code == 200 and r.get_json() == {"eliminadas": [3, 4], "quedan": 2}, str(r.get_json()))
+r = c.post(f"/api/v1/folios/{folio}/cuentas/eliminar", headers=h, json={"mesa": mesa, "cuentas": [1, 5]})
+check("siempre debe quedar una cuenta", codigo(r) == (409, "DEBE_QUEDAR_UNA_CUENTA"), str(codigo(r)))
+r = c.patch(f"/api/v1/salon/folios/{folio}", headers=h, json={"ccom": 5, "ncta": 3})
+numeros = numeros_de_cuentas()
+check("agregar una cuenta sigue la numeración (sin repetir)", r.status_code == 200 and numeros == [1, 5, 6], str(numeros))
+r = c.post(f"/api/v1/folios/{folio}/cuentas/eliminar", headers=h, json={"mesa": mesa, "cuentas": [5, 5]})
+check("lista con repetidos", codigo(r) == (422, "CUENTAS_INVALIDAS"), str(codigo(r)))
+
 # 8. habilitar
 r = c.post(f"/api/v1/salon/mesas/{mesa}/habilitar", headers=h)
 check("habilitar mesa sin comandas", r.status_code == 200, str(codigo(r)))

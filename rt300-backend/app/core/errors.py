@@ -5,9 +5,10 @@ class DomainError(Exception):
     status = 400
     code = "ERROR_DE_DOMINIO"
 
-    def __init__(self, message: str, code: str | None = None):
+    def __init__(self, message: str, code: str | None = None, detalle: dict | None = None):
         super().__init__(message)
         self.message = message
+        self.detalle = detalle or {}
         if code:
             self.code = code
 

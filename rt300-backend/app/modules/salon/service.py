@@ -198,16 +198,19 @@ class SalonService:
         cven = self._mesero_a_asignar(u, cven)
         self._validar_cuentas(ccom, ncta_nueva)
         with self._uow:
-            ncta_vieja = self._repo.contar_cuentas(nfol)
+            numeros = self._repo.numeros_de_cuentas(nfol)
+            ncta_vieja = len(numeros)
+            ultima_que_queda = numeros[min(ncta_nueva, ncta_vieja) - 1]
             if ncta_nueva < ncta_vieja and self._repo.contar_comandas(nfol, solo_vigentes=False) > 0:
                 raise Conflict("No se puede quitar cuentas, existen comandas asignadas.", "CUENTAS_CON_COMANDAS")
-            if max(self._repo.maxima_cuenta_con_nota(nfol), 1) > ncta_nueva:
+            if self._repo.maxima_cuenta_con_nota(nfol) > ultima_que_queda:
                 raise Conflict("No se puede quitar cuentas, Existen Notas de Ventas asociadas al folio.", "CUENTAS_CON_NOTA")
             fdia, hora, hent = self._fecha_negocio()
 
             self._repo.actualizar_folio(nfol, ccom, cven, u.usuario, hora, fdia)
             if ncta_nueva <= ncta_vieja:
-                self._repo.borrar_cuentas_sobrantes(nfol, ncta_nueva)
-            else:
-                self._repo.insertar_cuentas(self._cuentas(nfol, ncta_vieja + 1, ncta_nueva, self._cliente_varios(), u.cmon, fdia, hent))
+                self._repo.borrar_cuentas_sobrantes(nfol, ultima_que_queda)
+            else:     # sigue la numeración desde la última cuenta, aunque se hayan eliminado cuentas del medio
+                nuevas = range(numeros[-1] + 1, numeros[-1] + 1 + ncta_nueva - ncta_vieja)
+                self._repo.insertar_cuentas([NuevaCuenta(nfol, n, self._cliente_varios(), u.cmon, fdia, hent) for n in nuevas])
         return self._repo.cuentas_folio(nfol)

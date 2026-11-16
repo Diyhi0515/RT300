@@ -15,6 +15,7 @@ from typing import Any
 from sqlalchemy import Connection, bindparam, text
 
 from .errors import DomainError
+from .text import reparar_codificacion
 
 _IDENT = re.compile(r"^[a-z][a-z0-9_]{1,30}$")
 
@@ -24,7 +25,7 @@ _SERIALES = {("rtsrl", "rtsrlnfol"), ("rtsrl", "rtsrlntmp")}
 
 def _clean(v: Any) -> Any:
     if isinstance(v, str):
-        return v.strip()
+        return reparar_codificacion(v.strip())
     if isinstance(v, Decimal):
         return float(v)
     if isinstance(v, (datetime, date)):
