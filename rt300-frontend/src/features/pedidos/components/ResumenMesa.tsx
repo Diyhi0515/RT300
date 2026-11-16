@@ -1,8 +1,6 @@
 import { useEffect, useState } from 'react'
 import {
   BadgeCheck,
-  Check,
-  Clock,
   DoorOpen,
   LayoutList,
   Pencil,
@@ -11,13 +9,12 @@ import {
   UserRound,
   Users,
   UtensilsCrossed,
-  X,
 } from 'lucide-react'
-import { formatoMoneda, formatoNumero, tiempoTranscurrido } from '@/features/salon/formato'
+import { formatoMoneda, formatoNumero } from '@/features/salon/formato'
 import { useNavigate } from 'react-router-dom'
 import { vibrar } from '@/lib/vibrar'
 import { notificar } from '@/shared/avisos/almacen'
-import { totalCuenta } from '../calculos'
+import { estadoCuenta, totalCuenta } from '../calculos'
 import {
   useActualizarCuenta,
   useHabilitarMesa,
@@ -36,7 +33,7 @@ interface ResumenMesaProps {
 
 const COLUMNAS = 'grid-cols-[minmax(0,1fr)_2rem_3.6rem_4.2rem]'
 
-const MAXIMO_CUENTAS = 50
+const MAXIMO_COMENSALES = 999
 
 const accion =
   'flex h-11 cursor-pointer items-center justify-center gap-2 rounded-xl border border-line bg-surface px-3 text-sm font-semibold transition hover:border-primary/50 hover:bg-primary/5 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 short:h-10'
@@ -52,8 +49,6 @@ export function ResumenMesa({ mesa }: ResumenMesaProps) {
   const [editando, setEditando] = useState(false)
   const [verTodas, setVerTodas] = useState(false)
   const [eliminando, setEliminando] = useState<number | null>(null)
-  const [renombrando, setRenombrando] = useState(false)
-  const [nombre, setNombre] = useState('')
   const [confirmando, setConfirmando] = useState<'liberar' | null>(null)
   const [comensales, setComensales] = useState(mesa.comensales)
   const [cuentas, setCuentas] = useState(mesa.cuentas.length)
@@ -75,7 +70,7 @@ export function ResumenMesa({ mesa }: ResumenMesaProps) {
     ...mesa.cuentas.filter((c) => c.lineas.length > 0 || c.liquidada).map((c) => c.numero),
   )
   const sinConsumo = mesa.cuentas.every((c) => c.lineas.length === 0 && !c.liquidada)
-  const puedeAgregar = mesa.cuentas.length < MAXIMO_CUENTAS
+  const puedeAgregar = mesa.cuentas.length < mesa.comensales
   const puedeEliminar = (numero: number) =>
     mesa.cuentas.length > 1 && numero === mesa.cuentas.length && sinConsumo
   const totalActiva = cuenta ? totalCuenta(cuenta) : 0
@@ -111,22 +106,11 @@ export function ResumenMesa({ mesa }: ResumenMesaProps) {
         nomb: datos.nombre,
       })
     } catch {
-      return
+      return false
     }
     vibrar('exito')
     notificar.exito(`Se actualizó la cuenta ${numero}.`, `Mesa ${mesa.codigo}`)
-  }
-
-  const guardarNombre = async () => {
-    const limpio = nombre.trim()
-    if (cuenta && limpio) {
-      await actualizarDatos(cuenta.numero, {
-        nombre: limpio,
-        codigoCliente: cuenta.codigoCliente ?? '',
-        nit: cuenta.nit ?? '',
-      })
-    }
-    setRenombrando(false)
+    return true
   }
 
   const agregarCuenta = async () => {
@@ -173,12 +157,6 @@ export function ResumenMesa({ mesa }: ResumenMesaProps) {
             <UserRound className="size-3.5 text-primary" aria-hidden />
             Mozo: <strong className="text-fg">{mesa.mozo ?? '-'}</strong>
           </span>
-          <span className="inline-flex items-center gap-1.5">
-            <Clock className="size-3.5 text-primary" aria-hidden />
-            <strong className="text-fg">
-              {mesa.apertura ? tiempoTranscurrido(mesa.apertura) : '-'}
-            </strong>
-          </span>
         </p>
       </div>
 
@@ -188,16 +166,19 @@ export function ResumenMesa({ mesa }: ResumenMesaProps) {
           <Contador
             etiqueta="Comensales"
             valor={comensales}
-            minimo={1}
-            maximo={Math.max(mesa.capacidad + 4, 12, mesa.comensales)}
-            alCambiar={setComensales}
+            minimo={minimoCuentas}
+            maximo={MAXIMO_COMENSALES}
+            alCambiar={(valor) => {
+              setComensales(valor)
+              if (cuentas > valor) setCuentas(valor)
+            }}
           />
           <Contador
             etiqueta="Cuentas"
             detalle={`Mínimo ${minimoCuentas} por consumo existente`}
             valor={cuentas}
             minimo={minimoCuentas}
-            maximo={MAXIMO_CUENTAS}
+            maximo={comensales}
             alCambiar={setCuentas}
           />
           <div className="grid grid-cols-2 gap-2">
@@ -222,10 +203,9 @@ export function ResumenMesa({ mesa }: ResumenMesaProps) {
           puedeEliminar={puedeEliminar}
           alElegir={(numero) => {
             abrirCuenta(numero)
-            setRenombrando(false)
             setVerTodas(false)
           }}
-          alActualizar={(numero, datos) => void actualizarDatos(numero, datos)}
+          alActualizar={actualizarDatos}
           alEditarCuentas={() => navigate(`/pedidos/cuentas/${encodeURIComponent(mesa.codigo)}`)}
           alEliminar={setEliminando}
           alAgregar={() => void agregarCuenta()}
@@ -252,6 +232,7 @@ export function ResumenMesa({ mesa }: ResumenMesaProps) {
           >
             {mesa.cuentas.map((c) => {
               const activa = c.numero === numeroActivo
+              const enUso = estadoCuenta(c) === 'consumo'
               return (
                 <button
                   key={c.numero}
@@ -261,17 +242,28 @@ export function ResumenMesa({ mesa }: ResumenMesaProps) {
                   aria-selected={activa}
                   onClick={() => {
                     abrirCuenta(c.numero)
-                    setRenombrando(false)
                   }}
                   className={`inline-flex h-10 shrink-0 cursor-pointer items-center gap-1.5 rounded-xl px-3.5 text-sm font-bold tabular-nums transition duration-200 active:scale-95 ${
                     activa
-                      ? 'bg-gradient-to-r from-club-pc to-club-tertiary text-white shadow-[0_4px_12px_rgba(43,83,184,.35)]'
-                      : 'border border-line bg-surface text-fg hover:border-club-pc/50'
+                      ? `bg-gradient-to-r from-club-pc to-club-tertiary text-white shadow-[0_4px_12px_rgba(43,83,184,.35)] ${
+                          enUso ? 'ring-2 ring-success/70' : ''
+                        }`
+                      : enUso
+                        ? 'border border-success/40 bg-success/15 text-fg hover:border-success/70'
+                        : 'border border-line bg-surface text-fg hover:border-club-pc/50'
                   }`}
                 >
                   {c.liquidada && <BadgeCheck className="size-4 text-emerald-400" aria-hidden />}
                   Cta {c.numero}
-                  <span className={activa ? 'text-white/80' : 'text-muted'}>
+                  <span
+                    className={
+                      activa
+                        ? 'text-white/80'
+                        : enUso
+                          ? 'text-emerald-700 dark:text-emerald-300'
+                          : 'text-muted'
+                    }
+                  >
                     · Bs {Math.round(totalCuenta(c))}
                   </span>
                 </button>
@@ -292,60 +284,10 @@ export function ResumenMesa({ mesa }: ResumenMesaProps) {
 
           {cuenta && (
             <>
-              <div className="flex items-center justify-between gap-2">
-                {renombrando ? (
-                  <form
-                    className="flex min-w-0 flex-1 items-center gap-1.5"
-                    onSubmit={(e) => {
-                      e.preventDefault()
-                      void guardarNombre()
-                    }}
-                  >
-                    <input
-                      autoFocus
-                      value={nombre}
-                      maxLength={28}
-                      onChange={(e) => setNombre(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Escape' && setRenombrando(false)}
-                      aria-label="Nombre de la cuenta"
-                      className="h-10 min-w-0 flex-1 rounded-xl border border-club-pc bg-bg px-3 text-base font-semibold outline-none ring-4 ring-club-pc/15 short:h-9"
-                    />
-                    <button
-                      type="submit"
-                      aria-label="Guardar nombre"
-                      className="grid size-10 shrink-0 cursor-pointer place-items-center rounded-xl bg-club-pc text-white active:scale-90"
-                    >
-                      <Check className="size-4" />
-                    </button>
-                    <button
-                      type="button"
-                      aria-label="Cancelar"
-                      onClick={() => setRenombrando(false)}
-                      className="grid size-10 shrink-0 cursor-pointer place-items-center rounded-xl border border-line active:scale-90"
-                    >
-                      <X className="size-4" />
-                    </button>
-                  </form>
-                ) : (
-                  <>
-                    <h4 className="min-w-0 truncate text-sm font-bold">
-                      Cuenta {cuenta.numero}
-                      <span className="font-medium text-muted"> · {cuenta.nombre}</span>
-                    </h4>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setNombre(cuenta.nombre)
-                        setRenombrando(true)
-                      }}
-                      className="inline-flex h-8 shrink-0 cursor-pointer items-center gap-1.5 rounded-lg px-2 text-xs font-semibold text-club-primary transition hover:bg-club-pc/10 active:scale-95"
-                    >
-                      <Pencil className="size-3.5" />
-                      Datos cuenta
-                    </button>
-                  </>
-                )}
-              </div>
+              <h4 className="min-w-0 truncate text-sm font-bold">
+                Cuenta {cuenta.numero}
+                <span className="font-medium text-muted"> · {cuenta.nombre}</span>
+              </h4>
 
               <div className="overflow-hidden rounded-2xl border border-line">
                 <div

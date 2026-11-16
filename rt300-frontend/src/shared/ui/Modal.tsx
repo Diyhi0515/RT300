@@ -9,16 +9,19 @@ interface ModalProps {
   title?: string
   dismissible?: boolean
   className?: string
-  tone?: 'default' | 'club'
+  tone?: 'default' | 'club' | 'axon'
+  capa?: string
 }
 
 const estilosPanel = {
   default: 'border border-line bg-surface text-fg shadow-card',
+  axon: 'border border-line bg-surface text-fg shadow-card',
   club: 'bg-club-card text-club-text shadow-2xl shadow-club-pc/15 ring-1 ring-club-text/5 dark:bg-[linear-gradient(160deg,#18284b_0%,#111c35_55%,#0e1830_100%)] dark:shadow-[0_0_90px_-25px_rgba(79,124,255,0.55)] dark:ring-white/12',
 }
 
 const estilosCierre = {
   default: 'text-muted hover:bg-fg/5 hover:text-fg',
+  axon: 'text-white/70 hover:bg-white/10 hover:text-white',
   club: 'text-club-variant hover:bg-club-high hover:text-club-text',
 }
 
@@ -30,6 +33,7 @@ export function Modal({
   dismissible = true,
   className = '',
   tone = 'default',
+  capa = 'z-[80]',
 }: ModalProps) {
   const titleId = useId()
 
@@ -51,7 +55,7 @@ export function Modal({
 
   return createPortal(
     <div
-      className="px-safe pb-safe pt-safe fixed inset-0 z-50 flex overflow-y-auto bg-black/60 py-6 backdrop-blur-sm animate-[fade_0.2s_ease-out] short:py-3"
+      className={`px-safe pb-safe pt-safe fixed inset-0 ${capa} flex overflow-y-auto bg-black/60 py-6 backdrop-blur-sm animate-[fade_0.2s_ease-out] short:py-3`}
       onMouseDown={(event) => {
         if (dismissible && event.target === event.currentTarget) onClose()
       }}

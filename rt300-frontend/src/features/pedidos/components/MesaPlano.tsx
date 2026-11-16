@@ -1,4 +1,4 @@
-import { Clock, type LucideIcon } from 'lucide-react'
+import { type LucideIcon } from 'lucide-react'
 import { tiempoCorto, totalMesa } from '../calculos'
 import type { MesaPlano as MesaPlanoTipo } from '../types'
 import { estilosMesa } from './estilosMesa'
@@ -100,21 +100,14 @@ function Contenido({ mesa, Icono, ocupada, ancho = false }: ContenidoProps) {
       <strong className={`${ancho ? 'text-[7cqw]' : 'text-[15cqw]'} font-extrabold leading-none`}>
         {mesa.codigo.slice(-2)}
       </strong>
-      <span
-        className={`mt-[1.5cqw] flex items-center gap-[1.2cqw] ${ancho ? 'text-[4.4cqw]' : 'text-[9.5cqw]'} font-semibold opacity-90`}
-      >
-        {ocupada ? (
-          <>
-            <Clock className="size-[1.1em]" />
-            {mesa.apertura ? tiempoCorto(mesa.apertura) : ''}
-          </>
-        ) : (
-          <>
-            <Icono className="size-[1.1em]" />
-            {mesa.capacidad}
-          </>
-        )}
-      </span>
+      {!ocupada && (
+        <span
+          className={`mt-[1.5cqw] flex items-center gap-[1.2cqw] ${ancho ? 'text-[4.4cqw]' : 'text-[9.5cqw]'} font-semibold opacity-90`}
+        >
+          <Icono className="size-[1.1em]" />
+          {mesa.capacidad}
+        </span>
+      )}
       {ocupada && (
         <span className={`${ancho ? 'text-[4cqw]' : 'text-[8.5cqw]'} font-bold tabular-nums`}>
           Bs {Math.round(totalMesa(mesa))}

@@ -11,7 +11,7 @@ interface FormularioOcuparProps {
   mesa: MesaPlano
 }
 
-const MAXIMO_CUENTAS = 20
+const MAXIMO_COMENSALES = 999
 
 const primario =
   'flex h-12 w-full cursor-pointer items-center justify-center rounded-xl bg-gradient-to-r from-club-pc to-club-tertiary text-base font-bold text-white shadow-[0_10px_24px_rgba(43,83,184,.35)] transition hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 short:h-10 short:text-sm'
@@ -50,15 +50,18 @@ export function FormularioOcupar({ mesa }: FormularioOcuparProps) {
         detalle={`Capacidad de ${mesa.capacidad}`}
         valor={comensales}
         minimo={1}
-        maximo={Math.max(mesa.capacidad + 4, 12)}
-        alCambiar={setComensales}
+        maximo={MAXIMO_COMENSALES}
+        alCambiar={(valor) => {
+          setComensales(valor)
+          if (cuentas > valor) setCuentas(valor)
+        }}
       />
       <Contador
         etiqueta="Cuentas"
-        detalle="Una por cada persona o grupo que paga aparte"
+        detalle="Una por comensal o grupo"
         valor={cuentas}
         minimo={1}
-        maximo={MAXIMO_CUENTAS}
+        maximo={comensales}
         alCambiar={setCuentas}
       />
       <div className="flex items-center gap-3 rounded-2xl border border-line px-4 py-3 short:py-2">
