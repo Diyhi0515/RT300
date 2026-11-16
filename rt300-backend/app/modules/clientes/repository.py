@@ -28,6 +28,15 @@ class SqlClientesRepository(MesaQueries):
                AND (:cage IS NULL OR gbagecage = :cage)
              ORDER BY gbagenomb""", lim=limite, nombre=f"%{nombre}%" if nombre else None, cage=cage)
 
+    def buscar_por_documento(self, documento: str, limite: int = 20) -> list[dict]:
+        """Clientes cuyo NIT (gbagenruc) o CI (gbagendid) es exactamente `documento`."""
+        return self._rows("""
+            SELECT TOP (:lim) gbagecage AS codigo, gbagenomb AS nombre, gbagenruc AS nruc, gbagendid AS ndid,
+                   gbagelpre AS lpre
+              FROM gbage
+             WHERE LTRIM(RTRIM(gbagenruc)) = :doc OR LTRIM(RTRIM(gbagendid)) = :doc
+             ORDER BY gbagenomb""", lim=limite, doc=documento)
+
     def cliente_varios(self) -> int | None:
         r = self._one("SELECT TOP 1 gbrneccli FROM gbrne")
         return None if r is None else to_int(r["gbrneccli"])

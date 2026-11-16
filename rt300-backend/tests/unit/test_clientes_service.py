@@ -1,6 +1,6 @@
 import pytest
 
-from app.core.errors import Conflict, NotFound
+from app.core.errors import Conflict, NotFound, ValidationFailed
 from app.domain.mesa import Mesa
 from app.modules.clientes.service import ClientesService
 from tests.unit.fakes import GARZON, FakeUow
@@ -18,6 +18,7 @@ class RepoClientes:
     def actualizar_cuenta(self, *a): return self._filas
     def upsert_rtcfr(self, nruc, nombre): self.llamadas.append(("rtcfr", nruc))
     def cliente_varios(self): return self._varios
+    def buscar_por_documento(self, doc): return [{"codigo": 7, "nruc": doc}]
     def cliente_por_codigo(self, cage): return {"codigo": cage} if cage != 404 else None
     def actualizar_nit_agenda(self, cage, nruc): self.llamadas.append(("agenda", cage))
 
@@ -57,3 +58,14 @@ def test_no_se_asigna_un_cliente_que_no_existe_en_la_agenda():
     with pytest.raises(NotFound) as e:
         ClientesService(repo, uow).actualizar_cuenta(GARZON, 10, 1, "M1", cage=404, nruc="1", nomb="X")
     assert e.value.code == "CLIENTE_NO_EXISTE" and repo.llamadas == [] and uow.rollbacks == 1
+
+
+def test_buscar_por_documento_devuelve_los_clientes_del_repositorio():
+    assert ClientesService(RepoClientes(OCUPADA), FakeUow()).buscar_por_documento(" 1234567 ") == [{"codigo": 7, "nruc": "1234567"}]
+
+
+@pytest.mark.parametrize("documento", ["12", "1" * 16, "12a45", "1 2 3", "' OR 1=1 --", "١٢٣٤"])
+def test_el_documento_debe_ser_de_3_a_15_digitos(documento):
+    with pytest.raises(ValidationFailed) as e:
+        ClientesService(RepoClientes(OCUPADA), FakeUow()).buscar_por_documento(documento)
+    assert e.value.code == "DOCUMENTO_INVALIDO"

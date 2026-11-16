@@ -107,6 +107,12 @@ Se leyeron además `README.md`, `web.config`, `inc/config.php`, `require/*` y la
 - Pendiente: quitar componentes sueltos; `reintentar` no comprueba que el `ntmp` sea del folio; front sin pantallas para estas opciones.
 - Pruebas: 178 unitarias.
 
+### Revisión de los cambios del equipo (2026-11-16)
+- Commit `11b666c` (MABO262001, "cambios diseños"): rediseño de mesas, cuentas, modales y cargador; nueva pantalla **Editar cuenta** (`EditarCuentaModal`) con búsqueda de cliente por código o NIT / CI.
+- Al unir con `main` quedaron conflictos sin resolver que rompían `tsc` y una prueba: `MAXIMO_COMENSALES` duplicado y un import sin usar en `FormularioOcupar`, y `Modal` con la propiedad `elevado` (mía) contra `capa` (del equipo). Se adoptó `capa` (por defecto `z-[80]`) y se quitó `elevado`. El equipo dejó que los comensales bajen arrastrando las cuentas (en vez de bloquearse): cumple la regla y se ajustó la prueba.
+- **Conexión con el back:** el modal ya usaba la API real, pero decía que la búsqueda por NIT / CI "aún no está disponible en el servidor". Nuevo `GET /clientes?documento=…` (NIT o CI exacto, 3 a 15 dígitos, `422 DOCUMENTO_INVALIDO` si no). El modal busca primero por código y, si no existe o tiene más de 9 dígitos, por documento.
+- Verificación: backend 185 unitarias + 13 de integración; front 85 pruebas, `tsc`, `eslint` y build.
+
 ### Pendiente / decisiones abiertas
 `GET /auth/usuarios` sigue público; roles reales para autorizar eliminar comanda; hash de clave fuerte (requiere tabla propia); servicio SOAP real sin probar (192.168.0.2 no es alcanzable desde esta PC).
 

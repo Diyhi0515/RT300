@@ -9,8 +9,8 @@ interface ModalProps {
   title?: string
   dismissible?: boolean
   className?: string
-  tone?: 'default' | 'club'
-  elevado?: boolean
+  tone?: 'default' | 'club' | 'axon'
+  capa?: string
 }
 
 const estilosPanel = {
@@ -33,7 +33,7 @@ export function Modal({
   dismissible = true,
   className = '',
   tone = 'default',
-  elevado = false,
+  capa = 'z-[80]',
 }: ModalProps) {
   const titleId = useId()
 
@@ -55,7 +55,7 @@ export function Modal({
 
   return createPortal(
     <div
-      className={`px-safe pb-safe pt-safe fixed inset-0 ${elevado ? 'z-[80]' : 'z-50'} flex overflow-y-auto bg-black/60 py-6 backdrop-blur-sm animate-[fade_0.2s_ease-out] short:py-3`}
+      className={`px-safe pb-safe pt-safe fixed inset-0 ${capa} flex overflow-y-auto bg-black/60 py-6 backdrop-blur-sm animate-[fade_0.2s_ease-out] short:py-3`}
       onMouseDown={(event) => {
         if (dismissible && event.target === event.currentTarget) onClose()
       }}

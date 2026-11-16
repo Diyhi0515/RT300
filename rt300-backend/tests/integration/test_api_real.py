@@ -145,3 +145,13 @@ def test_el_acceso_rapido_lista_solo_los_usuarios_que_listaba_el_sistema_antiguo
             )
         }
     assert listados == esperados and listados
+
+
+def test_buscar_cliente_por_nit_o_ci(cliente, auth):
+    c = cliente.get("/api/v1/clientes?codigo=17", headers=auth).get_json()["clientes"][0]
+    documento = str(c.get("ndid") or c.get("nruc") or "").strip()
+    if not documento.isdigit() or len(documento) < 3:
+        pytest.skip("el cliente de prueba no tiene un NIT o CI numérico")
+    r = cliente.get(f"/api/v1/clientes?documento={documento}", headers=auth)
+    assert r.status_code == 200 and 17 in {x["codigo"] for x in r.get_json()["clientes"]}
+    assert cliente.get("/api/v1/clientes?documento=abc", headers=auth).status_code == 422

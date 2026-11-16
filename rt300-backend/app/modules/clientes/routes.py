@@ -30,7 +30,10 @@ def actualizar(nfol: int, ncta: int):
 def buscar():
     codigo = request.args.get("codigo", type=int)
     nombre = request.args.get("nombre")
+    documento = request.args.get("documento")
     svc = clientes_service()
+    if documento:
+        return responder(ClientesDetalleOut, {"clientes": svc.buscar_por_documento(documento)})
     if codigo and not nombre:
         return responder(ClientesDetalleOut, {"clientes": [svc.obtener_cliente(codigo)]})
     return responder(ClientesOut, {"clientes": svc.buscar(nombre, codigo)})
