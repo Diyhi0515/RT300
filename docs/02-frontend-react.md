@@ -90,7 +90,7 @@ Reglas para conectar las siguientes pantallas:
 - Las listas del backend vienen **envueltas** (`{ "mesas": [...] }`, `{ "platos": [...] }`…), nunca como arreglo suelto.
 - Los errores son `{ error: { code, message, request_id } }`; `lib/http.ts` ya los convierte en `ErrorApi`.
 - Las rutas por mesa o folio responden `403 OTRO_LOCAL` si pertenecen a otro local; el front no necesita filtrarlas.
-- Al cerrar sesión enviar el `refresh_token` en el cuerpo de `/auth/logout` (el backend revoca ambos tokens).
+- Al cerrar sesión llamar `/auth/logout` con la cabecera `X-Requested-With: rt300`: el backend revoca el acceso y la renovación (cookie) y la borra.
 - Cada cambio relevante se registra en [`docs/CAMBIOS.md`](CAMBIOS.md) y en el README de la feature.
 
 ---
@@ -111,7 +111,7 @@ flowchart TB
     UI <--> ST[(Zustand: sesión, carrito)]
 ```
 
-- **Sesión (Zustand + persistencia):** `accessToken` en memoria, `refreshToken` en almacenamiento seguro; perfil (`usuario, local, rol`).
+- **Sesión (Zustand + persistencia):** `accessToken` en memoria, el token de renovación **no está en JavaScript**: vive en una cookie HttpOnly; perfil (`usuario, local, rol`).
 - **Interceptor 401:** intenta `refresh` una vez; si falla, cierra sesión y redirige.
 - **Errores:** el backend devuelve `{error:{code,message,request_id}}`; `http.ts` lo convierte a un `ApiError` y la UI muestra un toast con el mensaje.
 

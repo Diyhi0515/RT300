@@ -4,6 +4,7 @@ import { useSesion } from '@/features/auth'
 import { vibrar } from '@/lib/vibrar'
 import { notificar } from '@/shared/avisos/almacen'
 import { useOcuparMesa } from '../hooks'
+import { MAXIMO_COMENSALES, MAXIMO_CUENTAS } from '../limites'
 import type { MesaPlano } from '../types'
 import { Contador } from './Contador'
 

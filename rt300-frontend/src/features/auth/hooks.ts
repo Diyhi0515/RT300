@@ -18,7 +18,7 @@ export const useIniciarSesion = () => {
     onSuccess: (data, variables) => {
       useAlmacenBloqueo.getState().reiniciar(variables.usuario)
       vibrar('exito')
-      iniciar(data.perfil, data.access_token, data.refresh_token)
+      iniciar(data.perfil, data.access_token)
       navigate('/inicio', { replace: true })
     },
     onError: (error, variables) => {

@@ -1,6 +1,8 @@
 import time
 
-from app.extensions import RevocadosEnMemoria, RevocadosEnRedis
+from app import _almacen_revocados
+from app.config import Config
+from app.extensions import RevocadosEnMemoria, RevocadosEnRedis, RevocadosEnSqlite
 
 
 class RedisFalso:
@@ -37,3 +39,41 @@ def test_redis_token_ya_vencido_expira_en_un_segundo_como_minimo():
     cliente = RedisFalso()
     RevocadosEnRedis(cliente).revocar("abc", time.time() - 50)
     assert cliente.datos[RevocadosEnRedis.PREFIJO + "abc"][1] == 1
+
+
+def test_sqlite_revoca_y_poda_los_vencidos(tmp_path):
+    almacen = RevocadosEnSqlite(tmp_path / "r.sqlite")
+    almacen.revocar("viejo", time.time() - 10)
+    almacen.revocar("vigente", time.time() + 60)
+    assert almacen.esta_revocado("vigente")
+    assert not almacen.esta_revocado("viejo")
+    assert not almacen.esta_revocado("otro")
+
+
+def test_sqlite_sobrevive_a_un_reinicio(tmp_path):
+    ruta = tmp_path / "carpeta" / "r.sqlite"
+    RevocadosEnSqlite(ruta).revocar("abc", time.time() + 60)
+    assert RevocadosEnSqlite(ruta).esta_revocado("abc")
+
+
+def test_sqlite_revocar_dos_veces_no_falla(tmp_path):
+    almacen = RevocadosEnSqlite(tmp_path / "r.sqlite")
+    almacen.revocar("abc", time.time() + 60)
+    almacen.revocar("abc", time.time() + 120)
+    assert almacen.esta_revocado("abc")
+
+
+def test_seleccion_usa_sqlite_por_defecto(tmp_path):
+    cfg = Config(env="development", revocados_db=str(tmp_path / "r.sqlite"), redis_url="")
+    assert isinstance(_almacen_revocados(cfg), RevocadosEnSqlite)
+
+
+def test_seleccion_cae_a_memoria_si_no_puede_escribir(tmp_path):
+    bloqueo = tmp_path / "archivo"
+    bloqueo.write_text("x")
+    cfg = Config(env="development", revocados_db=str(bloqueo / "r.sqlite"), redis_url="")
+    assert isinstance(_almacen_revocados(cfg), RevocadosEnMemoria)
+
+
+def test_seleccion_sin_ruta_usa_memoria():
+    assert isinstance(_almacen_revocados(Config(env="development", revocados_db="", redis_url="")), RevocadosEnMemoria)

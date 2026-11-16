@@ -1,11 +1,11 @@
 import pytest
 
-from app.core.errors import DomainError, Forbidden, GatewayError, NotFound
+from app.core.errors import Conflict, DomainError, Forbidden, GatewayError, NotFound, ValidationFailed
 from app.integrations.comandas.base import ResultadoGateway
 from app.modules.comandas.administrar import AdministrarComandasService
 from app.modules.comandas.guardar import GuardarComandaService
 from app.modules.comandas.ports import Autorizador
-from app.modules.comandas.schemas import EliminarComandaIn, GuardarComandaIn
+from app.modules.comandas.schemas import EliminarComandaIn, GuardarComandaIn, ReimprimirComandaIn
 from tests.unit.fakes import GARZON, FakeUow, GatewayProgramable
 
 
@@ -21,6 +21,9 @@ class RepoComandas:
     def siguiente_transaccion(self): return 9001
     def insertar_rttmp(self, ntra, tipo, filas): self.tmp.append((ntra, tipo, filas))
     def autorizador(self, u): return self._aut
+    def mesa_del_folio_abierto(self, n): return "M1"
+    def motivos_eliminacion(self): return [{"codigo": 1, "descripcion": "ERROR"}]
+    def detalle_vigente(self, n): return [{"ncom": 5, "item": 1}, {"ncom": 5, "item": 2}]
 
 
 def comanda():
@@ -88,3 +91,37 @@ def test_eliminar_ok_registra_tipo_90():
     repo, gw = RepoComandas(autorizador=Autorizador("SUP", "314580", False)), GatewayProgramable()
     r = AdministrarComandasService(repo, FakeUow(), gw).eliminar(GARZON, eliminar_in())
     assert r["ntmp"] == 9001 and repo.tmp[0][1] == 90 and repo.tmp[0][2] == [[5, 1]]
+
+
+def _eliminar(repo, **cambios):
+    datos = {"nfol": 1, "mesa": "M1", "uaut": "sup", "cont": "123456", "mtvo": 1, "items": [{"ncom": 5, "item": 1}], **cambios}
+    AdministrarComandasService(repo, FakeUow(), GatewayProgramable()).eliminar(GARZON, EliminarComandaIn.model_validate(datos))
+
+
+def test_no_se_puede_eliminar_un_producto_que_no_es_del_folio():
+    repo = RepoComandas(autorizador=Autorizador("SUP", "314580", False))
+    with pytest.raises(ValidationFailed) as e:
+        _eliminar(repo, items=[{"ncom": 999, "item": 1}])
+    assert e.value.code == "ITEMS_NO_VIGENTES" and repo.tmp == []
+
+
+def test_no_se_puede_eliminar_con_un_motivo_inexistente():
+    repo = RepoComandas(autorizador=Autorizador("SUP", "314580", False))
+    with pytest.raises(ValidationFailed) as e:
+        _eliminar(repo, mtvo=77)
+    assert e.value.code == "MOTIVO_INVALIDO" and repo.tmp == []
+
+
+def test_la_mesa_debe_ser_la_del_folio():
+    repo = RepoComandas(autorizador=Autorizador("SUP", "314580", False))
+    with pytest.raises(Conflict) as e:
+        _eliminar(repo, mesa="M9")
+    assert e.value.code == "MESA_NO_COINCIDE" and repo.tmp == []
+
+
+def test_reimprimir_tambien_exige_items_vigentes_del_folio():
+    repo = RepoComandas(autorizador=Autorizador("SUP", "314580", False))
+    b = ReimprimirComandaIn.model_validate({"nfol": 1, "mesa": "M1", "uaut": "sup", "mtvo": 1, "items": [{"ncom": 999, "item": 1}]})
+    with pytest.raises(ValidationFailed):
+        AdministrarComandasService(repo, FakeUow(), GatewayProgramable()).reimprimir(GARZON, b)
+    assert repo.tmp == []

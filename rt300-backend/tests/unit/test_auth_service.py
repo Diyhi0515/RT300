@@ -23,6 +23,7 @@ class RepoAuth:
     def hay_parametros_restaurant(self): return self.rtctl
     def nombre_local(self, c): return "RESTAURANTE HOYO 19"
     def usuarios_de_pedidos(self): return []
+    def registradora(self, u, c, n): return n
 
 
 def svc(**over):
@@ -63,3 +64,19 @@ def test_deshabilitado_solo_se_informa_tras_clave_correcta():
 def test_rol_admin_por_politica():
     s = AuthService(RepoAuth(), PoliticaRoles(admins=("GP1",)))
     assert s.login("GP1", "123456").usuario.rol == "admin"
+
+
+def test_la_caja_del_usuario_viaja_en_la_sesion():
+    from app.modules.auth.ports import Credencial
+
+    cred = Credencial("GP1", "GARZON 1", CLAVE_123456 + "   ", False, 2, 2, "12009", caja="3")
+    assert svc(cred=cred).login("gp1", "123456").usuario.caja == "3"
+    assert svc().login("gp1", "123456").usuario.caja == ""
+
+
+def test_la_registradora_se_resuelve_con_el_repositorio():
+    class Repo(RepoAuth):
+        def registradora(self, u, c, n): return 7
+
+    r = AuthService(Repo(), PoliticaRoles()).login("gp1", "123456")
+    assert r.usuario.nreg == 7

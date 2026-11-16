@@ -37,9 +37,10 @@ services:
     entrypoint: ["/bin/bash", "-c", "/opt/mssql-tools18/bin/sqlcmd -C -S db -U sa -P \"$$MSSQL_SA_PASSWORD\" -v APP_PASSWORD=\"$$APP_DB_PASSWORD\" -i /init.sql || /opt/mssql-tools/bin/sqlcmd -S db -U sa -P \"$$MSSQL_SA_PASSWORD\" -v APP_PASSWORD=\"$$APP_DB_PASSWORD\" -i /init.sql"]
     restart: "no"
 
-  # ───────────────────────────── Redis (tokens revocados y límites de intentos compartidos) ─────────────────────────────
+  # ───────────────────────────── Redis OPCIONAL (solo si hay varias instancias: docker compose --profile redis up -d y REDIS_URL en .env) ─────────────────────────────
   redis:
     image: redis:7-alpine
+    profiles: ["redis"]
     command: ["redis-server", "--requirepass", "${REDIS_PASSWORD:-Rt300Redis2026x}", "--save", "", "--appendonly", "no"]
     healthcheck:
       test: ["CMD-SHELL", "redis-cli -a \"$$REDIS_PASSWORD\" --no-auth-warning ping | grep PONG"]
@@ -62,6 +63,20 @@ services:
       - ./docker/proxy/Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
 
+  # ───────────────────────────── Proxy de PRODUCCIÓN (front compilado + CSP): npm run build y luego
+  #   PROXY_HOPS=1 docker compose --profile produccion up -d backend proxy-prod
+  proxy-prod:
+    image: caddy:2-alpine
+    profiles: ["produccion"]
+    depends_on:
+      - backend
+    ports:
+      - "127.0.0.1:8444:8444"
+    volumes:
+      - ./docker/proxy/Caddyfile.prod:/etc/caddy/Caddyfile:ro
+      - ./rt300-frontend/dist:/srv:ro
+      - caddy_data_prod:/data
+
   # ───────────────────────────── Backend (Flask) ─────────────────────────────
   backend:
     build: ./rt300-backend
@@ -70,10 +85,10 @@ services:
         condition: service_healthy
       db-init:
         condition: service_completed_successfully
-      redis:
-        condition: service_healthy
     environment:
-      REDIS_URL: "redis://:${REDIS_PASSWORD:-Rt300Redis2026x}@redis:6379/0"
+      REDIS_URL: "${REDIS_URL:-}"
+      COOKIE_SECURE: "${COOKIE_SECURE:-}"
+      REVOCADOS_DB: "/data/app/revocados.sqlite"
       FLASK_ENV: "${FLASK_ENV:-production}"
       SECRET_KEY: "${SECRET_KEY:-dev-secret-cambiar}"
       JWT_SECRET_KEY: "${JWT_SECRET_KEY:-dev-jwt-secret-cambiar-por-uno-largo-de-32-o-mas}"
@@ -109,6 +124,7 @@ services:
       - ./rt300-backend:/app                       # recarga en caliente
       - "${IMAGENES_DIR:-./img/Restaurantes}:/data/imagenes:ro"
       - imgcache:/data/cache
+      - appdata:/data/app
     # Desarrollo: servidor Flask con recarga, SIN depurador interactivo (la consola de Werkzeug permite ejecutar código). Producción: quitar esta línea y usar el CMD (waitress) del Dockerfile.
     command: ["flask", "--app", "wsgi", "run", "--host=0.0.0.0", "--port=5000", "--reload", "--no-debugger"]
 
@@ -129,5 +145,7 @@ services:
 volumes:
   sqldata:
   imgcache:
+  appdata:
   frontend_node_modules:
   caddy_data:
+  caddy_data_prod:

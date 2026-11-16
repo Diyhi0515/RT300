@@ -23,6 +23,7 @@ import {
 } from '../hooks'
 import { usePedidos } from '../store'
 import type { DatosCuenta, MesaDetalle } from '../types'
+import { MAXIMO_COMENSALES, MAXIMO_CUENTAS } from '../limites'
 import { ConfirmarAccion } from './ConfirmarAccion'
 import { Contador } from './Contador'
 import { TodasLasCuentas } from './TodasLasCuentas'
@@ -33,7 +34,6 @@ interface ResumenMesaProps {
 
 const COLUMNAS = 'grid-cols-[minmax(0,1fr)_2rem_3.6rem_4.2rem]'
 
-const MAXIMO_COMENSALES = 999
 
 const accion =
   'flex h-11 cursor-pointer items-center justify-center gap-2 rounded-xl border border-line bg-surface px-3 text-sm font-semibold transition hover:border-primary/50 hover:bg-primary/5 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 short:h-10'
@@ -114,6 +114,13 @@ export function ResumenMesa({ mesa }: ResumenMesaProps) {
   }
 
   const agregarCuenta = async () => {
+    if (mesa.cuentas.length >= mesa.comensales) {
+      notificar.advertencia(
+        'No puede haber más cuentas que comensales. Aumenta los comensales en los datos de la mesa.',
+        `Mesa ${mesa.codigo}`,
+      )
+      return
+    }
     if (await cambiarMesa(mesa.cuentas.length + 1, mesa.comensales)) vibrar('toque')
   }
 
@@ -166,19 +173,16 @@ export function ResumenMesa({ mesa }: ResumenMesaProps) {
           <Contador
             etiqueta="Comensales"
             valor={comensales}
-            minimo={minimoCuentas}
+            minimo={Math.max(1, cuentas)}
             maximo={MAXIMO_COMENSALES}
-            alCambiar={(valor) => {
-              setComensales(valor)
-              if (cuentas > valor) setCuentas(valor)
-            }}
+            alCambiar={setComensales}
           />
           <Contador
             etiqueta="Cuentas"
-            detalle={`Mínimo ${minimoCuentas} por consumo existente`}
+            detalle={`Mínimo ${minimoCuentas} por consumo existente. No pueden ser más que los comensales`}
             valor={cuentas}
             minimo={minimoCuentas}
-            maximo={comensales}
+            maximo={Math.max(minimoCuentas, Math.min(MAXIMO_CUENTAS, comensales))}
             alCambiar={setCuentas}
           />
           <div className="grid grid-cols-2 gap-2">

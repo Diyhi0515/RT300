@@ -37,23 +37,32 @@ def test_renovar_entrega_un_access_token_con_los_mismos_claims():
 def test_cerrar_sesion_revoca_acceso_y_refresh_de_la_misma_persona():
     t = EmisorTokens()
     r = t.emitir(GARZON, "L")
-    acceso = decode_token(r["access_token"])
-    t.cerrar_sesion(acceso, r["refresh_token"])
-    assert esta_revocado(acceso["jti"]) and esta_revocado(decode_token(r["refresh_token"])["jti"])
+    t.cerrar_sesion(r["access_token"], r["refresh_token"])
+    assert esta_revocado(decode_token(r["access_token"])["jti"])
+    assert esta_revocado(decode_token(r["refresh_token"])["jti"])
 
 
-def test_cerrar_sesion_no_revoca_el_refresh_de_otra_persona():
+def test_cerrar_sesion_no_revoca_nada_si_los_tokens_son_de_personas_distintas():
     t = EmisorTokens()
     mio, ajeno = t.emitir(GARZON, "L"), t.emitir(Usuario("GP2", "G2", 2, 2, 1, 0, "garzon"), "L")
-    t.cerrar_sesion(decode_token(mio["access_token"]), ajeno["refresh_token"])
+    t.cerrar_sesion(mio["access_token"], ajeno["refresh_token"])
     assert not esta_revocado(decode_token(ajeno["refresh_token"])["jti"])
 
 
-def test_un_refresh_invalido_no_impide_cerrar_sesion():
+def test_un_token_invalido_no_impide_cerrar_sesion():
     r = EmisorTokens().emitir(GARZON, "L")
-    acceso = decode_token(r["access_token"])
-    EmisorTokens().cerrar_sesion(acceso, "basura")
-    assert esta_revocado(acceso["jti"])
+    EmisorTokens().cerrar_sesion(r["access_token"], "basura")
+    assert esta_revocado(decode_token(r["access_token"])["jti"])
+
+
+def test_con_el_acceso_invalido_se_revoca_igual_la_renovacion():
+    r = EmisorTokens().emitir(GARZON, "L")
+    EmisorTokens().cerrar_sesion("basura", r["refresh_token"])
+    assert esta_revocado(decode_token(r["refresh_token"])["jti"])
+
+
+def test_cerrar_sesion_sin_tokens_no_falla():
+    EmisorTokens().cerrar_sesion(None, None)
 
 
 def test_un_refresh_de_una_sesion_anterior_sin_cven_exige_iniciar_sesion_de_nuevo():

@@ -71,5 +71,6 @@ class AuthService:
             raise Unauthorized("Falta Definir tipo de pedido inicial.", "SIN_TIPO_PEDIDO")
 
         sesion = Usuario(usuario=usuario, nombre=cred.nombre, cloc=cred.cloc, calm=cred.calm, cmon=cmon,
-                         nreg=acceso.nreg, rol=self._roles.rol_de(usuario), cven=to_int(cred.cven, 0) or 0)
+                         nreg=self._repo.registradora(usuario, cred.cloc, acceso.nreg), rol=self._roles.rol_de(usuario),
+                         cven=to_int(cred.cven, 0) or 0, caja=cred.caja)
         return ResultadoLogin(sesion, self._repo.nombre_local(cred.cloc))

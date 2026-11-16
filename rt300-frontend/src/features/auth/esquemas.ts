@@ -16,7 +16,6 @@ export const esquemaPerfil = z.object({
 
 export const esquemaRespuestaInicio = z.object({
   access_token: z.string(),
-  refresh_token: z.string(),
   perfil: esquemaPerfil,
 })
 

@@ -7,6 +7,7 @@ import { notificar } from '@/shared/avisos/almacen'
 import { cantidadItems, totalItems } from '../calculos'
 import { useEnviarComanda, useMesaDetalle, usePlatos, useSecciones } from '../hooks'
 import { usePedidos } from '../store'
+import { ConfirmarAccion } from './ConfirmarAccion'
 import type { ItemComanda, Plato } from '../types'
 
 const boton =
@@ -34,6 +35,7 @@ function Contenido({ codigo, numero, alCerrar }: ContenidoProps) {
   const [busqueda, setBusqueda] = useState('')
   const [elegidos, setElegidos] = useState<Record<string, ItemComanda>>({})
   const [verResumen, setVerResumen] = useState(false)
+  const [confirmando, setConfirmando] = useState(false)
 
   const listaSecciones = secciones.data ?? []
   const seccion = seccionElegida ?? listaSecciones[0]?.codigo ?? null
@@ -122,7 +124,7 @@ function Contenido({ codigo, numero, alCerrar }: ContenidoProps) {
     <button
       type="button"
       disabled={!items.length || envio.isPending || !mesa}
-      onClick={() => void enviar()}
+      onClick={() => setConfirmando(true)}
       className={clases}
     >
       <Send className="size-[18px]" />
@@ -366,6 +368,18 @@ function Contenido({ codigo, numero, alCerrar }: ContenidoProps) {
           </div>
         </div>
       </section>
+      <ConfirmarAccion
+        elevado
+        abierto={confirmando}
+        titulo="¿Enviar la comanda?"
+        mensaje={`${cantidad} ${cantidad === 1 ? 'producto' : 'productos'} por ${formatoMoneda(total)} para la cuenta ${numero} de la mesa ${codigo}.`}
+        textoConfirmar="Sí, enviar"
+        alConfirmar={() => {
+          setConfirmando(false)
+          void enviar()
+        }}
+        alCancelar={() => setConfirmando(false)}
+      />
     </div>
   )
 }

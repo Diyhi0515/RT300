@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from ...core.acceso import exigir_local
-from ...core.errors import DomainError, Forbidden, NotFound
+from ...core.errors import Conflict, DomainError, Forbidden, NotFound, ValidationFailed
 from ...core.legacy_password import verificar
 from ...domain.uow import UnitOfWork
 from ...domain.usuario import Usuario
@@ -47,6 +47,7 @@ class AdministrarComandasService:
     def eliminar(self, u: Usuario, b: EliminarComandaIn) -> dict:
         exigir_local(u, self._repo.local_de_folio(b.nfol))
         self._validar_autorizador(b.uaut, b.cont)
+        self._validar_pedido(b.nfol, b.mesa, b.mtvo, b.items)
         ntmp = self._registrar(TIPO_ELIMINAR, b.items)
         r = invocar(self._gw.eliminar_comanda, EliminarComandaReq(ntra=ntmp, nfol=b.nfol, mesa=b.mesa, uaut=b.uaut,
                                                                   cont=b.cont, mtvo=b.mtvo, usrn=u.usuario))
@@ -55,6 +56,7 @@ class AdministrarComandasService:
     def reimprimir(self, u: Usuario, b: ReimprimirComandaIn) -> dict:
         exigir_local(u, self._repo.local_de_folio(b.nfol))
         self._validar_autorizador(b.uaut, None)
+        self._validar_pedido(b.nfol, b.mesa, b.mtvo, b.items)
         ntmp = self._registrar(TIPO_REIMPRIMIR, b.items)
         r = invocar(self._gw.reimprimir_comanda, ReimprimirComandaReq(ntra=ntmp, nfol=b.nfol, mesa=b.mesa, uaut=b.uaut,
                                                                       mtvo=b.mtvo, usrn=u.usuario))
@@ -67,6 +69,20 @@ class AdministrarComandasService:
             raise Forbidden("Usuario autorizador no válido.", "AUTORIZADOR_INVALIDO")
         if clave is not None and not verificar(clave, a.clave_guardada):
             raise Forbidden("Clave del autorizador incorrecta.", "AUTORIZADOR_INVALIDO")
+
+    def _validar_pedido(self, nfol: int, mesa: str, mtvo: int, items: list[ItemComandaRef]) -> None:
+        """El sistema antiguo dejaba elegir solo comandas vigentes de la mesa y un motivo de la tabla (el servicio de comandas
+        lo volvía a comprobar). Aquí se exige antes de escribir nada, para que no se pueda tocar una comanda ajena al folio."""
+        mesa_folio = self._repo.mesa_del_folio_abierto(nfol)
+        if mesa_folio is None:
+            raise NotFound(f"NO EXISTE FOLIO: {nfol}", "FOLIO_NO_EXISTE")
+        if mesa_folio != mesa.strip():
+            raise Conflict(f"El folio {nfol} no pertenece a la mesa {mesa}.", "MESA_NO_COINCIDE")
+        if mtvo not in {int(m["codigo"]) for m in self._repo.motivos_eliminacion()}:
+            raise ValidationFailed("El motivo indicado no existe.", "MOTIVO_INVALIDO")
+        vigentes = {(int(d["ncom"]), int(d["item"])) for d in self._repo.detalle_vigente(nfol)}
+        if any((i.ncom, i.item) not in vigentes for i in items):
+            raise ValidationFailed("Hay productos que no son de comandas vigentes de este folio.", "ITEMS_NO_VIGENTES")
 
     def _registrar(self, tipo: int, items: list[ItemComandaRef]) -> int:
         with self._uow:

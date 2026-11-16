@@ -37,7 +37,6 @@ class PerfilOut(SesionOut):
 
 class LoginOut(Salida):
     access_token: str
-    refresh_token: str
     perfil: PerfilOut
 
 

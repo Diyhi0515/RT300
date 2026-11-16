@@ -91,12 +91,11 @@ cd rt300-frontend && npm install && npm run dev
 
 En desarrollo el front llama a `/api/v1` y el proxy de Vite lo reenvía a `http://127.0.0.1:5000` (se usa la IP y no `localhost` porque en Windows `localhost` prueba primero IPv6 y añade ~200 ms a cada petición) (no hace falta CORS).
 Si usa `VITE_API_URL` con otro origen, ese origen debe estar en `CORS_ORIGINS` del backend.
-Para las siguientes pantallas: guardar `access_token` (15 min), renovar con `/auth/refresh`, y al cerrar sesión llamar `/auth/logout`
-enviando el `refresh_token` en el cuerpo (el backend revoca ambos tokens).
+La sesión usa una cookie `HttpOnly` para la renovación: en desarrollo abre el front y la API con el mismo host (`127.0.0.1` en ambos, sin mezclar con `localhost`), o la cookie no se enviará.
 
 ## 7.1 HTTPS (TLS) y Redis
 
-- **Redis** ya es parte del `docker-compose.yml` (sin puerto publicado, con clave `REDIS_PASSWORD`). El backend lo usa solo; no hay que hacer nada.
+- **Tokens revocados:** se guardan en un archivo SQLite (`REVOCADOS_DB`), sin servicios extra ni Docker. **Redis es opcional** y solo hace falta con varias máquinas: `docker compose --profile redis up -d` y `REDIS_URL=redis://:CLAVE@redis:6379/0` en `.env`.
 - **HTTPS local o en servidor** con Caddy (certificado propio, se renueva solo):
 
 ```bash
@@ -105,6 +104,15 @@ PROXY_HOPS=1 VITE_API_URL=/api/v1 docker compose --profile https up -d
 
 Abre `https://127.0.0.1:8443`. El navegador avisará del certificado hasta que confíes en la CA de Caddy (volumen `caddy_data`, `pki/authorities/local/root.crt`). `PROXY_HOPS=1` es obligatorio con el proxy, para que el backend vea la IP real y el esquema https.
 En un servidor con dominio, cambia las direcciones de `docker/proxy/Caddyfile` por el dominio y quita `tls internal`: Caddy obtiene un certificado público solo. Para volver al modo normal: `docker compose stop proxy` y `docker compose up -d backend frontend`.
+
+## 7.2 Producción: front compilado y CSP
+
+```bash
+cd rt300-frontend && npm run build
+cd .. && PROXY_HOPS=1 COOKIE_SECURE=true docker compose --profile produccion up -d backend proxy-prod
+```
+
+Abre `https://127.0.0.1:8444` (el navegador pedirá confiar en el certificado local de Caddy). `docker/proxy/Caddyfile.prod` sirve `dist/` y reenvía `/api` al backend **bajo el mismo origen** (requisito de la cookie `SameSite=Strict`) y añade al front estas cabeceras: `Content-Security-Policy` (`default-src 'self'`, `script-src 'self'` sin `unsafe-inline` ni `eval`, `connect-src 'self'`, `object-src 'none'`, `frame-ancestors 'none'`, `upgrade-insecure-requests`; solo `style-src-attr 'unsafe-inline'` para los `style=""` de React), `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`, `Cross-Origin-Opener-Policy`, `Cross-Origin-Resource-Policy` y HSTS. Si usas nginx u otro servidor, copia esas mismas cabeceras. El script del tema se movió a `public/tema-inicial.js` para no necesitar `unsafe-inline`. Si agregas una fuente, imagen o API externa, hay que ampliar la directiva correspondiente.
 
 ## 8. Reglas de trabajo con la base de datos
 

@@ -1,10 +1,13 @@
 import { Navigate, createBrowserRouter } from 'react-router-dom'
-import { SoloPublico, RequerirSesion } from './guardas'
+import { CargadorPantalla } from '@/shared/ui/Cargador'
+import { SoloPublico, RequerirRol, RequerirSesion } from './guardas'
+import { AdminLayout } from './layouts/AdminLayout'
 import { AppLayout } from './layouts/AppLayout'
 
 export const router = createBrowserRouter([
   {
     element: <SoloPublico />,
+    HydrateFallback: CargadorPantalla,
     children: [
       {
         path: '/login',
@@ -16,6 +19,7 @@ export const router = createBrowserRouter([
   },
   {
     element: <RequerirSesion />,
+    HydrateFallback: CargadorPantalla,
     children: [
       {
         element: <AppLayout />,
@@ -39,11 +43,42 @@ export const router = createBrowserRouter([
                 .DatosCuentasPage,
             }),
           },
+          { path: '/mesas', element: <Navigate to="/admin" replace /> },
+        ],
+      },
+      {
+        element: <RequerirRol roles={['admin']} />,
+        children: [
           {
-            path: '/mesas',
-            lazy: async () => ({
-              Component: (await import('@/features/salon/pages/MesasPage')).MesasPage,
-            }),
+            element: <AdminLayout />,
+            children: [
+              {
+                path: '/admin',
+                lazy: async () => ({
+                  Component: (await import('@/features/admin/pages/PanelPage')).PanelPage,
+                }),
+              },
+              {
+                path: '/admin/mesas',
+                lazy: async () => ({
+                  Component: (await import('@/features/admin/pages/MesasServicioPage'))
+                    .MesasServicioPage,
+                }),
+              },
+              {
+                path: '/admin/menu',
+                lazy: async () => ({
+                  Component: (await import('@/features/admin/pages/MenuAdminPage')).MenuAdminPage,
+                }),
+              },
+              {
+                path: '/admin/clientes',
+                lazy: async () => ({
+                  Component: (await import('@/features/admin/pages/ClientesAdminPage'))
+                    .ClientesAdminPage,
+                }),
+              },
+            ],
           },
         ],
       },

@@ -64,4 +64,20 @@ describe('FormularioOcupar', () => {
 
     expect(await screen.findByRole('button', { name: 'Ocupando...' })).toBeDisabled()
   })
+
+  it('las cuentas no pueden superar a los comensales (regla del sistema antiguo)', async () => {
+    useSesion.setState({ perfil: { usuario: 'GP1', nombre: 'Mozo Uno', local: '2', rol: 'garzon' } })
+    const usuario = userEvent.setup()
+    renderConProveedores(<FormularioOcupar mesa={{ ...mesa, capacidad: 2 }} />)
+
+    const masCuentas = screen.getByRole('button', { name: /más cuentas/i })
+    await usuario.click(masCuentas)
+    expect(masCuentas).toBeDisabled()
+
+    const menosComensales = screen.getByRole('button', { name: /menos comensales/i })
+    expect(menosComensales).toBeDisabled()
+
+    await usuario.click(screen.getByRole('button', { name: /más comensales/i }))
+    expect(masCuentas).toBeEnabled()
+  })
 })

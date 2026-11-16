@@ -51,6 +51,8 @@ class Config:
     menu_cache_seconds: int = field(default_factory=lambda: int(_env("MENU_CACHE_SECONDS", "300")))
     proxy_hops: int = field(default_factory=lambda: int(_env("PROXY_HOPS", "0")))
     rate_limit_default: str = field(default_factory=lambda: _env("RATE_LIMIT_DEFAULT", "300 per minute"))
+    cookie_secure: str = field(default_factory=lambda: _env("COOKIE_SECURE", "").lower())
+    revocados_db: str = field(default_factory=lambda: _env("REVOCADOS_DB", "data/revocados.sqlite"))
     redis_url: str = field(repr=False, default_factory=lambda: _env("REDIS_URL"))
     imagenes_dir: str = field(default_factory=lambda: _env("IMAGENES_DIR", "/data/imagenes"))
     imagenes_cache_dir: str = field(default_factory=lambda: _env("IMAGENES_CACHE_DIR", "/data/cache"))
@@ -59,6 +61,15 @@ class Config:
     @property
     def is_dev(self) -> bool:
         return self.env == "development"
+
+    @property
+    def cookie_segura(self) -> bool:
+        """Por defecto la cookie exige HTTPS salvo en desarrollo; COOKIE_SECURE=true/false lo fuerza."""
+        if self.cookie_secure in ("true", "1", "yes"):
+            return True
+        if self.cookie_secure in ("false", "0", "no"):
+            return False
+        return not self.is_dev
 
     @property
     def jwt_access_ttl(self) -> timedelta:

@@ -18,6 +18,7 @@ class RepoClientes:
     def actualizar_cuenta(self, *a): return self._filas
     def upsert_rtcfr(self, nruc, nombre): self.llamadas.append(("rtcfr", nruc))
     def cliente_varios(self): return self._varios
+    def cliente_por_codigo(self, cage): return {"codigo": cage} if cage != 404 else None
     def actualizar_nit_agenda(self, cage, nruc): self.llamadas.append(("agenda", cage))
 
 
@@ -49,3 +50,10 @@ def test_cuenta_inexistente_hace_rollback():
     with pytest.raises(NotFound):
         ClientesService(RepoClientes(OCUPADA, filas=0), uow).actualizar_cuenta(GARZON, 10, 9, "M1", 0, "", "X")
     assert uow.rollbacks == 1
+
+
+def test_no_se_asigna_un_cliente_que_no_existe_en_la_agenda():
+    repo, uow = RepoClientes(OCUPADA), FakeUow()
+    with pytest.raises(NotFound) as e:
+        ClientesService(repo, uow).actualizar_cuenta(GARZON, 10, 1, "M1", cage=404, nruc="1", nomb="X")
+    assert e.value.code == "CLIENTE_NO_EXISTE" and repo.llamadas == [] and uow.rollbacks == 1

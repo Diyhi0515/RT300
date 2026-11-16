@@ -43,5 +43,7 @@ export const tiempoCorto = (marca: number) => {
   const minutos = Math.max(0, Math.round((Date.now() - marca) / 60_000))
   if (minutos < 1) return 'Ahora'
   if (minutos < 60) return `${minutos} min`
-  return `${Math.floor(minutos / 60)}h ${minutos % 60}m`
+  const horas = Math.floor(minutos / 60)
+  if (horas < 24) return `${horas}h ${minutos % 60}m`
+  return `${Math.floor(horas / 24)}d ${horas % 24}h`
 }

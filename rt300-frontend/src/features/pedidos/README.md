@@ -67,7 +67,7 @@ Con el servicio de comandas en modo `fake` (desarrollo) la comanda se registra p
 | Reservar mesa y estado "reservada" | Se quitaron. La base solo tiene mesas libres y ocupadas |
 | "Por cobrar" y "Liquidar cuenta" | Se quitaron. Pedir cuenta ahora es **Imprimir cuenta**. La liquidación la hace el módulo de caja |
 | Agregar y quitar cuentas de a una | Se mantienen los botones. Agregar suma una cuenta. Quitar solo elimina la última y solo si la mesa no tiene consumo; el servidor valida igualmente |
-| "Cuentas no pueden superar a comensales" | Se quitó (el sistema antiguo no la tiene) |
+| "Cuentas no pueden superar a comensales" | **Se mantiene** (corregido 2026-11-13: el sistema antiguo sí la tiene en `RT300a.js`, al ocupar y al modificar la mesa). El contador de cuentas se detiene en el número de comensales, los comensales no bajan de las cuentas, y agregar una cuenta de más avisa. El servidor también la valida (`422 CUENTAS_MAYOR_COMENSALES`) |
 
 Una cuenta liquidada (la marca la caja) se muestra con su insignia y no permite nueva comanda.
 
@@ -120,3 +120,25 @@ Flujo manual completo: [`docs/04-pruebas-locales.md`](../../../../docs/04-prueba
 - Búsqueda de productos en todo el menú (hoy busca dentro de la sección elegida).
 - Imágenes de platos (`/menu/platos/{cart}/imagen`).
 - Ampliar el adaptador del mockup a estas pantallas.
+
+## Restricciones del sistema antiguo y dónde se cumplen aquí
+
+Revisadas contra `RT300a/b/c/303 .js y .php` (2026-11-13). "Servidor" significa que se exige en el backend aunque el front falle o lo salten.
+
+| Restricción del sistema antiguo | Dónde se cumple ahora |
+|---|---|
+| Cuentas no pueden superar a comensales (al ocupar y al modificar) | Servidor `422 CUENTAS_MAYOR_COMENSALES` + contadores del front |
+| Al menos 1 comensal, 1 cuenta y un mesero | Servidor (`COMENSALES_INVALIDOS`, `SIN_MESERO`) |
+| Mesa eliminada, deshabilitada, ya ocupada o en unión no se puede ocupar | Servidor (`MESA_ELIMINADA`, `MESA_DESHABILITADA`, `MESA_OCUPADA`, `MESA_EN_UNION`) |
+| Datos de cuenta solo en mesa ocupada del mismo folio | Servidor (`MESA_NO_OCUPADA`, `CUENTA_NO_EXISTE`) |
+| No quitar cuentas si hay comandas o notas de venta | Servidor (`CUENTAS_CON_COMANDAS`, `CUENTAS_CON_NOTA`) + el front solo ofrece quitar la última cuenta sin consumo |
+| No habilitar una mesa con comandas vigentes | Servidor |
+| Cuenta liquidada no admite comandas ("Cta: liquidada.") | Servidor (la cuenta debe estar abierta) + botón desactivado en el front |
+| Comanda con al menos 1 producto y cantidad mayor a 0 | Servidor (1 a 100 líneas, cantidad 1 a 99) + botón desactivado sin productos |
+| Producto existente, con precio y centro de producción del local | Servidor (`PLATO_NO_EXISTE`, `SIN_PRECIO`, centro de producción) |
+| "Confirma: Guardar Comanda?" antes de enviar | Front: diálogo "¿Enviar la comanda?" (agregado el 2026-11-13) |
+| Cliente debe existir en la agenda | Servidor (`CLIENTE_NO_EXISTE`) |
+| Eliminar comanda: motivo y clave del autorizador | Servidor (la pantalla aún no existe) |
+| Cada usuario solo ve su local | Servidor (`OTRO_LOCAL`), nuevo respecto al sistema antiguo |
+
+Pendiente de comparar cuando existan las pantallas: "una comanda con insumos debe tener por lo menos un insumo" (`RT300c.js`, edición de insumos) y la eliminación de comandas.

@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from ...core.acceso import exigir_local
-from ...core.errors import Conflict, DomainError, NotFound
+from ...core.errors import Conflict, DomainError, Forbidden, NotFound, ValidationFailed
 from ...domain.mesa import ESTC_LIQUIDADA, Mesa
 from ...domain.uow import UnitOfWork
 from ...domain.usuario import Usuario
@@ -131,11 +131,33 @@ class SalonService:
         return self._repo.cuentas_folio(nfol)
 
     # ───────────── Escrituras (una unidad de trabajo cada una) ─────────────
+    def _mesero_a_asignar(self, u: Usuario, cven: int | None) -> int | None:
+        """En el sistema antiguo la lista de meseros solo se habilitaba a quien tenía caja (adusrcaja); los demás atendían con
+        su propio mesero. El PHP no lo comprobaba (solo el navegador): aquí se exige en el servidor, y el mesero debe existir."""
+        if not cven or cven == u.cven:
+            return cven
+        if not u.caja:
+            raise Forbidden("Solo un usuario con caja puede asignar otro mesero.", "SIN_PERMISO_MESERO")
+        if not self._repo.es_vendedor(cven):
+            raise NotFound(f"NO EXISTE VENDEDOR: {cven} en la agenda.", "MESERO_NO_EXISTE")
+        return cven
+
+    @staticmethod
+    def _validar_cuentas(ccom: int, ncta: int) -> None:
+        """Regla del sistema antiguo (RT300a.js): no puede haber más cuentas que comensales, al ocupar y al modificar."""
+        if ccom < 1:
+            raise ValidationFailed("Indique la cantidad de comensales.", "COMENSALES_INVALIDOS")
+        if ncta > ccom:
+            raise ValidationFailed(
+                "El número de cuentas no puede ser mayor que el número de comensales.", "CUENTAS_MAYOR_COMENSALES"
+            )
+
     def ocupar_mesa(self, u: Usuario, codigo: str, cven: int | None, caco: int, ccom: int, ncta: int) -> dict:
-        cven = cven or u.cven
+        exigir_local(u, self._repo.local_de_mesa(codigo))
+        cven = self._mesero_a_asignar(u, cven) or u.cven
         if not cven:
             raise DomainError("El usuario no tiene mesero asignado.", "SIN_MESERO")
-        exigir_local(u, self._repo.local_de_mesa(codigo))
+        self._validar_cuentas(ccom, ncta)
         with self._uow:
             self._mesa_operable(codigo)
             cli = self._cliente_varios()
@@ -173,6 +195,8 @@ class SalonService:
 
     def modificar_mesa(self, u: Usuario, nfol: int, cven: int | None, ccom: int, ncta_nueva: int) -> list[dict]:
         exigir_local(u, self._repo.local_de_folio(nfol))
+        cven = self._mesero_a_asignar(u, cven)
+        self._validar_cuentas(ccom, ncta_nueva)
         with self._uow:
             ncta_vieja = self._repo.contar_cuentas(nfol)
             if ncta_nueva < ncta_vieja and self._repo.contar_comandas(nfol, solo_vigentes=False) > 0:

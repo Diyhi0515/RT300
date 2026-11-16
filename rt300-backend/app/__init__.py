@@ -1,6 +1,9 @@
 """Application factory del backend RT-300."""
 from __future__ import annotations
 
+import logging
+import sqlite3
+
 from flask import Flask, jsonify
 from sqlalchemy import text
 from werkzeug.middleware.proxy_fix import ProxyFix
@@ -14,9 +17,11 @@ from .core.logging import init_logging
 from .core.respuesta import responder
 from .core.salidas_comunes import SaludOut
 from .core.seguridad_http import registrar_cabeceras
+from .core.sesion_cookie import NOMBRE_COOKIE, RUTA_COOKIE
 from .extensions import (
     RevocadosEnMemoria,
     RevocadosEnRedis,
+    RevocadosEnSqlite,
     configurar_revocados,
     cors,
     esta_revocado,
@@ -24,13 +29,21 @@ from .extensions import (
     limiter,
 )
 
+log = logging.getLogger(__name__)
 
-def _almacen_revocados(redis_url: str):
-    if not redis_url:
-        return RevocadosEnMemoria()
-    import redis
 
-    return RevocadosEnRedis(redis.Redis.from_url(redis_url, socket_timeout=2, socket_connect_timeout=2))
+def _almacen_revocados(cfg: Config):
+    """Redis si hay REDIS_URL (varias máquinas); si no, un archivo SQLite; si ni eso se puede escribir, memoria."""
+    if cfg.redis_url:
+        import redis
+
+        return RevocadosEnRedis(redis.Redis.from_url(cfg.redis_url, socket_timeout=2, socket_connect_timeout=2))
+    if cfg.revocados_db:
+        try:
+            return RevocadosEnSqlite(cfg.revocados_db)
+        except (OSError, sqlite3.Error):
+            log.warning("No se puede usar %s para los tokens revocados; se guardan en memoria.", cfg.revocados_db)
+    return RevocadosEnMemoria()
 
 
 def create_app(config: Config | None = None) -> Flask:
@@ -43,6 +56,12 @@ def create_app(config: Config | None = None) -> Flask:
         SECRET_KEY=cfg.secret_key,
         JWT_SECRET_KEY=cfg.jwt_secret_key,
         JWT_ACCESS_TOKEN_EXPIRES=cfg.jwt_access_ttl,
+        JWT_TOKEN_LOCATION=["headers", "cookies"],
+        JWT_REFRESH_COOKIE_NAME=NOMBRE_COOKIE,
+        JWT_REFRESH_COOKIE_PATH=RUTA_COOKIE,
+        JWT_COOKIE_SECURE=cfg.cookie_segura,
+        JWT_COOKIE_SAMESITE="Strict",
+        JWT_COOKIE_CSRF_PROTECT=False,  # lo reemplaza la cabecera propia de core/sesion_cookie.py
         JWT_REFRESH_TOKEN_EXPIRES=cfg.jwt_refresh_ttl,
         MAX_CONTENT_LENGTH=1 * 1024 * 1024,  # 1 MB: evita cuerpos gigantes
         JSON_AS_ASCII=False,
@@ -55,7 +74,7 @@ def create_app(config: Config | None = None) -> Flask:
     if cfg.proxy_hops:
         # detrás de un proxy inverso: IP real para los límites de intentos y esquema https para HSTS
         app.wsgi_app = ProxyFix(app.wsgi_app, x_for=cfg.proxy_hops, x_proto=cfg.proxy_hops, x_host=cfg.proxy_hops)
-    configurar_revocados(_almacen_revocados(cfg.redis_url))
+    configurar_revocados(_almacen_revocados(cfg))
     app.extensions["cache_menu"] = CacheTTL(cfg.menu_cache_seconds)
 
     init_logging(app)
@@ -64,7 +83,8 @@ def create_app(config: Config | None = None) -> Flask:
     cors.init_app(app, resources={r"/api/*": {
         "origins": list(cfg.cors_origins),
         "methods": ["GET", "POST", "PUT", "PATCH", "OPTIONS"],
-        "allow_headers": ["Authorization", "Content-Type", "X-Request-ID"],
+        "allow_headers": ["Authorization", "Content-Type", "X-Request-ID", "X-Requested-With"],
+        "supports_credentials": True,
         "expose_headers": ["X-Request-ID", "Retry-After"],
         "max_age": 600,
     }})

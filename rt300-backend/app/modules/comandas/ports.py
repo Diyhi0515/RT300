@@ -58,12 +58,40 @@ class FichaComanda:
     pvta: float
     ccpd: int
     cbas: float
+    csme: int = 0
+    cssm: int = 0
     insumos: list[InsumoFicha] = field(default_factory=list)
     componentes: list[ComponenteFicha] = field(default_factory=list)
 
 
+@dataclass(frozen=True)
+class AlternativoFicha:
+    """Insumo que puede reemplazar a otro del plato (rtial) y los componentes que aporta."""
+
+    cins: str                     # insumo del plato al que reemplaza
+    cina: str                     # alternativo
+    descripcion: str
+    componentes: list[ComponenteFicha] = field(default_factory=list)
+
+
+@dataclass(frozen=True)
+class ExtraFicha:
+    """Extra que se puede agregar a un plato (rtext): su precio viene en su propia moneda."""
+
+    cart: str
+    descripcion: str
+    impt: float
+    cmon: int
+
+
 class CatalogoPlatos(Protocol):
     def ficha(self, u: Usuario, cart: str, ctx: ContextoPrecios, cpxc: str) -> FichaComanda: ...
+    def extras_del_plato(self, csme: int, cssm: int) -> dict[str, ExtraFicha]: ...
+    def ficha_extra(self, u: Usuario, extra: ExtraFicha, cpxc: str) -> FichaComanda: ...
+    def alternativos(self, cins: str) -> list[AlternativoFicha]: ...
+    def textos_del_plato(self, cart: str) -> dict[tuple[int, int], str]: ...
+    def textos_de_comanda(self) -> dict[tuple[int, int], str]: ...
+    def centros_de_produccion(self, u: Usuario, cart: str) -> set[int]: ...
 
 
 class GuardarComanda(Protocol):

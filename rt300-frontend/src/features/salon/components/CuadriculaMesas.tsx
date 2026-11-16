@@ -1,9 +1,7 @@
 import { useMemo, useState } from 'react'
 import { LayoutGrid, Search, Users, X } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
 import { useAreas, useMesas } from '@/features/pedidos/hooks'
-import { usePedidos } from '@/features/pedidos/store'
-import type { EstadoMesaPlano } from '@/features/pedidos/types'
+import type { EstadoMesaPlano, MesaPlano } from '@/features/pedidos/types'
 import { tiempoTranscurrido } from '../formato'
 import { InsigniaEstado } from './InsigniaEstado'
 
@@ -20,11 +18,14 @@ const BORDE: Record<EstadoMesaPlano, string> = {
   ocupada: 'border-primary/40 bg-primary/[0.06] hover:border-primary',
 }
 
-export function CuadriculaMesas() {
+interface CuadriculaMesasProps {
+  ayuda: string
+  alElegir: (mesa: MesaPlano) => void
+}
+
+export function CuadriculaMesas({ ayuda, alElegir }: CuadriculaMesasProps) {
   const consulta = useMesas()
   const areas = useAreas()
-  const mostrarMesa = usePedidos((s) => s.mostrarMesa)
-  const navigate = useNavigate()
   const [filtro, setFiltro] = useState<Filtro>('todas')
   const [busqueda, setBusqueda] = useState('')
   const mesas = useMemo(() => consulta.data ?? [], [consulta.data])
@@ -55,7 +56,7 @@ export function CuadriculaMesas() {
           </span>
           <div>
             <h2 className="font-bold">Salón</h2>
-            <p className="text-xs text-muted">Toca una mesa para abrirla en Pedidos.</p>
+            <p className="text-xs text-muted">{ayuda}</p>
           </div>
         </div>
         <label className="relative w-full sm:w-64">
@@ -139,10 +140,7 @@ export function CuadriculaMesas() {
             <button
               key={m.codigo}
               type="button"
-              onClick={() => {
-                mostrarMesa(m.codigo, m.areaId)
-                void navigate('/pedidos')
-              }}
+              onClick={() => alElegir(m)}
               style={{ animationDelay: `${Math.min(i, 18) * 25}ms` }}
               className={`flex animate-[chip-in_0.35s_ease-out_both] cursor-pointer flex-col gap-2 rounded-2xl border bg-surface p-3 text-left transition duration-200 hover:-translate-y-0.5 hover:shadow-lg active:scale-95 short:gap-1 short:p-2 ${BORDE[m.estado]}`}
             >

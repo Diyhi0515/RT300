@@ -38,6 +38,8 @@ class ClientesService:
             if m.estado != 3 or m.folio != nfol:
                 raise Conflict(f"La Mesa '{mesa}' esta en estado libre o pertenece a otro folio.", "MESA_NO_OCUPADA")
 
+            if cage and self._repo.cliente_por_codigo(cage) is None:
+                raise NotFound(f"No existe cliente {cage} en la agenda.", "CLIENTE_NO_EXISTE")
             nruc_v, nomb_v = blank_to_none(nruc), blank_to_none(nomb)
             if self._repo.actualizar_cuenta(nfol, ncta, nomb_v, nruc_v, cage) == 0:
                 raise NotFound(f"No existe la cuenta {ncta} en el folio {nfol}.", "CUENTA_NO_EXISTE")
