@@ -52,6 +52,14 @@ class SqlClientesRepository(MesaQueries):
     def borrar_cuentas(self, nfol: int, cuentas: list[int]) -> None:
         self._exec_many("DELETE FROM rtfoc WHERE rtfocnfol = :n AND rtfocncta = :c", [{"n": nfol, "c": c} for c in cuentas])
 
+    def renumerar_cuenta(self, nfol: int, antes: int, despues: int) -> None:
+        self._exec("UPDATE rtfoc SET rtfocncta = :nuevo WHERE rtfocnfol = :n AND rtfocncta = :viejo", n=nfol, viejo=antes, nuevo=despues)
+
+    def lista_de_cuentas(self, nfol: int) -> list[dict]:
+        """Cuentas del folio tal como quedan (para que el front recargue sin otra consulta)."""
+        return self._rows("SELECT rtfocncta AS ncta, rtfocnomb AS nombre, rtfocestc AS estc FROM rtfoc "
+                          "WHERE rtfocnfol = :n AND rtfocmrcb = 0 ORDER BY rtfocncta", n=nfol)
+
     def cliente_varios(self) -> int | None:
         r = self._one("SELECT TOP 1 gbrneccli FROM gbrne")
         return None if r is None else to_int(r["gbrneccli"])

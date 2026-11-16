@@ -23,6 +23,9 @@ class RepoCuentas:
     def estado_de_cuentas(self, n): return self.cuentas
     def cuentas_con_comandas(self, n): return self.comandas
     def borrar_cuentas(self, nfol, cuentas): self.borradas += cuentas
+    def renumerar_cuenta(self, nfol, antes, despues): pass
+    def lista_de_cuentas(self, n):
+        return [{"ncta": c["ncta"], "nombre": "x", "estc": c["estc"]} for c in self.cuentas if c["ncta"] not in self.borradas]
 
 
 def eliminar(repo, cuentas, uow=None):
@@ -33,13 +36,13 @@ def eliminar(repo, cuentas, uow=None):
 def test_elimina_una_cuenta_vacia_que_no_es_la_ultima():
     repo = RepoCuentas()
     r, uow = eliminar(repo, [2])
-    assert r == {"eliminadas": [2], "quedan": 3} and repo.borradas == [2] and uow.commits == 1
+    assert (r["eliminadas"], r["quedan"]) == ([2], 3) and repo.borradas == [2] and uow.commits == 1
 
 
 def test_elimina_varias_a_la_vez_y_las_devuelve_ordenadas():
     repo = RepoCuentas()
     r, _ = eliminar(repo, [3, 1])
-    assert r == {"eliminadas": [1, 3], "quedan": 2} and repo.borradas == [1, 3]
+    assert (r["eliminadas"], r["quedan"]) == ([1, 3], 2) and repo.borradas == [1, 3]
 
 
 def test_si_una_no_se_puede_no_se_elimina_ninguna_y_dice_cual():

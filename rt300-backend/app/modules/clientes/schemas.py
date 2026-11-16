@@ -20,9 +20,27 @@ class EliminarCuentasIn(BaseModel):
 
 
 # ───────────── Salida ─────────────
+class CompactarCuentasIn(BaseModel):
+    mesa: str = Field(min_length=1, max_length=20)
+
+
+class RenumeracionOut(Salida):
+    antes: int
+    despues: int
+
+
+class CuentaNumeradaOut(Salida):
+    ncta: int
+    nombre: str | None = None
+    liquidada: bool
+
+
 class CuentasEliminadasOut(Salida):
     eliminadas: list[int]
     quedan: int
+    renumeradas: list[RenumeracionOut]
+    consecutivas: bool          # false si alguna cuenta con comandas, notas o liquidada impide cerrar todos los huecos
+    cuentas: list[CuentaNumeradaOut]
 
 class CuentaClienteOut(Salida):
     nfol: int

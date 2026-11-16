@@ -10,6 +10,7 @@ from .schemas import (
     ActualizarCuentaIn,
     ClientesDetalleOut,
     ClientesOut,
+    CompactarCuentasIn,
     CuentasClienteOut,
     CuentasEliminadasOut,
     EliminarCuentaIn,
@@ -47,6 +48,13 @@ def eliminar_una(nfol: int, ncta: int):
 def eliminar_varias(nfol: int):
     b = EliminarCuentasIn.model_validate(request.get_json(silent=True) or {})
     return responder(CuentasEliminadasOut, clientes_service().eliminar_cuentas(usuario_actual(), nfol, b.mesa, b.cuentas))
+
+
+@bp.post("/folios/<int:nfol>/cuentas/compactar")
+@autenticado
+def compactar(nfol: int):
+    b = CompactarCuentasIn.model_validate(request.get_json(silent=True) or {})
+    return responder(CuentasEliminadasOut, clientes_service().compactar_cuentas(usuario_actual(), nfol, b.mesa))
 
 
 @bp.get("/clientes")
