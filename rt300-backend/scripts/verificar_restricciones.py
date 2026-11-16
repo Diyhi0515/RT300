@@ -112,7 +112,7 @@ check("eliminar: productos que no son del folio", codigo(r)[1] in ("ITEMS_NO_VIG
 r = c.post("/api/v1/comandas/eliminar", headers=h, json={**cuerpo, "cont": "mala"})
 check("eliminar: clave de autorizador incorrecta", codigo(r)[1] == "AUTORIZADOR_INVALIDO", str(codigo(r)))
 
-# 7b. eliminar cuentas (una, varias, todo o nada, siempre queda una)
+# 7b. eliminar cuentas (una, varias, todo o nada, siempre queda una) y renumerar
 r = c.patch(f"/api/v1/salon/folios/{folio}", headers=h, json={"ccom": 5, "ncta": 5})
 check("preparar 5 cuentas para eliminar", r.status_code == 200, str(codigo(r)))
 
@@ -123,23 +123,34 @@ def numeros_de_cuentas():
 
 
 r = c.delete(f"/api/v1/folios/{folio}/cuentas/2", headers=h, json={"mesa": mesa})
-check("eliminar una cuenta del medio (DELETE)", r.status_code == 200 and r.get_json()["eliminadas"] == [2], str(r.get_json()))
-check("quedan las demás con su número", numeros_de_cuentas() == [1, 3, 4, 5], str(numeros_de_cuentas()))
+cuerpo = r.get_json() or {}
+check("eliminar una cuenta del medio (DELETE)", r.status_code == 200 and cuerpo.get("eliminadas") == [2], str(cuerpo)[:120])
+check("las demás se renumeran 1..N", [x["ncta"] for x in cuerpo.get("cuentas", [])] == [1, 2, 3, 4] and cuerpo.get("consecutivas") is True,
+      str(cuerpo.get("renumeradas")))
+check("y así quedan en la base", numeros_de_cuentas() == [1, 2, 3, 4], str(numeros_de_cuentas()))
 r = c.delete(f"/api/v1/folios/{folio}/cuentas/9?mesa={mesa}", headers=h)
 falla = (r.get_json() or {}).get("error", {})
 check("eliminar una cuenta inexistente (mesa en query)", codigo(r) == (404, "CUENTA_NO_EXISTE") and falla.get("ncta") == 9, str(falla))
 r = c.post(f"/api/v1/folios/{folio}/cuentas/eliminar", headers=h, json={"mesa": mesa, "cuentas": [3, 9]})
-check("varias: una falla y no se elimina ninguna", r.status_code == 404 and numeros_de_cuentas() == [1, 3, 4, 5], str(numeros_de_cuentas()))
+check("varias: una falla y no se elimina ninguna", r.status_code == 404 and numeros_de_cuentas() == [1, 2, 3, 4], str(numeros_de_cuentas()))
 r = c.post(f"/api/v1/folios/{folio}/cuentas/eliminar", headers=h, json={"mesa": "OTRA", "cuentas": [3]})
 check("varias: mesa que no es del folio", r.status_code in (404, 409), str(codigo(r)))
-r = c.post(f"/api/v1/folios/{folio}/cuentas/eliminar", headers=h, json={"mesa": mesa, "cuentas": [3, 4]})
-check("eliminar varias a la vez", r.status_code == 200 and r.get_json() == {"eliminadas": [3, 4], "quedan": 2}, str(r.get_json()))
-r = c.post(f"/api/v1/folios/{folio}/cuentas/eliminar", headers=h, json={"mesa": mesa, "cuentas": [1, 5]})
+r = c.post(f"/api/v1/folios/{folio}/cuentas/eliminar", headers=h, json={"mesa": mesa, "cuentas": [1, 3]})
+cuerpo = r.get_json() or {}
+quedan = [x["ncta"] for x in cuerpo.get("cuentas", [])]
+check("eliminar varias a la vez y renumerar", r.status_code == 200 and quedan == [1, 2], str(quedan))
+r = c.post(f"/api/v1/folios/{folio}/cuentas/eliminar", headers=h, json={"mesa": mesa, "cuentas": [1, 2]})
 check("siempre debe quedar una cuenta", codigo(r) == (409, "DEBE_QUEDAR_UNA_CUENTA"), str(codigo(r)))
 r = c.patch(f"/api/v1/salon/folios/{folio}", headers=h, json={"ccom": 5, "ncta": 3})
 numeros = numeros_de_cuentas()
-check("agregar una cuenta sigue la numeración (sin repetir)", r.status_code == 200 and numeros == [1, 5, 6], str(numeros))
-r = c.post(f"/api/v1/folios/{folio}/cuentas/eliminar", headers=h, json={"mesa": mesa, "cuentas": [5, 5]})
+check("agregar una cuenta es la última + 1", r.status_code == 200 and numeros == [1, 2, 3], str(numeros))
+r = c.post(f"/api/v1/folios/{folio}/cuentas/compactar", headers=h, json={"mesa": mesa})
+cuerpo = r.get_json() or {}
+sin_cambios = cuerpo.get("renumeradas") == [] and cuerpo.get("consecutivas") is True
+check("compactar un folio sin huecos no cambia nada", r.status_code == 200 and sin_cambios, str(cuerpo)[:120])
+r = c.post(f"/api/v1/folios/{folio}/cuentas/compactar", headers=h, json={"mesa": "OTRA"})
+check("compactar: mesa que no es del folio", r.status_code in (404, 409), str(codigo(r)))
+r = c.post(f"/api/v1/folios/{folio}/cuentas/eliminar", headers=h, json={"mesa": mesa, "cuentas": [2, 2]})
 check("lista con repetidos", codigo(r) == (422, "CUENTAS_INVALIDAS"), str(codigo(r)))
 
 # 8. habilitar

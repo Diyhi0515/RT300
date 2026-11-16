@@ -125,6 +125,14 @@ Se leyeron además `README.md`, `web.config`, `inc/config.php`, `require/*` y la
 - **Búsqueda:** buscar `AÑEZ` o `NUÑEZ` encuentra los nombres guardados de cualquiera de las tres formas.
 - **Límite:** un texto en IBM850 con solo á, í, ó o ú (sin ñ, Ñ ni é) no se distingue con seguridad y sigue mal; no hay ninguno en la copia local. Para revisarlo en otra base: `docker compose exec -T -e PYTHONPATH=/app -e PYTHONIOENCODING=utf-8 backend python scripts/auditar_codificacion.py`. La base no se modificó. Pruebas: 229 unitarias.
 
+### Renumerar cuentas al eliminar (pedido del front, 2026-11-16)
+- **Renumeración automática:** tras `DELETE /folios/{nfol}/cuentas/{ncta}` o `POST /folios/{nfol}/cuentas/eliminar`, las cuentas que quedan se renumeran 1..N en la misma transacción (regla pura en `domain/cuentas.py`).
+- **Qué se puede mover:** solo cuentas vacías (sin comandas —vigentes o anuladas—, sin notas de venta y no liquidadas): el número de cuenta también está en `rtcoh`, y no se cambia en cuentas con historial. Las que no se pueden mover conservan su número y las vacías llenan los huecos libres más bajos; si las fijas dejan huecos, `consecutivas` viene en `false`.
+- **Folios que ya tienen huecos:** `POST /folios/{nfol}/cuentas/compactar` con `{ "mesa" }` (mismas validaciones). Decisión del backend: no se compacta solo al modificar la mesa, para no cambiar números por debajo de una pantalla abierta; el front lo llama una vez por folio con saltos.
+- **Respuesta** (eliminar y compactar): `{ eliminadas, quedan, renumeradas: [{antes, despues}], consecutivas, cuentas: [{ncta, nombre, liquidada}] }`, ya con la numeración nueva.
+- **Agregar cuentas** (`PATCH /salon/folios/{nfol}`): la nueva es la última + 1 (sigue funcionando aunque queden huecos por cuentas fijas).
+- Probado en vivo con un folio con huecos reales (1, 4, 5, 7, 8 → 1..5). Pruebas: 244 unitarias; 38 comprobaciones en vivo.
+
 ### Pendiente / decisiones abiertas
 `GET /auth/usuarios` sigue público; roles reales para autorizar eliminar comanda; hash de clave fuerte (requiere tabla propia); servicio SOAP real sin probar (192.168.0.2 no es alcanzable desde esta PC).
 

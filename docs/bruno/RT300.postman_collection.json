@@ -587,6 +587,34 @@
               }
             }
           }
+        },
+        {
+          "name": "Compactar cuentas del folio",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/folios/{{folio}}/cuentas/compactar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "folios",
+                "{{folio}}",
+                "cuentas",
+                "compactar"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mesa\": \"HPB02\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
         }
       ]
     },

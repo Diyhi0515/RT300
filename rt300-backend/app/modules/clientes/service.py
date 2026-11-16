@@ -3,6 +3,7 @@ from __future__ import annotations
 from ...core.acceso import exigir_local
 from ...core.errors import Conflict, NotFound, ValidationFailed
 from ...core.sql import blank_to_none
+from ...domain.cuentas import CuentaFolio, plan_compactacion
 from ...domain.mesa import ESTC_LIQUIDADA
 from ...domain.uow import UnitOfWork
 from ...domain.usuario import Usuario
@@ -51,8 +52,10 @@ class ClientesService:
         return f"Cuenta: {ncta} modificada."
 
     def eliminar_cuentas(self, u: Usuario, nfol: int, mesa: str, cuentas: list[int]) -> dict:
-        """Elimina cuentas concretas del folio, todas o ninguna. Cada una debe existir, no estar liquidada, no tener notas
-        de venta ni comandas (vigentes o anuladas) y al folio le debe quedar al menos una cuenta."""
+        """Elimina cuentas concretas del folio, todas o ninguna, y renumera las que quedan para que sean consecutivas.
+
+        Cada cuenta a eliminar debe existir, no estar liquidada, no tener notas de venta ni comandas (vigentes o anuladas) y
+        al folio le debe quedar al menos una cuenta. Todo ocurre en una sola transacción."""
         pedidas = sorted(set(cuentas))
         if len(pedidas) != len(cuentas) or pedidas[0] < 1:
             raise ValidationFailed("La lista de cuentas tiene números repetidos o inválidos.", "CUENTAS_INVALIDAS")
@@ -66,7 +69,37 @@ class ClientesService:
             if len(existentes) - len(pedidas) < 1:
                 raise Conflict("Debe quedar al menos una cuenta en el folio.", "DEBE_QUEDAR_UNA_CUENTA")
             self._repo.borrar_cuentas(nfol, pedidas)
-        return {"eliminadas": pedidas, "quedan": len(existentes) - len(pedidas)}
+            quedan = {n: c for n, c in existentes.items() if n not in pedidas}
+            resultado = self._renumerar(nfol, quedan, con_comandas)
+        return {"eliminadas": pedidas, **resultado}
+
+    def compactar_cuentas(self, u: Usuario, nfol: int, mesa: str) -> dict:
+        """Cierra los huecos que ya tiene la numeración de un folio (por cuentas eliminadas antes de que se renumerara)."""
+        exigir_local(u, self._repo.local_de_folio(nfol))
+        with self._uow:
+            self._exigir_mesa_ocupada(mesa, nfol)
+            existentes = {int(c["ncta"]): c for c in self._repo.estado_de_cuentas(nfol)}
+            resultado = self._renumerar(nfol, existentes, self._repo.cuentas_con_comandas(nfol))
+        return {"eliminadas": [], **resultado}
+
+    def _renumerar(self, nfol: int, cuentas: dict[int, dict], con_comandas: set[int]) -> dict:
+        folio = [CuentaFolio(n, self._es_movible(n, c, n in con_comandas)) for n, c in cuentas.items()]
+        cambios = plan_compactacion(folio)
+        for antes, despues in cambios:          # de menor a mayor: cada número nuevo ya está libre
+            self._repo.renumerar_cuenta(nfol, antes, despues)
+        lista = self._repo.lista_de_cuentas(nfol)
+        numeros = [int(c["ncta"]) for c in lista]
+        return {
+            "quedan": len(numeros),
+            "renumeradas": [{"antes": a, "despues": d} for a, d in cambios],
+            "consecutivas": numeros == list(range(1, len(numeros) + 1)),
+            "cuentas": [{"ncta": int(c["ncta"]), "nombre": c["nombre"], "liquidada": int(c["estc"] or 0) == ESTC_LIQUIDADA}
+                        for c in lista],
+        }
+
+    @staticmethod
+    def _es_movible(ncta: int, cuenta: dict, tiene_comandas: bool) -> bool:
+        return int(cuenta["estc"] or 0) != ESTC_LIQUIDADA and int(cuenta["nvta"] or 0) == 0 and not tiene_comandas
 
     # ───────────── Reglas compartidas ─────────────
     def _exigir_mesa_ocupada(self, mesa: str, nfol: int) -> None:
