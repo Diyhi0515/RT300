@@ -113,6 +113,18 @@ Se leyeron además `README.md`, `web.config`, `inc/config.php`, `require/*` y la
 - **Conexión con el back:** el modal ya usaba la API real, pero decía que la búsqueda por NIT / CI "aún no está disponible en el servidor". Nuevo `GET /clientes?documento=…` (NIT o CI exacto, 3 a 15 dígitos, `422 DOCUMENTO_INVALIDO` si no). El modal busca primero por código y, si no existe o tiene más de 9 dígitos, por documento.
 - Verificación: backend 185 unitarias + 13 de integración; front 85 pruebas, `tsc`, `eslint` y build.
 
+### Eliminar cuentas de un folio (pedido del front, 2026-11-16)
+- `DELETE /api/v1/folios/{nfol}/cuentas/{ncta}` (la mesa en el cuerpo, como el PUT, o en `?mesa=`) y `POST /api/v1/folios/{nfol}/cuentas/eliminar` con `{ "mesa", "cuentas": [...] }`. Responden `{ eliminadas, quedan }`. Con JWT y acceso por local.
+- **Todo o nada** en una transacción: si una no se puede, no se elimina ninguna y el error trae el número de la cuenta que falló (`error.ncta`). Reglas: mesa ocupada, habilitada y del folio; la cuenta debe existir, no estar liquidada (`CUENTA_LIQUIDADA`), sin notas de venta (`CUENTA_CON_NOTA`) y sin comandas, vigentes o anuladas (`CUENTA_CON_COMANDAS`); al folio le debe quedar al menos una (`DEBE_QUEDAR_UNA_CUENTA`). Lista con repetidos o números inválidos: `422 CUENTAS_INVALIDAS`. No se toca la cantidad de comensales.
+- **Consecuencia en la numeración:** ya puede haber huecos (1, 3, 7). `PATCH /salon/folios/{nfol}` ahora agrega cuentas desde el último número (antes contaba y habría repetido números) y reduce quitando las últimas. Los errores de dominio pueden llevar un `detalle` extra en el JSON.
+- Pruebas: 205 unitarias; 35 comprobaciones en vivo (10 nuevas de este tema). Bruno actualizado.
+
+### Nombres con letras erróneas (Ñ y acentos), 2026-11-16
+- **Causa:** la base mezcla codificaciones. El mapa previo (`scripts/auditar_codificacion.py`, solo lectura, recorre 13 columnas de texto y cuenta sus caracteres) mostró **tres** formas de guardar la ñ: Windows-1252 (Ñ = 0xD1, la correcta), IBM850 (ñ = 0xA4, Ñ = 0xA5, é = 0x82; la que escribía el PHP antiguo) y la ñ guardada como `±`. Afecta a clientes (`gbage`: 115 de 339 nombres con acentos, `rtfoc`, `rtcfr`), locales (`vtloc`: 6 de 6) y algún producto. Salían `A¤EZ`, `CABA¥A`, `JOS‚`, `PE±A`.
+- **Arreglo:** `core/text.reparar_codificacion` aplica ese mapa en la lectura central de la base (`core/sql._clean`): IBM850 cuando hay `¤ ¥ ‚` sin otras letras acentuadas, y `±` entre letras = ñ. Respeta mayúsculas (`AÑEZ`, no `AñEZ`) y no toca `º`, `¡`, `£`, `±` sueltos ni textos ya correctos. Tras el arreglo, `gbage` y `vtloc` quedan con 0 valores dudosos.
+- **Búsqueda:** buscar `AÑEZ` o `NUÑEZ` encuentra los nombres guardados de cualquiera de las tres formas.
+- **Límite:** un texto en IBM850 con solo á, í, ó o ú (sin ñ, Ñ ni é) no se distingue con seguridad y sigue mal; no hay ninguno en la copia local. Para revisarlo en otra base: `docker compose exec -T -e PYTHONPATH=/app -e PYTHONIOENCODING=utf-8 backend python scripts/auditar_codificacion.py`. La base no se modificó. Pruebas: 229 unitarias.
+
 ### Pendiente / decisiones abiertas
 `GET /auth/usuarios` sigue público; roles reales para autorizar eliminar comanda; hash de clave fuerte (requiere tabla propia); servicio SOAP real sin probar (192.168.0.2 no es alcanzable desde esta PC).
 

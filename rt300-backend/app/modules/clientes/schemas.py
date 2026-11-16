@@ -10,7 +10,20 @@ class ActualizarCuentaIn(BaseModel):
     nomb: str = Field(default="", max_length=80)
 
 
+class EliminarCuentaIn(BaseModel):
+    mesa: str = Field(min_length=1, max_length=20)
+
+
+class EliminarCuentasIn(BaseModel):
+    mesa: str = Field(min_length=1, max_length=20)
+    cuentas: list[int] = Field(min_length=1, max_length=200)
+
+
 # ───────────── Salida ─────────────
+class CuentasEliminadasOut(Salida):
+    eliminadas: list[int]
+    quedan: int
+
 class CuentaClienteOut(Salida):
     nfol: int
     ncta: int

@@ -136,6 +136,10 @@ class SqlSalonRepository(MesaQueries):
     def contar_cuentas(self, nfol: int) -> int:
         return int(self._one("SELECT COUNT(*) AS total FROM rtfoc WHERE rtfocnfol = :n", n=nfol)["total"])
 
+    def numeros_de_cuentas(self, nfol: int) -> list[int]:
+        """Números de cuenta del folio, en orden. Pueden tener huecos si se eliminaron cuentas del medio."""
+        return [int(r["ncta"]) for r in self._rows("SELECT rtfocncta AS ncta FROM rtfoc WHERE rtfocnfol = :n ORDER BY rtfocncta", n=nfol)]
+
     def contar_comandas(self, nfol: int, solo_vigentes: bool = True) -> int:
         extra = " AND rtcohmrcb = 0" if solo_vigentes else ""
         return int(self._one(f"SELECT COUNT(rtcohncom) AS t FROM rtcoh WHERE rtcohnfol = :n AND rtcohesco <> 9{extra}",  # noqa: S608

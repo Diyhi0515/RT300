@@ -20,7 +20,7 @@ class RepoSalon:
     def __init__(self, mesa=None, toma=True, comandas=0, estados=()):
         self._mesa = mesa if mesa is not None else Mesa("M1", 1, 0, False, False)
         self.toma, self.n_comandas, self.estados = toma, comandas, list(estados)
-        self.cuentas_insertadas, self.llamadas = [], []
+        self.cuentas_insertadas, self.llamadas, self.numeros = [], [], [1, 2, 3]
 
     def parametros(self):
         return Parametros({}, {}, {}, {}, datetime(2026, 7, 24, 8, 30), 1, True)
@@ -43,12 +43,16 @@ class RepoSalon:
     def cerrar_folio_liquidado(self, *a): self.llamadas.append(("cerrar",))
     def anular_folio(self, *a): self.llamadas.append(("anular",))
     def contar_cuentas(self, n): return 3
+    def numeros_de_cuentas(self, n): return self.numeros
     def mesas_del_local(self, cloc): return [{"mesa": "M1", "cloc": cloc}]
     def cuentas_con_cliente(self, n): return [{"ncta": 1, "nombre": "A"}, {"ncta": 2, "nombre": "B"}, {"ncta": 3, "nombre": "C"}]
     def consumo_por_cuenta(self, n):
         return [{"ncta": 1, "cart": "X", "cant": 2}, {"ncta": 1, "cart": "Y", "cant": 1}, {"ncta": 3, "cart": "X", "cant": 5}]
     def maxima_cuenta_con_nota(self, n): return 0
     def es_vendedor(self, c): return c in (12009, 12010)
+    def borrar_cuentas_sobrantes(self, nfol, desde): self.llamadas.append(("borrar_desde", desde))
+    def actualizar_folio(self, *a): self.llamadas.append(("actualizar",))
+    def cuentas_folio(self, n): return []
 
 
 def test_ocupar_mesa_crea_folio_y_cuentas_en_una_unidad_de_trabajo():
@@ -168,3 +172,26 @@ def test_el_mesero_asignado_debe_existir_en_la_agenda():
 def test_modificar_tampoco_deja_cambiar_el_mesero_sin_caja():
     with pytest.raises(Forbidden):
         SalonService(RepoSalon(), FakeUow()).modificar_mesa(MOZO, 77, cven=12010, ccom=3, ncta_nueva=3)
+
+
+def test_se_aceptan_tantas_cuentas_como_comensales_hasta_999():
+    from app.modules.salon.schemas import ModificarMesaIn, OcuparMesaIn
+
+    assert OcuparMesaIn(caco=1, ccom=999, ncta=999).ncta == 999
+    assert ModificarMesaIn(ccom=999, ncta=999).ncta == 999
+    with pytest.raises(Exception):  # noqa: B017 - pydantic ValidationError
+        OcuparMesaIn(caco=1, ccom=999, ncta=1000)
+
+
+def test_modificar_agrega_cuentas_siguiendo_la_numeracion_aunque_haya_huecos():
+    repo = RepoSalon()
+    repo.numeros = [1, 3, 7]
+    SalonService(repo, FakeUow()).modificar_mesa(MOZO, 77, cven=None, ccom=5, ncta_nueva=5)
+    assert [c.ncta for c in repo.cuentas_insertadas] == [8, 9]
+
+
+def test_modificar_reduce_quitando_las_ultimas_cuentas_aunque_haya_huecos():
+    repo = RepoSalon()
+    repo.numeros = [1, 3, 7]
+    SalonService(repo, FakeUow()).modificar_mesa(MOZO, 77, cven=None, ccom=5, ncta_nueva=2)
+    assert ("borrar_desde", 3) in repo.llamadas

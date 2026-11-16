@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from ...core.repos_compartidos import MesaQueries
-from ...core.text import to_int
+from ...core.text import to_int, variantes_de_busqueda
 
 
 class SqlClientesRepository(MesaQueries):
@@ -21,12 +21,15 @@ class SqlClientesRepository(MesaQueries):
                          "gbagelpre AS lpre FROM gbage WHERE gbagecage = :c", c=cage)
 
     def buscar_clientes(self, nombre: str | None, cage: int | None, limite: int = 100) -> list[dict]:
+        """Por nombre busca en todas las codificaciones en que puede estar guardado (ver core/text.py)."""
+        variantes = [f"%{v}%" for v in variantes_de_busqueda(nombre or "")] or [""]
+        patrones = {f"n{i}": variantes[min(i, len(variantes) - 1)] for i in range(4)}
         return self._rows("""
             SELECT TOP (:lim) gbagecage AS codigo, gbagenomb AS nombre, gbagenruc AS nruc
               FROM gbage
-             WHERE (:nombre IS NULL OR gbagenomb LIKE :nombre)
+             WHERE (:nombre IS NULL OR gbagenomb LIKE :n0 OR gbagenomb LIKE :n1 OR gbagenomb LIKE :n2 OR gbagenomb LIKE :n3)
                AND (:cage IS NULL OR gbagecage = :cage)
-             ORDER BY gbagenomb""", lim=limite, nombre=f"%{nombre}%" if nombre else None, cage=cage)
+             ORDER BY gbagenomb""", lim=limite, nombre=nombre, cage=cage, **patrones)
 
     def buscar_por_documento(self, documento: str, limite: int = 20) -> list[dict]:
         """Clientes cuyo NIT (gbagenruc) o CI (gbagendid) es exactamente `documento`."""
@@ -36,6 +39,18 @@ class SqlClientesRepository(MesaQueries):
               FROM gbage
              WHERE LTRIM(RTRIM(gbagenruc)) = :doc OR LTRIM(RTRIM(gbagendid)) = :doc
              ORDER BY gbagenomb""", lim=limite, doc=documento)
+
+    def estado_de_cuentas(self, nfol: int) -> list[dict]:
+        """Todas las cuentas del folio con lo que impide eliminarlas: liquidada (estc 9) y notas de venta (nvta)."""
+        return self._rows("SELECT rtfocncta AS ncta, rtfocestc AS estc, rtfocnvta AS nvta FROM rtfoc "
+                          "WHERE rtfocnfol = :n ORDER BY rtfocncta", n=nfol)
+
+    def cuentas_con_comandas(self, nfol: int) -> set[int]:
+        """Cuentas que tienen o tuvieron comandas (vigentes o anuladas)."""
+        return {int(r["ncta"]) for r in self._rows("SELECT DISTINCT rtcohncta AS ncta FROM rtcoh WHERE rtcohnfol = :n", n=nfol)}
+
+    def borrar_cuentas(self, nfol: int, cuentas: list[int]) -> None:
+        self._exec_many("DELETE FROM rtfoc WHERE rtfocnfol = :n AND rtfocncta = :c", [{"n": nfol, "c": c} for c in cuentas])
 
     def cliente_varios(self) -> int | None:
         r = self._one("SELECT TOP 1 gbrneccli FROM gbrne")

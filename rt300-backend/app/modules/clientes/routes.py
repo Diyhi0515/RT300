@@ -6,7 +6,15 @@ from ...composition import clientes_service
 from ...core.respuesta import responder
 from ...core.salidas_comunes import MensajeOut
 from ...core.security import autenticado, usuario_actual
-from .schemas import ActualizarCuentaIn, ClientesDetalleOut, ClientesOut, CuentasClienteOut
+from .schemas import (
+    ActualizarCuentaIn,
+    ClientesDetalleOut,
+    ClientesOut,
+    CuentasClienteOut,
+    CuentasEliminadasOut,
+    EliminarCuentaIn,
+    EliminarCuentasIn,
+)
 
 bp = Blueprint("clientes", __name__)
 
@@ -23,6 +31,22 @@ def actualizar(nfol: int, ncta: int):
     b = ActualizarCuentaIn.model_validate(request.get_json(silent=True) or {})
     mensaje = clientes_service().actualizar_cuenta(usuario_actual(), nfol, ncta, b.mesa, b.cage, b.nruc, b.nomb)
     return responder(MensajeOut, {"mensaje": mensaje})
+
+
+@bp.delete("/folios/<int:nfol>/cuentas/<int:ncta>")
+@autenticado
+def eliminar_una(nfol: int, ncta: int):
+    """La mesa va en el cuerpo (como en el PUT) o, si el cliente no envía cuerpo en DELETE, en `?mesa=`."""
+    datos = request.get_json(silent=True) or {}
+    b = EliminarCuentaIn.model_validate({"mesa": datos.get("mesa") or request.args.get("mesa", "")})
+    return responder(CuentasEliminadasOut, clientes_service().eliminar_cuentas(usuario_actual(), nfol, b.mesa, [ncta]))
+
+
+@bp.post("/folios/<int:nfol>/cuentas/eliminar")
+@autenticado
+def eliminar_varias(nfol: int):
+    b = EliminarCuentasIn.model_validate(request.get_json(silent=True) or {})
+    return responder(CuentasEliminadasOut, clientes_service().eliminar_cuentas(usuario_actual(), nfol, b.mesa, b.cuentas))
 
 
 @bp.get("/clientes")

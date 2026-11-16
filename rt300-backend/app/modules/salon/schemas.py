@@ -10,13 +10,13 @@ class OcuparMesaIn(BaseModel):
     cven: int | None = Field(default=None, description="Código del mesero (gbage). Si no se envía, el del usuario")
     caco: int = Field(description="Área de consumo")
     ccom: int = Field(ge=0, le=999, description="Cantidad de comensales")
-    ncta: int = Field(ge=1, le=50, description="Cantidad de cuentas")
+    ncta: int = Field(ge=1, le=999, description="Cantidad de cuentas")
 
 
 class ModificarMesaIn(BaseModel):
     cven: int | None = Field(default=None, description="Si no se envía, se conserva el mesero actual")
     ccom: int = Field(ge=0, le=999)
-    ncta: int = Field(ge=1, le=50)
+    ncta: int = Field(ge=1, le=999)
 
 
 # ───────────── Salida ─────────────
