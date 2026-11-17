@@ -1,5 +1,7 @@
 .env
-.env.local-db
+.env.*
+!.env.example
+!.env.*.example
 docker/imagenes/
 docker/backup/
 build/

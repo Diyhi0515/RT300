@@ -25,6 +25,7 @@ services:
       DB_USER: "${DB_USER:?Defina DB_USER en .env.local-db}"
       DB_PASSWORD: "${DB_PASSWORD:?Defina DB_PASSWORD en .env.local-db}"
       DB_TRUST_CERT: "${DB_TRUST_CERT:-yes}"
+      ALLOW_PRIVILEGED_DB_USER: "${ALLOW_PRIVILEGED_DB_USER:-false}"
 
       GATEWAY_MODE: "${GATEWAY_MODE:-soap}"
       GATEWAY_WSDL_URL: "${GATEWAY_WSDL_URL:-}"

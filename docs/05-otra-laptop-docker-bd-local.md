@@ -26,13 +26,7 @@ Compruebe desde PowerShell:
 Test-NetConnection localhost -Port 1433
 ```
 
-El backend necesita autenticación SQL, no autenticación integrada de Windows. Si `rt300_app` todavía no existe, abra una consola con permisos administrativos y ejecute:
-
-```powershell
-sqlcmd -S localhost,1433 -E -v APP_PASSWORD="COLOQUE_UNA_CLAVE_PROPIA" -i docker\db\crear-usuario-app.sql
-```
-
-El script solo crea el login/usuario y le asigna `db_datareader` y `db_datawriter`; no modifica el esquema ni restaura la base.
+El backend necesita autenticación SQL, no autenticación integrada de Windows. Este despliegue reutiliza el login existente indicado en `DB_USER`; no crea usuarios, no modifica el esquema y no restaura la base.
 
 ## 2. Copiar la configuración
 
@@ -46,7 +40,8 @@ notepad .env.local-db
 Cambie obligatoriamente:
 
 - `SECRET_KEY` y `JWT_SECRET_KEY` por valores aleatorios distintos.
-- `DB_PASSWORD` por la clave de `rt300_app`.
+- `DB_USER` y `DB_PASSWORD` por las credenciales existentes de SQL Server.
+- Si se reutiliza `sa`, mantener `ALLOW_PRIVILEGED_DB_USER=true`. Esta opción es una aceptación explícita del riesgo; no concede permisos nuevos.
 - La IP dentro de `CORS_ORIGINS` por la IP de la laptop.
 - `GATEWAY_WSDL_URL` y `GATEWAY_PASSWORD` si utilizará el SOAP real.
 
@@ -117,7 +112,7 @@ No use `down -v` salvo que quiera eliminar la caché y el registro local de toke
 docker compose --env-file .env.local-db -f docker-compose.local-db.yml logs backend
 ```
 
-Revise que SQL Server escuche en TCP, acepte autenticación SQL y que `DB_PASSWORD` sea correcta. Si SQL usa otro puerto, cambie `DB_PORT`.
+Revise que SQL Server escuche en TCP, acepte autenticación SQL y que `DB_USER`/`DB_PASSWORD` sean correctos. Si SQL usa otro puerto, cambie `DB_PORT`.
 
 ### El SOAP no responde
 

@@ -21,7 +21,7 @@ Documentos relacionados: [00 arquitectura](00-arquitectura-general.md) · [01 ba
 - Se agregó `docker-compose.local-db.yml`: ejecuta backend y frontend en Docker, sin contenedor SQL ni restauración de backup.
 - El backend se conecta al SQL Server de la laptop mediante `host.docker.internal`.
 - Se agregó una imagen de producción del frontend, configuración de ejemplo y guía completa de traslado/operación.
-- Se agregó un script opcional que crea solamente el login `rt300_app` con permisos mínimos sobre la base local existente.
+- El despliegue reutiliza el login SQL existente y no crea usuarios ni modifica la base. El uso de un login administrativo exige aceptación explícita en la configuración.
 
 ## Lo que NO cambió
 

@@ -36,6 +36,9 @@ class Config:
     db_user: str = field(default_factory=lambda: _env("DB_USER", ""))
     db_password: str = field(repr=False, default_factory=lambda: _env("DB_PASSWORD", ""))
     db_trust_cert: str = field(default_factory=lambda: _env("DB_TRUST_CERT", "yes"))
+    allow_privileged_db_user: bool = field(
+        default_factory=lambda: _env("ALLOW_PRIVILEGED_DB_USER", "false").lower() in ("true", "1", "yes")
+    )
 
     gateway_mode: str = field(default_factory=lambda: _env("GATEWAY_MODE", "fake"))
     gateway_wsdl_url: str = field(default_factory=lambda: _env("GATEWAY_WSDL_URL"))
@@ -87,7 +90,8 @@ class Config:
         problemas = []
         if "cambiar" in self.secret_key or "cambiar" in self.jwt_secret_key or len(self.jwt_secret_key) < 32:
             problemas.append("SECRET_KEY/JWT_SECRET_KEY inseguros: defina valores propios (JWT >= 32 caracteres)")
-        if self.db_user.lower() in USUARIOS_DB_DE_DESARROLLO or self.db_password in CLAVES_DB_DE_DESARROLLO:
+        usuario_privilegiado_bloqueado = self.db_user.lower() in USUARIOS_DB_DE_DESARROLLO and not self.allow_privileged_db_user
+        if usuario_privilegiado_bloqueado or self.db_password in CLAVES_DB_DE_DESARROLLO:
             problemas.append("DB_USER/DB_PASSWORD son de desarrollo: use un usuario propio con permisos mínimos")
         if not self.cors_origins or "*" in self.cors_origins:
             problemas.append("CORS_ORIGINS debe listar los orígenes permitidos (sin '*')")
