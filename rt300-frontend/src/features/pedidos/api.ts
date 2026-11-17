@@ -66,6 +66,18 @@ export const actualizarCuenta = async (
   await http.put(`/folios/${folio}/cuentas/${cuenta}`, datos)
 }
 
+export const eliminarCuentas = async (folio: number, mesa: string, cuentas: number[]) => {
+  if (cuentas.length === 1) {
+    await http.delete(`/folios/${folio}/cuentas/${cuentas[0]}`, { params: { mesa } })
+    return
+  }
+  await http.post(`/folios/${folio}/cuentas/eliminar`, { mesa, cuentas })
+}
+
+export const compactarCuentas = async (folio: number, mesa: string) => {
+  await http.post(`/folios/${folio}/cuentas/compactar`, { mesa })
+}
+
 export interface FiltroClientes {
   nombre?: string
   codigo?: number

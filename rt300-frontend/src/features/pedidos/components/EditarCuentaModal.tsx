@@ -37,7 +37,7 @@ export function EditarCuentaModal({ cuenta, alCerrar, alGuardar }: EditarCuentaM
   const inicial = cuenta.codigoCliente || CODIGO_SIN_CLIENTE
   const [codigo, setCodigo] = useState(inicial)
   const [nit, setNit] = useState(cuenta.nit ?? '')
-  const [nombre, setNombre] = useState(cuenta.nombre)
+  const [nombre, setNombre] = useState(cuenta.nombre.toUpperCase())
   const [desdeBarra, setDesdeBarra] = useState(false)
   const [consulta, setConsulta] = useState('')
   const [estado, setEstado] = useState<EstadoBusqueda>('reposo')
@@ -63,7 +63,7 @@ export function EditarCuentaModal({ cuenta, alCerrar, alGuardar }: EditarCuentaM
       }
       const datos = mapearCliente(cliente)
       setCodigo(datos.codigo)
-      setNombre(datos.nombre)
+      setNombre(datos.nombre.toUpperCase())
       setNit(datos.nit)
       setEstado('encontrado')
     } catch {
@@ -119,7 +119,7 @@ export function EditarCuentaModal({ cuenta, alCerrar, alGuardar }: EditarCuentaM
       const datos = mapearCliente(cliente)
       setCodigo(datos.codigo)
       consultado.current = datos.codigo
-      setNombre(datos.nombre)
+      setNombre(datos.nombre.toUpperCase())
       setNit(datos.nit)
       setEstado('encontrado')
     } catch {
@@ -128,7 +128,7 @@ export function EditarCuentaModal({ cuenta, alCerrar, alGuardar }: EditarCuentaM
   }
 
   const guardar = async () => {
-    const limpio = nombre.trim()
+    const limpio = nombre.trim().toUpperCase()
     if (!limpio) {
       notificar.advertencia('Escribe el nombre de la cuenta.', 'Falta el nombre')
       return
@@ -256,7 +256,7 @@ export function EditarCuentaModal({ cuenta, alCerrar, alGuardar }: EditarCuentaM
               value={nombre}
               maxLength={40}
               autoComplete="off"
-              onChange={(e) => setNombre(e.target.value)}
+              onChange={(e) => setNombre(e.target.value.toUpperCase())}
               className={campo}
             />
           </div>

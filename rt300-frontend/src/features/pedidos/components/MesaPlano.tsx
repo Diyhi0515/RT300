@@ -31,8 +31,8 @@ export function MesaPlano({ mesa, seleccionada, indice, alElegir }: MesaPlanoPro
       onClick={() => alElegir(mesa.codigo)}
       aria-pressed={seleccionada}
       aria-label={`Mesa ${mesa.codigo}, ${estilo.etiqueta}, ${mesa.capacidad} personas`}
-      style={{ animationDelay: `${Math.min(indice, 20) * 28}ms` }}
-      className={`@container group relative animate-[chip-in_0.4s_ease-out_both] cursor-pointer rounded-3xl p-1 transition duration-200 hover:-translate-y-0.5 active:scale-95 ${
+      style={{ animationDelay: `${Math.min(indice, 8) * 15}ms` }}
+      className={`@container group relative animate-[chip-in_0.16s_ease-out_both] cursor-pointer rounded-3xl p-1 transition duration-200 hover:-translate-y-0.5 active:scale-95 ${
         larga ? 'col-span-2 aspect-[2/1]' : 'aspect-square'
       } ${seleccionada ? 'z-10 scale-[1.04] bg-primary/10 ring-2 ring-primary' : ''}`}
     >
@@ -55,7 +55,7 @@ export function MesaPlano({ mesa, seleccionada, indice, alElegir }: MesaPlanoPro
             ))}
           </span>
           <span
-            className={`absolute inset-x-[7%] inset-y-[22%] flex flex-col items-center justify-center rounded-[18cqw] border-2 transition duration-300 ${estilo.cuerpo}`}
+            className={`absolute inset-x-[7%] inset-y-[22%] flex flex-col items-center justify-center rounded-[18cqw] border-2 transition duration-200 ${estilo.cuerpo}`}
           >
             <Contenido mesa={mesa} Icono={Icono} ocupada={ocupada} ancho />
           </span>
@@ -74,7 +74,7 @@ export function MesaPlano({ mesa, seleccionada, indice, alElegir }: MesaPlanoPro
             ))}
           </span>
           <span
-            className={`absolute inset-[19%] flex flex-col items-center justify-center rounded-full border-2 transition duration-300 ${estilo.cuerpo}`}
+            className={`absolute inset-[19%] flex flex-col items-center justify-center rounded-full border-2 transition duration-200 ${estilo.cuerpo}`}
           >
             <Contenido mesa={mesa} Icono={Icono} ocupada={ocupada} />
           </span>

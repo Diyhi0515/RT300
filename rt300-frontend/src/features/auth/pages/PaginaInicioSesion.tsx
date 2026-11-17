@@ -14,7 +14,7 @@ export function PaginaInicioSesion() {
       <title>RT - Login</title>
       <FondoInicio />
 
-      <div className="grid w-full max-w-md grid-cols-[minmax(0,1fr)] animate-[rise_0.5s_ease-out] overflow-hidden rounded-2xl bg-club-card shadow-2xl shadow-club-pc/15 ring-1 ring-club-text/5 dark:bg-[linear-gradient(160deg,#18284b_0%,#111c35_55%,#0e1830_100%)] dark:shadow-[0_0_90px_-25px_rgba(79,124,255,0.55)] dark:ring-white/12 md:max-h-[calc(var(--alto-app,100dvh)-3rem)] md:min-h-[min(40rem,calc(var(--alto-app,100dvh)-3rem))] md:max-w-4xl md:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] md:grid-rows-[minmax(0,1fr)_auto] lg:max-w-6xl 2xl:max-w-[1360px] short:md:max-h-[calc(var(--alto-app,100dvh)-1rem)] short:md:min-h-0">
+      <div className="grid w-full max-w-md grid-cols-[minmax(0,1fr)] animate-[rise_0.3s_ease-out] overflow-hidden rounded-2xl bg-club-card shadow-2xl shadow-club-pc/15 ring-1 ring-club-text/5 dark:bg-[linear-gradient(160deg,#18284b_0%,#111c35_55%,#0e1830_100%)] dark:shadow-[0_0_90px_-25px_rgba(79,124,255,0.55)] dark:ring-white/12 md:max-h-[calc(var(--alto-app,100dvh)-3rem)] md:min-h-[min(40rem,calc(var(--alto-app,100dvh)-3rem))] md:max-w-4xl md:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] md:grid-rows-[minmax(0,1fr)_auto] lg:max-w-6xl 2xl:max-w-[1360px] short:md:max-h-[calc(var(--alto-app,100dvh)-1rem)] short:md:min-h-0">
         <section className="flex min-h-0 min-w-0 flex-col overflow-hidden p-6 sm:p-8 short:p-3">
           <MarcaCabecera />
 

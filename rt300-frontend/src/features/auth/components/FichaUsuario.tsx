@@ -20,7 +20,7 @@ export function FichaUsuario({
 }: FichaUsuarioProps) {
   const supervisor = usuario.usuario === 'MCB'
   const base =
-    'flex min-w-0 flex-col items-center justify-center rounded-xl px-1 font-semibold [contain:layout_style] shadow-sm transition duration-200 active:scale-95 animate-[chip-in_0.35s_ease-out_both]'
+    'flex min-w-0 flex-col items-center justify-center rounded-xl px-1 font-semibold [contain:layout_style] shadow-sm transition duration-200 active:scale-95 animate-[chip-in_0.16s_ease-out_both]'
   const size =
     variant === 'grid'
       ? 'h-16 text-lg short:h-14 short:text-base lg:h-[4.5rem] 2xl:h-20 2xl:text-xl'
@@ -39,7 +39,7 @@ export function FichaUsuario({
       aria-pressed={activo}
       disabled={disabled}
       onClick={() => onSelect(usuario.usuario)}
-      style={{ animationDelay: `${Math.min(index, 24) * 30}ms` }}
+      style={{ animationDelay: `${Math.min(index, 8) * 15}ms` }}
       className={`${base} ${size} ${color} disabled:cursor-not-allowed disabled:opacity-50`}
     >
       <span>{usuario.usuario}</span>

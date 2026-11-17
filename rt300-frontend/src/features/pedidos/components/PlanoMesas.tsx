@@ -134,7 +134,7 @@ export function PlanoMesas() {
       ) : vista === 'tarjetas' ? (
         <div
           key={`${areaId}-tarjetas`}
-          className="relative grid animate-[fade_0.3s_ease-out] grid-cols-2 gap-2.5 p-3 @lg:grid-cols-3 @3xl:grid-cols-4 @5xl:grid-cols-5 sm:p-4"
+          className="relative grid animate-[fade_0.15s_ease-out] grid-cols-2 gap-2.5 p-3 @lg:grid-cols-3 @3xl:grid-cols-4 @5xl:grid-cols-5 sm:p-4"
         >
           {visibles.map((mesa, i) => (
             <MesaTarjeta
@@ -149,7 +149,7 @@ export function PlanoMesas() {
       ) : (
         <div
           key={`${areaId}-plano`}
-          className="relative grid animate-[fade_0.3s_ease-out] grid-flow-dense grid-cols-3 gap-1.5 p-3 @md:grid-cols-4 @2xl:grid-cols-5 @4xl:grid-cols-6 @6xl:grid-cols-8 sm:gap-2 sm:p-4"
+          className="relative grid animate-[fade_0.15s_ease-out] grid-flow-dense grid-cols-3 gap-1.5 p-3 @md:grid-cols-4 @2xl:grid-cols-5 @4xl:grid-cols-6 @6xl:grid-cols-8 sm:gap-2 sm:p-4"
         >
           {visibles.map((mesa, i) => (
             <MesaPlano

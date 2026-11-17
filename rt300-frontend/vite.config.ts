@@ -37,6 +37,34 @@ const appMode = (): Plugin => ({
   },
 })
 
+const SERVICE_WORKER_LIMPIEZA = `self.addEventListener('install', () => self.skipWaiting())
+self.addEventListener('activate', (evento) => {
+  evento.waitUntil(
+    (async () => {
+      const claves = await caches.keys()
+      await Promise.all(claves.map((clave) => caches.delete(clave)))
+      await self.registration.unregister()
+      const ventanas = await self.clients.matchAll({ type: 'window' })
+      ventanas.forEach((ventana) => ventana.navigate(ventana.url))
+    })(),
+  )
+})
+`
+
+const limpiarServiceWorkerViejo = (): Plugin => ({
+  name: 'rt300-limpiar-service-worker-viejo',
+  apply: 'serve',
+  configureServer(server) {
+    server.middlewares.use((req, res, next) => {
+      const ruta = req.url?.split('?')[0]
+      if (ruta !== '/sw.js' && ruta !== '/dev-sw.js') return next()
+      res.setHeader('Content-Type', 'text/javascript')
+      res.setHeader('Cache-Control', 'no-store')
+      res.end(SERVICE_WORKER_LIMPIEZA)
+    })
+  },
+})
+
 const dominiosNgrok = [
   '.ngrok-free.app',
   '.ngrok-free.dev',
@@ -48,16 +76,12 @@ const dominiosNgrok = [
 export default defineConfig({
   plugins: [
     appMode(),
+    limpiarServiceWorkerViejo(),
     react(),
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
       useCredentials: true,
-      devOptions: {
-        enabled: true,
-        type: 'module',
-        navigateFallbackAllowlist: [/^\/$/],
-      },
       includeAssets: ['icono-pestana-32.png'],
       manifest: {
         name: 'RT - AXON',

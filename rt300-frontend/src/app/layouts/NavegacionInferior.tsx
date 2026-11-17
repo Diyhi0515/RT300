@@ -51,7 +51,7 @@ export function NavegacionInferior({ perfilAbierto, alAbrirPerfil }: NavegacionI
             <NavLink
               key={modulo.clave}
               to={modulo.ruta}
-              className={`${base} animate-[chip-in_0.35s_ease-out_both]`}
+              className={`${base} animate-[chip-in_0.16s_ease-out_both]`}
             >
               {({ isActive }) => (
                 <>

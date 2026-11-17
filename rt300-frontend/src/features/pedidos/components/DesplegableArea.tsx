@@ -44,7 +44,7 @@ export function DesplegableArea({ local }: DesplegableAreaProps) {
         <ul
           role="listbox"
           aria-label="Áreas de consumo"
-          className="absolute left-0 top-[calc(100%+8px)] z-30 w-72 max-w-[calc(100vw-2rem)] uppercase animate-[pop_0.18s_ease-out] overflow-hidden rounded-2xl border border-line bg-surface p-1.5 shadow-[0_24px_60px_rgba(1,21,38,.25)]"
+          className="absolute left-0 top-[calc(100%+8px)] z-30 w-72 max-w-[calc(100vw-2rem)] uppercase animate-[pop_0.14s_ease-out] overflow-hidden rounded-2xl border border-line bg-surface p-1.5 shadow-[0_24px_60px_rgba(1,21,38,.25)]"
         >
           {areas.map((area) => {
             const { ocupadas, total } = resumenMesas(mesas.filter((m) => m.areaId === area.id))

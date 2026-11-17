@@ -17,7 +17,7 @@ export function PanelMesa({ cerrable = false }: PanelMesaProps) {
   const ocupada = mesa.estado === 'ocupada'
 
   return (
-    <div key={mesa.codigo} className="animate-[entrar-lado_0.3s_ease-out]">
+    <div key={mesa.codigo} className="animate-[entrar-lado_0.18s_ease-out]">
       <CabeceraMesa mesa={mesa} cerrable={cerrable} />
       {!ocupada ? (
         <FormularioOcupar key={mesa.estado} mesa={mesa} />
@@ -26,10 +26,7 @@ export function PanelMesa({ cerrable = false }: PanelMesaProps) {
           Cargando cuentas...
         </p>
       ) : (
-        <ResumenMesa
-          key={`${mesa.folio}-${mesa.comensales}-${mesa.cuentas.length}`}
-          mesa={mesa}
-        />
+        <ResumenMesa key={`${mesa.folio}-${mesa.comensales}`} mesa={mesa} />
       )}
     </div>
   )

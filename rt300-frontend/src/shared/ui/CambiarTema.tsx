@@ -14,7 +14,7 @@ export function CambiarTema({ className = '', onDark = true, compact = false }: 
   const look = onDark
     ? 'border-white/10 bg-white/5 text-white hover:bg-white/10'
     : 'border-line bg-elevated text-fg hover:border-primary'
-  const icon = 'absolute size-5 transition-all duration-300 ease-out'
+  const icon = 'absolute size-5 transition duration-200 ease-out'
   return (
     <button
       type="button"

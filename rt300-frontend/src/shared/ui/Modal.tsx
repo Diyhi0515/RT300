@@ -55,7 +55,7 @@ export function Modal({
 
   return createPortal(
     <div
-      className={`px-safe pb-safe pt-safe fixed inset-0 ${capa} flex overflow-y-auto bg-black/60 py-6 backdrop-blur-sm animate-[fade_0.2s_ease-out] short:py-3`}
+      className={`px-safe pb-safe pt-safe fixed inset-0 ${capa} flex overflow-y-auto bg-black/60 py-6 escritorio:backdrop-blur-sm animate-[fade_0.15s_ease-out] short:py-3`}
       onMouseDown={(event) => {
         if (dismissible && event.target === event.currentTarget) onClose()
       }}
@@ -64,7 +64,7 @@ export function Modal({
         role="dialog"
         aria-modal="true"
         aria-labelledby={title ? titleId : undefined}
-        className={`relative m-auto w-full max-w-sm animate-[pop_0.25s_cubic-bezier(0.2,1.2,0.4,1)] overflow-hidden rounded-3xl ${estilosPanel[tone]} ${className}`}
+        className={`relative m-auto w-full max-w-sm animate-[pop_0.16s_cubic-bezier(0.2,0.9,0.3,1)] overflow-hidden rounded-3xl ${estilosPanel[tone]} ${className}`}
       >
         {dismissible && (
           <button

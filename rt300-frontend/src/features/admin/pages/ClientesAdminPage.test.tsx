@@ -24,7 +24,7 @@ describe('ClientesAdminPage', () => {
 
     expect(await screen.findByRole('table', { name: 'Clientes encontrados' })).toBeInTheDocument()
     expect(screen.getByText(clientes.clientes[0].nombre)).toBeInTheDocument()
-    expect(consultas).toEqual(['?nombre=no'])
+    expect(consultas).toEqual(['?nombre=NO'])
   })
 
   it('una sola letra no consulta al servidor', async () => {

@@ -56,13 +56,13 @@ export function MenuUsuario({ abierto, alCambiar }: MenuUsuarioProps) {
       <div
         aria-hidden
         onClick={() => alCambiar(false)}
-        className={`fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm transition-opacity duration-300 sm:hidden ${
+        className={`fixed inset-0 z-[60] bg-black/60 escritorio:backdrop-blur-sm transition-opacity duration-200 sm:hidden ${
           abierto ? 'opacity-100' : 'pointer-events-none opacity-0'
         }`}
       />
       <div
         role="menu"
-        className={`fixed inset-x-0 bottom-0 z-[70] flex max-h-[90dvh] flex-col overflow-hidden rounded-t-[32px] border-t border-line bg-surface text-fg shadow-[0_-24px_70px_rgba(1,21,38,.25)] transition-[opacity,transform] duration-300 ease-out sm:absolute sm:inset-x-auto sm:bottom-auto sm:right-0 sm:top-[calc(100%+10px)] sm:max-h-none short:sm:max-h-[calc(var(--alto-app,100dvh)-5rem)] sm:w-[340px] sm:origin-top-right sm:rounded-3xl sm:border sm:duration-200 ${
+        className={`fixed inset-x-0 bottom-0 z-[70] flex max-h-[90dvh] flex-col overflow-hidden rounded-t-[32px] border-t border-line bg-surface text-fg shadow-[0_-24px_70px_rgba(1,21,38,.25)] transition-[opacity,transform] duration-200 ease-out sm:absolute sm:inset-x-auto sm:bottom-auto sm:right-0 sm:top-[calc(100%+10px)] sm:max-h-none short:sm:max-h-[calc(var(--alto-app,100dvh)-5rem)] sm:w-[340px] sm:origin-top-right sm:rounded-3xl sm:border sm:duration-200 ${
           abierto
             ? 'translate-y-0 opacity-100 sm:scale-100'
             : 'pointer-events-none translate-y-full opacity-0 sm:translate-y-0 sm:scale-95'

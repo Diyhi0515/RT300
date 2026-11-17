@@ -98,13 +98,13 @@ export function UsuarioPanel({ seleccionado, onSelect, disabled = false }: Usuar
               {Array.from({ length: 12 }, (_, i) => (
                 <span
                   key={i}
-                  style={{ animationDelay: `${i * 80}ms` }}
+                  style={{ animationDelay: `${i * 40}ms` }}
                   className="h-16 animate-pulse rounded-xl bg-club-card"
                 />
               ))}
             </div>
             <div className="absolute inset-0 grid place-items-center">
-              <div className="rounded-3xl bg-club-card/95 px-8 py-6 shadow-xl ring-1 ring-club-text/5 backdrop-blur">
+              <div className="rounded-3xl bg-club-card/95 px-8 py-6 shadow-xl ring-1 ring-club-text/5 escritorio:backdrop-blur">
                 <Cargador label="Cargando usuarios…" />
               </div>
             </div>

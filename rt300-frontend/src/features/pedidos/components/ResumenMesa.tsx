@@ -17,6 +17,8 @@ import { notificar } from '@/shared/avisos/almacen'
 import { estadoCuenta, totalCuenta } from '../calculos'
 import {
   useActualizarCuenta,
+  useCompactarCuentas,
+  useEliminarCuentas,
   useHabilitarMesa,
   useImprimirCuenta,
   useModificarMesa,
@@ -38,25 +40,39 @@ const COLUMNAS = 'grid-cols-[minmax(0,1fr)_2rem_3.6rem_4.2rem]'
 const accion =
   'flex h-11 cursor-pointer items-center justify-center gap-2 rounded-xl border border-line bg-surface px-3 text-sm font-semibold transition hover:border-primary/50 hover:bg-primary/5 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 short:h-10'
 
+const foliosOrdenados = new Set<number>()
+
 export function ResumenMesa({ mesa }: ResumenMesaProps) {
   const cuentaActiva = usePedidos((s) => s.cuentaActiva)
   const { abrirCuenta, abrirComanda } = usePedidos.getState()
   const modificar = useModificarMesa()
   const actualizar = useActualizarCuenta()
+  const eliminar = useEliminarCuentas()
+  const compactar = useCompactarCuentas()
   const habilitar = useHabilitarMesa()
   const imprimir = useImprimirCuenta()
   const navigate = useNavigate()
   const [editando, setEditando] = useState(false)
   const [verTodas, setVerTodas] = useState(false)
-  const [eliminando, setEliminando] = useState<number | null>(null)
   const [confirmando, setConfirmando] = useState<'liberar' | null>(null)
   const [comensales, setComensales] = useState(mesa.comensales)
   const [cuentas, setCuentas] = useState(mesa.cuentas.length)
 
   const cuenta = mesa.cuentas.find((c) => c.numero === cuentaActiva) ?? mesa.cuentas[0]
   const numeroActivo = cuenta?.numero
-  const cuentaAEliminar = mesa.cuentas.find((c) => c.numero === eliminando)
-  const trabajando = modificar.isPending || actualizar.isPending || habilitar.isPending
+  const trabajando =
+    modificar.isPending || actualizar.isPending || habilitar.isPending || eliminar.isPending
+
+  const hayHuecos = [...mesa.cuentas]
+    .sort((a, b) => a.numero - b.numero)
+    .some((c, i) => c.numero !== i + 1)
+  const { mutate: ordenar, isPending: ordenando } = compactar
+
+  useEffect(() => {
+    if (!hayHuecos || ordenando || foliosOrdenados.has(mesa.folio)) return
+    foliosOrdenados.add(mesa.folio)
+    ordenar({ folio: mesa.folio, mesa: mesa.codigo })
+  }, [hayHuecos, ordenando, ordenar, mesa.folio, mesa.codigo])
 
   useEffect(() => {
     if (numeroActivo === undefined) return
@@ -65,14 +81,16 @@ export function ResumenMesa({ mesa }: ResumenMesaProps) {
       ?.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' })
   }, [numeroActivo])
 
-  const minimoCuentas = Math.max(
-    1,
-    ...mesa.cuentas.filter((c) => c.lineas.length > 0 || c.liquidada).map((c) => c.numero),
+  const posicionUltimaConConsumo = mesa.cuentas.reduce(
+    (ultima, c, i) => (c.lineas.length > 0 || c.liquidada ? i : ultima),
+    -1,
   )
-  const sinConsumo = mesa.cuentas.every((c) => c.lineas.length === 0 && !c.liquidada)
+  const minimoCuentas = Math.max(1, posicionUltimaConConsumo + 1)
   const puedeAgregar = mesa.cuentas.length < mesa.comensales
-  const puedeEliminar = (numero: number) =>
-    mesa.cuentas.length > 1 && numero === mesa.cuentas.length && sinConsumo
+  const puedeEliminar = (numero: number) => {
+    const c = mesa.cuentas.find((x) => x.numero === numero)
+    return mesa.cuentas.length > 1 && !!c && c.lineas.length === 0 && !c.liquidada
+  }
   const totalActiva = cuenta ? totalCuenta(cuenta) : 0
 
   const cambiarMesa = async (totalCuentas: number, totalComensales: number) => {
@@ -110,6 +128,23 @@ export function ResumenMesa({ mesa }: ResumenMesaProps) {
     }
     vibrar('exito')
     notificar.exito(`Se actualizó la cuenta ${numero}.`, `Mesa ${mesa.codigo}`)
+    return true
+  }
+
+  const eliminarCuentas = async (numeros: number[]) => {
+    try {
+      await eliminar.mutateAsync({ folio: mesa.folio, mesa: mesa.codigo, cuentas: numeros })
+    } catch {
+      return false
+    }
+    if (cuentaActiva !== null && numeros.includes(cuentaActiva)) abrirCuenta(null)
+    vibrar('exito')
+    notificar.exito(
+      numeros.length === 1
+        ? `Se eliminó la cuenta ${numeros[0]}.`
+        : `Se eliminaron ${numeros.length} cuentas.`,
+      `Mesa ${mesa.codigo}`,
+    )
     return true
   }
 
@@ -211,7 +246,7 @@ export function ResumenMesa({ mesa }: ResumenMesaProps) {
           }}
           alActualizar={actualizarDatos}
           alEditarCuentas={() => navigate(`/pedidos/cuentas/${encodeURIComponent(mesa.codigo)}`)}
-          alEliminar={setEliminando}
+          alEliminar={eliminarCuentas}
           alAgregar={() => void agregarCuenta()}
           alVolver={() => setVerTodas(false)}
         />
@@ -370,7 +405,15 @@ export function ResumenMesa({ mesa }: ResumenMesaProps) {
                     <Printer className="size-4" />
                     {imprimir.isPending ? 'Enviando...' : 'Imprimir cuenta'}
                   </button>
-                  <button type="button" className={accion} onClick={() => setEditando(true)}>
+                  <button
+                    type="button"
+                    className={accion}
+                    onClick={() => {
+                      setComensales(mesa.comensales)
+                      setCuentas(mesa.cuentas.length)
+                      setEditando(true)
+                    }}
+                  >
                     <Pencil className="size-4" />
                     Datos de mesa
                   </button>
@@ -389,25 +432,6 @@ export function ResumenMesa({ mesa }: ResumenMesaProps) {
         </>
       )}
 
-      <ConfirmarAccion
-        abierto={cuentaAEliminar !== undefined}
-        peligro
-        titulo="Eliminar la cuenta"
-        mensaje={`Se eliminará la cuenta ${cuentaAEliminar?.numero ?? ''}. Solo se puede mientras la mesa no tenga comandas.`}
-        textoConfirmar="Eliminar"
-        alCancelar={() => setEliminando(null)}
-        alConfirmar={() => {
-          const eliminada = cuentaAEliminar
-          setEliminando(null)
-          if (!eliminada) return
-          void cambiarMesa(mesa.cuentas.length - 1, mesa.comensales).then((hecho) => {
-            if (!hecho) return
-            abrirCuenta(null)
-            vibrar('exito')
-            notificar.exito(`Se eliminó la cuenta ${eliminada.numero}.`, `Mesa ${mesa.codigo}`)
-          })
-        }}
-      />
       <ConfirmarAccion
         abierto={confirmando === 'liberar'}
         peligro
