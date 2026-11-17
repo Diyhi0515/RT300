@@ -6,6 +6,7 @@ repositorios sobre la misma conexión no se pisan entre sí.
 import pytest
 from sqlalchemy import create_engine, text
 
+from app.core.db import _odbc
 from app.core.sql import SqlRepository, one, rows
 
 
@@ -40,3 +41,7 @@ def test_cada_peticion_obtiene_su_propia_conexion(engine):
     assert c1 is not c2
     c1.close()
     assert rows(c2, "SELECT COUNT(*) AS n FROM t") == [{"n": 2}]   # cerrar una no afecta a la otra
+
+
+def test_valores_odbc_no_permiten_inyectar_parametros():
+    assert _odbc("clave;Encrypt=no}") == "{clave;Encrypt=no}}}"

@@ -240,3 +240,18 @@ def test_cors_permite_credenciales_solo_para_el_origen_configurado(cliente):
     assert "x-requested-with" in ok.headers["Access-Control-Allow-Headers"].lower()
     ajeno = cliente.options("/api/v1/auth/refresh", headers={"Origin": "http://malo.com", "Access-Control-Request-Method": "POST"})
     assert "Access-Control-Allow-Origin" not in ajeno.headers
+
+
+def test_instalacion_windows_sirve_frontend_y_fallback_spa(tmp_path):
+    (tmp_path / "index.html").write_text("<main>RT300</main>", encoding="utf-8")
+    (tmp_path / "assets").mkdir()
+    (tmp_path / "assets" / "app.js").write_text("console.log('rt300')", encoding="utf-8")
+    app = create_app(Config(
+        env="development", cors_origins=(ORIGEN,), db_host="no-existe", gateway_mode="fake",
+        revocados_db="", frontend_dir=str(tmp_path),
+    ))
+    cliente_front = app.test_client()
+    assert "RT300" in cliente_front.get("/").get_data(as_text=True)
+    assert "RT300" in cliente_front.get("/pedidos/mesa/1").get_data(as_text=True)
+    asset = cliente_front.get("/assets/app.js")
+    assert asset.status_code == 200 and "default-src 'self'" in asset.headers["Content-Security-Policy"]

@@ -56,6 +56,7 @@ class Config:
     redis_url: str = field(repr=False, default_factory=lambda: _env("REDIS_URL"))
     imagenes_dir: str = field(default_factory=lambda: _env("IMAGENES_DIR", "/data/imagenes"))
     imagenes_cache_dir: str = field(default_factory=lambda: _env("IMAGENES_CACHE_DIR", "/data/cache"))
+    frontend_dir: str = field(default_factory=lambda: _env("FRONTEND_DIR"))
     gateway_timeout_seconds: int = field(default_factory=lambda: int(_env("GATEWAY_TIMEOUT_SECONDS", "30")))
 
     @property

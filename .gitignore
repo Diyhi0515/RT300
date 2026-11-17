@@ -1,3 +1,7 @@
 .env
+.env.local-db
 docker/imagenes/
 docker/backup/
+build/
+release/
+installer/windows/RT300.Service.exe

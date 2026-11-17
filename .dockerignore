@@ -1,0 +1,15 @@
+.git
+.env
+.env.*
+build
+release
+installer
+docs
+img
+rt300-backend
+docker/db
+docker/backup
+docker/imagenes
+rt300-frontend/node_modules
+rt300-frontend/dist
+rt300-frontend/.env*

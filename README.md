@@ -9,6 +9,7 @@ y la misma lógica de negocio del sistema PHP anterior (`RT-300WEB`), pero más 
 | [`rt300-frontend/`](rt300-frontend/src/features/pedidos/README.md) | React + Vite + TypeScript (PWA) | Login, mesas, cuentas y comanda conectados al backend ([login](rt300-frontend/src/features/auth/README.md), [pedidos](rt300-frontend/src/features/pedidos/README.md)) |
 | [`docs/`](docs/) | Arquitectura, diseño, puesta en marcha, registro de cambios, colección Bruno | Al día |
 | `docker/`, `docker-compose.yml` | SQL Server 2017 con restauración del `.bak`, backend y frontend | Funcionando |
+| [`installer/windows/`](installer/windows/README.md) | Instalador y servicio nativos para Windows Server 2016+, sin Docker | Preparado para compilar |
 | `img/Restaurantes/` | Imágenes de platos del sistema antiguo | Copiada |
 
 ## Empezar
@@ -22,6 +23,8 @@ cd rt300-frontend && npm install && npm run dev      # http://localhost:5173
 ```
 
 Usuario de prueba: `GP1` / `123456`. Guía completa y problemas frecuentes: [docs/03-puesta-en-marcha.md](docs/03-puesta-en-marcha.md).
+
+Para instalar en **otra laptop con Docker pero usando el SQL Server local de Windows** (sin empaquetar ni restaurar la BD), siga [docs/05-otra-laptop-docker-bd-local.md](docs/05-otra-laptop-docker-bd-local.md).
 
 ## Documentación
 

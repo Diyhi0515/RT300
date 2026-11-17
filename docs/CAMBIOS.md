@@ -7,6 +7,22 @@ Documentos relacionados: [00 arquitectura](00-arquitectura-general.md) · [01 ba
 [03 puesta en marcha](03-puesta-en-marcha.md) · [04 pruebas locales](04-pruebas-locales.md) · [README del backend](../rt300-backend/README.md) ·
 [README del login (front)](../rt300-frontend/src/features/auth/README.md)
 
+## 2026-11-16 — Instalación nativa en Windows Server
+
+- Se agregó un punto de entrada compilable con Nuitka que carga la configuración externa desde `C:\ProgramData\RT300\config.env`.
+- El backend puede servir el build React y la API bajo el mismo puerto, sin fijar una IP durante la compilación.
+- Se agregó un instalador Inno Setup, servicio automático WinSW y asistente gráfico para SQL Server, SOAP, puerto e imágenes.
+- El asistente genera secretos aleatorios, valida SQL/SOAP, restringe ACL y abre el Firewall solo para redes Dominio/Privada.
+- Se endureció la cadena ODBC para soportar contraseñas con `;` y `}` sin alterar sus parámetros.
+- El servidor de destino no requiere Docker, Python, Node.js ni componentes Linux.
+
+## 2026-11-17 — Despliegue Docker con base local externa
+
+- Se agregó `docker-compose.local-db.yml`: ejecuta backend y frontend en Docker, sin contenedor SQL ni restauración de backup.
+- El backend se conecta al SQL Server de la laptop mediante `host.docker.internal`.
+- Se agregó una imagen de producción del frontend, configuración de ejemplo y guía completa de traslado/operación.
+- Se agregó un script opcional que crea solamente el login `rt300_app` con permisos mínimos sobre la base local existente.
+
 ## Lo que NO cambió
 
 - **El esquema de la base `tbpos_new`:** no se creó, alteró ni borró ninguna tabla, columna ni índice. El backend usa las mismas tablas legacy
