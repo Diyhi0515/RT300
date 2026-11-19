@@ -1,6 +1,11 @@
-import { http } from '@/lib/http'
+import { z } from 'zod'
+import { ErrorApi, http } from '@/lib/http'
 import {
+  esquemaAccionComanda,
   esquemaComandaEnviada,
+  esquemaCentros,
+  esquemaComandasMesa,
+  esquemaExtras,
   esquemaDetalleFolio,
   esquemaOcupacion,
   esquemaParametros,
@@ -9,6 +14,12 @@ import {
   esquemaRespuestaMesas,
   esquemaSecciones,
 } from './esquemas'
+import {
+  MAXIMO_CANTIDAD_PRODUCTO,
+  MAXIMO_EXTRAS_PRODUCTO,
+  MAXIMO_NOTA_PRODUCTO,
+  MAXIMO_PRODUCTOS_COMANDA,
+} from './limites'
 
 const enRuta = (valor: string) => encodeURIComponent(valor)
 
@@ -102,6 +113,9 @@ export const listarPlatos = async (seccion: number, subseccion: number) => {
 export interface ItemEnvio {
   cart: string
   cant: number
+  glos?: string
+  ccpd?: number
+  extras?: { cart: string; cant: number }[]
 }
 
 export interface DatosEnvioComanda {
@@ -109,8 +123,33 @@ export interface DatosEnvioComanda {
   items: ItemEnvio[]
 }
 
+const esquemaEnvioComanda = z.object({
+  glos: z.string().max(200),
+  items: z
+    .array(
+      z.object({
+        cart: z.string().trim().min(1).max(30),
+        cant: z.number().int().min(1).max(MAXIMO_CANTIDAD_PRODUCTO),
+        glos: z.string().trim().max(MAXIMO_NOTA_PRODUCTO).optional(),
+        ccpd: z.number().int().min(0).optional(),
+        extras: z
+          .array(
+            z.object({
+              cart: z.string().trim().min(1).max(30),
+              cant: z.number().int().min(1).max(MAXIMO_CANTIDAD_PRODUCTO),
+            }),
+          )
+          .max(MAXIMO_EXTRAS_PRODUCTO)
+          .optional(),
+      }),
+    )
+    .min(1)
+    .max(MAXIMO_PRODUCTOS_COMANDA),
+})
+
 export const enviarComanda = async (folio: number, cuenta: number, datos: DatosEnvioComanda) => {
-  const { data } = await http.post(`/folios/${folio}/cuentas/${cuenta}/comandas`, datos)
+  const cuerpo = esquemaEnvioComanda.parse(datos)
+  const { data } = await http.post(`/folios/${folio}/cuentas/${cuenta}/comandas`, cuerpo)
   return esquemaComandaEnviada.parse(data)
 }
 
@@ -122,4 +161,53 @@ export interface DatosImprimir {
 
 export const imprimirCuenta = async (folio: number, cuenta: number, datos: DatosImprimir) => {
   await http.post(`/folios/${folio}/cuentas/${cuenta}/imprimir`, datos)
+}
+
+export const listarComandasMesa = async (folio: number, mesa: string) => {
+  try {
+    const { data } = await http.get(`/folios/${folio}/comandas`, { params: { mesa } })
+    return esquemaComandasMesa.parse(data)
+  } catch (error) {
+    if (error instanceof ErrorApi && error.code === 'SIN_COMANDAS') {
+      return esquemaComandasMesa.parse({ comandas: [], detalle: [], motivos: [] })
+    }
+    throw error
+  }
+}
+
+export interface ReferenciaItemComanda {
+  ncom: number
+  item: number
+}
+
+export interface DatosReimprimirComandas {
+  nfol: number
+  mesa: string
+  uaut: string
+  mtvo: number
+  items: ReferenciaItemComanda[]
+}
+
+export interface DatosEliminarComandas extends DatosReimprimirComandas {
+  cont: string
+}
+
+export const reimprimirComandas = async (datos: DatosReimprimirComandas) => {
+  const { data } = await http.post('/comandas/reimprimir', datos)
+  return esquemaAccionComanda.parse(data)
+}
+
+export const eliminarComandas = async (datos: DatosEliminarComandas) => {
+  const { data } = await http.post('/comandas/eliminar', datos)
+  return esquemaAccionComanda.parse(data)
+}
+
+export const listarExtras = async (seccion: number, subseccion: number) => {
+  const { data } = await http.get(`/menu/secciones/${seccion}/${subseccion}/extras`)
+  return esquemaExtras.parse(data).extras
+}
+
+export const listarCentros = async (cart: string) => {
+  const { data } = await http.get(`/menu/platos/${enRuta(cart)}/centros-produccion`)
+  return esquemaCentros.parse(data).centros
 }

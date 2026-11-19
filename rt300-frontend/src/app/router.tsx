@@ -43,6 +43,12 @@ export const router = createBrowserRouter([
                 .DatosCuentasPage,
             }),
           },
+          {
+            path: '/pedidos/comanda/:codigo/:cuenta',
+            lazy: async () => ({
+              Component: (await import('@/features/pedidos/pages/ComandaPage')).ComandaPage,
+            }),
+          },
           { path: '/mesas', element: <Navigate to="/admin" replace /> },
         ],
       },

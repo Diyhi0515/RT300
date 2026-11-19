@@ -1,6 +1,7 @@
 import { useEffect, useId, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { X } from 'lucide-react'
+import { bloquearScroll } from './bloquearScroll'
 
 interface ModalProps {
   open: boolean
@@ -39,14 +40,13 @@ export function Modal({
 
   useEffect(() => {
     if (!open) return
-    const previous = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
+    const liberar = bloquearScroll()
     const onKey = (event: KeyboardEvent) => {
       if (event.key === 'Escape' && dismissible) onClose()
     }
     window.addEventListener('keydown', onKey)
     return () => {
-      document.body.style.overflow = previous
+      liberar()
       window.removeEventListener('keydown', onKey)
     }
   }, [open, dismissible, onClose])

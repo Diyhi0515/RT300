@@ -12,6 +12,7 @@ export function AppLayout() {
   const [perfilAbierto, setPerfilAbierto] = useState(false)
   const { pathname } = useLocation()
   const registrar = useUltimoModulo((s) => s.registrar)
+  const ocultarPie = pathname.startsWith('/pedidos/comanda/')
 
   useEffect(() => {
     const modulo = moduloDeRuta(pathname)
@@ -26,9 +27,11 @@ export function AppLayout() {
           <Outlet />
         </Suspense>
       </main>
-      <footer className="px-safe hidden pb-5 text-center text-[11px] leading-relaxed text-muted sm:text-xs escritorio:block short:escritorio:pb-3">
-        Santa Cruz, Bolivia · v{VERSION_APP}
-      </footer>
+      {!ocultarPie && (
+        <footer className="px-safe hidden pb-5 text-center text-[11px] leading-relaxed text-muted sm:text-xs escritorio:block short:escritorio:pb-3">
+          Santa Cruz, Bolivia · v{VERSION_APP}
+        </footer>
+      )}
       <NavegacionInferior
         perfilAbierto={perfilAbierto}
         alAbrirPerfil={() => setPerfilAbierto(true)}

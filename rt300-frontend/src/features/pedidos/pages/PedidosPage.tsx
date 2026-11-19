@@ -3,7 +3,6 @@ import { ClipboardList } from 'lucide-react'
 import { EncabezadoPagina } from '@/features/salon/components/EncabezadoPagina'
 import { useMediaQuery } from '@/shared/hooks/useMediaQuery'
 import { HojaInferior } from '@/shared/ui/HojaInferior'
-import { ComandaNueva } from '../components/ComandaNueva'
 import { PanelMesa } from '../components/PanelMesa'
 import { PlanoMesas } from '../components/PlanoMesas'
 import { usePedidos } from '../store'
@@ -51,7 +50,6 @@ export function PedidosPage() {
         </HojaInferior>
       )}
 
-      <ComandaNueva />
     </div>
   )
 }

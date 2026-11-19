@@ -4,10 +4,14 @@ import {
   actualizarCuenta,
   buscarClientes,
   compactarCuentas,
+  eliminarComandas,
   eliminarCuentas,
   enviarComanda,
   habilitarMesa,
   imprimirCuenta,
+  listarCentros,
+  listarComandasMesa,
+  listarExtras,
   listarMesas,
   listarPlatos,
   listarSecciones,
@@ -15,14 +19,26 @@ import {
   obtenerDetalleFolio,
   obtenerParametros,
   ocuparMesa,
+  reimprimirComandas,
   type DatosActualizarCuenta,
+  type DatosEliminarComandas,
   type DatosEnvioComanda,
   type DatosImprimir,
   type DatosModificar,
   type DatosOcupar,
+  type DatosReimprimirComandas,
   type FiltroClientes,
 } from './api'
-import { mapearArea, mapearCliente, mapearCuenta, mapearMesa, mapearSecciones } from './mapeos'
+import {
+  mapearArea,
+  mapearCentros,
+  mapearCliente,
+  mapearComandasMesa,
+  mapearCuenta,
+  mapearExtras,
+  mapearMesa,
+  mapearSecciones,
+} from './mapeos'
 import { usePedidos } from './store'
 import type { AreaConsumo, MesaDetalle, MesaPlano, Plato } from './types'
 
@@ -35,6 +51,9 @@ export const claves = {
   secciones: ['menu', 'secciones'] as const,
   platos: (seccion: number, subseccion: number) => ['menu', 'platos', seccion, subseccion] as const,
   clientes: (filtro: FiltroClientes | null) => ['clientes', filtro] as const,
+  comandas: (folio: number) => ['comandas', 'folio', folio] as const,
+  extras: (seccion: number, subseccion: number) => ['menu', 'extras', seccion, subseccion] as const,
+  centros: (cart: string) => ['menu', 'centros', cart] as const,
 }
 
 export const useParametros = () =>
@@ -100,11 +119,18 @@ export const useSecciones = () =>
     select: mapearSecciones,
   })
 
-const aPlato = (p: { cart: string; descripcion?: string | null; pvta: number; moneda: string }): Plato => ({
+const aPlato = (p: {
+  cart: string
+  cssm?: number | null
+  descripcion?: string | null
+  pvta: number
+  moneda: string
+}): Plato => ({
   id: p.cart.trim(),
   nombre: p.descripcion?.trim() || p.cart.trim(),
   precio: p.pvta,
   moneda: p.moneda,
+  subseccion: p.cssm ?? undefined,
 })
 
 export const usePlatos = (seccion: number | null, subseccion: number) =>
@@ -206,4 +232,56 @@ export const useImprimirCuenta = () =>
   useMutation({
     mutationFn: ({ folio, cuenta, ...datos }: DatosImprimir & { folio: number; cuenta: number }) =>
       imprimirCuenta(folio, cuenta, datos),
+  })
+
+export const useComandasMesa = (folio: number, mesa: string, habilitado: boolean) =>
+  useQuery({
+    queryKey: claves.comandas(folio),
+    queryFn: () => listarComandasMesa(folio, mesa),
+    enabled: habilitado,
+    staleTime: 0,
+    select: mapearComandasMesa,
+  })
+
+const useRefrescarComandas = () => {
+  const cliente = useQueryClient()
+  const refrescar = useRefrescar()
+  return (folio: number) => {
+    void cliente.invalidateQueries({ queryKey: claves.comandas(folio) })
+    refrescar(folio)
+  }
+}
+
+export const useReimprimirComandas = () => {
+  const refrescar = useRefrescarComandas()
+  return useMutation({
+    mutationFn: (datos: DatosReimprimirComandas) => reimprimirComandas(datos),
+    onSuccess: (_datos, { nfol }) => refrescar(nfol),
+  })
+}
+
+export const useEliminarComandas = () => {
+  const refrescar = useRefrescarComandas()
+  return useMutation({
+    mutationFn: (datos: DatosEliminarComandas) => eliminarComandas(datos),
+    onSuccess: (_datos, { nfol }) => refrescar(nfol),
+  })
+}
+
+export const useExtrasPlato = (seccion: number | undefined, subseccion: number | undefined) =>
+  useQuery({
+    queryKey: claves.extras(seccion ?? 0, subseccion ?? 0),
+    queryFn: () => listarExtras(seccion as number, subseccion as number),
+    enabled: !!seccion && !!subseccion,
+    staleTime: 10 * 60_000,
+    select: mapearExtras,
+  })
+
+export const useCentrosPlato = (cart: string | null) =>
+  useQuery({
+    queryKey: claves.centros(cart ?? ''),
+    queryFn: () => listarCentros(cart as string),
+    enabled: cart !== null,
+    staleTime: 10 * 60_000,
+    select: mapearCentros,
   })

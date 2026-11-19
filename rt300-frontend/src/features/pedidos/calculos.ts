@@ -12,8 +12,11 @@ export const estadoCuenta = (cuenta: Cuenta): EstadoCuenta => {
   return cuenta.lineas.length ? 'consumo' : 'vacia'
 }
 
+export const totalExtras = (item: ItemComanda) =>
+  (item.extras ?? []).reduce((suma, e) => suma + e.cantidad * e.precio, 0)
+
 export const totalItems = (items: ItemComanda[]) =>
-  items.reduce((suma, i) => suma + i.cantidad * i.plato.precio, 0)
+  items.reduce((suma, i) => suma + i.cantidad * i.plato.precio + totalExtras(i), 0)
 
 export const cantidadItems = (items: ItemComanda[]) =>
   items.reduce((suma, i) => suma + i.cantidad, 0)
@@ -70,8 +73,8 @@ export const filtrarCuentas = (cuentas: Cuenta[], texto: string) => {
   const buscado = sinAcentos(texto.trim())
   if (!buscado) return cuentas
   return cuentas.filter((cuenta) =>
-    [String(cuenta.numero), cuenta.nombre, cuenta.codigoCliente ?? '', cuenta.nit ?? ''].some((campo) =>
-      sinAcentos(campo).includes(buscado),
+    [String(cuenta.numero), cuenta.nombre, cuenta.codigoCliente ?? '', cuenta.nit ?? ''].some(
+      (campo) => sinAcentos(campo).includes(buscado),
     ),
   )
 }
@@ -84,4 +87,74 @@ export const ordenarCuentas = (cuentas: Cuenta[]) => {
     .filter((cuenta) => !cuenta.codigoCliente)
     .sort((a, b) => a.numero - b.numero)
   return [...conCliente, ...sinCliente]
+}
+
+const COLUMNAS_PEDIDO = 40
+
+const centrarTexto = (texto: string) => {
+  const corto = texto.slice(0, COLUMNAS_PEDIDO)
+  const margen = Math.max(0, COLUMNAS_PEDIDO / 2 - Math.floor(corto.trim().length / 2))
+  return (' '.repeat(margen) + corto).padEnd(COLUMNAS_PEDIDO)
+}
+
+const numeroTicket = (valor: number) => {
+  const [entero, decimales] = Math.abs(valor).toFixed(2).split('.')
+  return `${valor < 0 ? '-' : ''}${entero.replace(/\B(?=(\d{3})+(?!\d))/g, '.')},${decimales}`
+}
+
+const alineada = (izquierda: string, derecha: string) =>
+  izquierda
+    .slice(0, COLUMNAS_PEDIDO - derecha.length - 1)
+    .padEnd(COLUMNAS_PEDIDO - derecha.length) + derecha
+
+const partirEnLineas = (texto: string, ancho = COLUMNAS_PEDIDO) => {
+  const lineas: string[] = []
+  let actual = ''
+  for (const palabra of texto.split(/\s+/).filter(Boolean)) {
+    const candidata = actual ? `${actual} ${palabra}` : palabra
+    if (candidata.length <= ancho) {
+      actual = candidata
+      continue
+    }
+    if (actual) lineas.push(actual)
+    actual = palabra.slice(0, ancho)
+  }
+  if (actual) lineas.push(actual)
+  return lineas
+}
+
+const bloqueDeProducto = (nombre: string, cantidad: number, precio: number, sangria: string) => [
+  ...partirEnLineas(nombre, COLUMNAS_PEDIDO - sangria.length).map((linea) => sangria + linea),
+  alineada(
+    `${sangria}  ${cantidad} x ${numeroTicket(precio)}`,
+    `= ${numeroTicket(cantidad * precio)}`,
+  ),
+]
+
+interface DatosVistaPrevia {
+  mesa: string
+  cuenta: number
+  cliente: string
+  items: ItemComanda[]
+}
+
+export const textoVistaPrevia = ({ mesa, cuenta, cliente, items }: DatosVistaPrevia) => {
+  const raya = '-'.repeat(COLUMNAS_PEDIDO)
+  const lineas = [
+    centrarTexto('PEDIDO DE MESA'),
+    raya,
+    `Mesa  : ${mesa}`,
+    `Cuenta: ${cuenta}`,
+    `Clte. : ${cliente}`.slice(0, COLUMNAS_PEDIDO),
+    raya,
+  ]
+  for (const item of items) {
+    lineas.push(...bloqueDeProducto(item.plato.nombre, item.cantidad, item.plato.precio, ''))
+    for (const extra of item.extras ?? []) {
+      lineas.push(...bloqueDeProducto(`+ ${extra.nombre}`, extra.cantidad, extra.precio, '  '))
+    }
+    if (item.nota) lineas.push(...partirEnLineas(`++ ${item.nota}`))
+  }
+  lineas.push(raya, alineada('TOTAL', `= ${numeroTicket(totalItems(items))}`))
+  return lineas.join('\n')
 }

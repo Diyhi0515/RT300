@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { X } from 'lucide-react'
+import { bloquearScroll } from './bloquearScroll'
 
 interface HojaInferiorProps {
   abierta: boolean
@@ -48,14 +49,13 @@ export function HojaInferior({ abierta, alCerrar, titulo, children }: HojaInferi
 
   useEffect(() => {
     if (!abierta) return
-    const previo = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
+    const liberar = bloquearScroll()
     const alTeclear = (evento: KeyboardEvent) => {
       if (evento.key === 'Escape') cerrarAnimado()
     }
     window.addEventListener('keydown', alTeclear)
     return () => {
-      document.body.style.overflow = previo
+      liberar()
       window.removeEventListener('keydown', alTeclear)
     }
   }, [abierta, cerrarAnimado])
