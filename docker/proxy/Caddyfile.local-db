@@ -1,0 +1,32 @@
+# Despliegue en LAN: frontend y API comparten http://IP-DE-LA-LAPTOP:8080.
+# Para publicar fuera de la LAN debe reemplazarse por HTTPS con certificado confiable.
+:8080 {
+	encode zstd gzip
+
+	header {
+		-Server
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "no-referrer"
+		Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
+	}
+
+	handle /api/* {
+		reverse_proxy backend:5000
+	}
+
+	handle {
+		header {
+			Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self'; style-src-attr 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+			Cross-Origin-Opener-Policy "same-origin"
+			Cross-Origin-Resource-Policy "same-origin"
+		}
+
+		root * /srv
+		header /assets/* Cache-Control "public, max-age=31536000, immutable"
+		header /index.html Cache-Control "no-cache"
+		header /sw.js Cache-Control "no-cache"
+		try_files {path} /index.html
+		file_server
+	}
+}

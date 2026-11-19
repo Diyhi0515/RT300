@@ -16,6 +16,10 @@ def test_produccion_con_ajustes_propios_arranca():
     Config(**PRODUCCION_OK).validate()
 
 
+def test_usuario_privilegiado_requiere_aceptacion_explicita():
+    Config(**{**PRODUCCION_OK, "db_user": "sa", "allow_privileged_db_user": True}).validate()
+
+
 def test_desarrollo_no_se_valida():
     Config(env="development").validate()
 

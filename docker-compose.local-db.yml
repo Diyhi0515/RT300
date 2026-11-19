@@ -1,0 +1,68 @@
+# Producción en otra laptop: aplicación en Docker + SQL Server instalado en el host.
+# No crea, restaura, copia ni modifica el esquema de la base de datos.
+name: rt300-local-db
+
+services:
+  backend:
+    build:
+      context: ./rt300-backend
+    restart: unless-stopped
+    environment:
+      FLASK_ENV: production
+      SECRET_KEY: "${SECRET_KEY:?Defina SECRET_KEY en .env.local-db}"
+      JWT_SECRET_KEY: "${JWT_SECRET_KEY:?Defina JWT_SECRET_KEY en .env.local-db}"
+      JWT_ACCESS_MINUTES: "15"
+      CORS_ORIGINS: "${CORS_ORIGINS:-http://localhost:8080}"
+      COOKIE_SECURE: "false"
+      PROXY_HOPS: "1"
+      REVOCADOS_DB: /data/app/revocados.sqlite
+      REDIS_URL: ""
+
+      DB_DRIVER: ODBC Driver 18 for SQL Server
+      DB_HOST: "${DB_HOST:-host.docker.internal}"
+      DB_PORT: "${DB_PORT:-1433}"
+      DB_NAME: "${DB_NAME:-tbpos_new}"
+      DB_USER: "${DB_USER:?Defina DB_USER en .env.local-db}"
+      DB_PASSWORD: "${DB_PASSWORD:?Defina DB_PASSWORD en .env.local-db}"
+      DB_TRUST_CERT: "${DB_TRUST_CERT:-yes}"
+      ALLOW_PRIVILEGED_DB_USER: "${ALLOW_PRIVILEGED_DB_USER:-false}"
+
+      GATEWAY_MODE: "${GATEWAY_MODE:-soap}"
+      GATEWAY_WSDL_URL: "${GATEWAY_WSDL_URL:-}"
+      GATEWAY_HTTP_URL: "${GATEWAY_HTTP_URL:-}"
+      GATEWAY_PASSWORD: "${GATEWAY_PASSWORD:-}"
+      GATEWAY_TIMEOUT_SECONDS: "${GATEWAY_TIMEOUT_SECONDS:-30}"
+
+      ADMIN_USERS: "${ADMIN_USERS:-}"
+      CAJERO_USERS: "${CAJERO_USERS:-}"
+      MENU_CACHE_SECONDS: "${MENU_CACHE_SECONDS:-300}"
+      RATE_LIMIT_DEFAULT: "${RATE_LIMIT_DEFAULT:-300 per minute}"
+      IMAGENES_DIR: /data/imagenes
+      IMAGENES_CACHE_DIR: /data/cache
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - "${IMAGENES_DIR:-./img/Restaurantes}:/data/imagenes:ro"
+      - imagenes_cache:/data/cache
+      - app_data:/data/app
+    healthcheck:
+      test: ["CMD", "python", "-c", "import sys,urllib.request; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:5000/api/v1/health',timeout=5).status == 200 else 1)"]
+      interval: 20s
+      timeout: 7s
+      retries: 5
+      start_period: 20s
+
+  web:
+    build:
+      context: .
+      dockerfile: rt300-frontend/Dockerfile.local-db
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "${APP_PORT:-8080}:8080"
+
+volumes:
+  imagenes_cache:
+  app_data:

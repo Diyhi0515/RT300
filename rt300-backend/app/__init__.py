@@ -3,8 +3,9 @@ from __future__ import annotations
 
 import logging
 import sqlite3
+from pathlib import Path
 
-from flask import Flask, jsonify
+from flask import Flask, abort, jsonify, send_from_directory
 from sqlalchemy import text
 from werkzeug.middleware.proxy_fix import ProxyFix
 
@@ -122,7 +123,29 @@ def create_app(config: Config | None = None) -> Flask:
             db_ok = False
         return responder(SaludOut, {"status": "ok" if db_ok else "degraded", "db": db_ok}, 200 if db_ok else 503)
 
+    _registrar_frontend(app, cfg)
+
     return app
+
+
+def _registrar_frontend(app: Flask, cfg: Config) -> None:
+    """Sirve el build de React y su fallback SPA en la instalación sin Docker."""
+    if not cfg.frontend_dir:
+        return
+    frontend = Path(cfg.frontend_dir).resolve()
+    if not (frontend / "index.html").is_file():
+        raise RuntimeError(f"FRONTEND_DIR no contiene index.html: {frontend}")
+
+    @app.get("/")
+    @app.get("/<path:ruta>")
+    @limiter.exempt
+    def frontend_spa(ruta: str = ""):
+        if ruta.startswith("api/"):
+            abort(404)
+        archivo = frontend / ruta
+        if ruta and archivo.is_file():
+            return send_from_directory(frontend, ruta)
+        return send_from_directory(frontend, "index.html")
 
 
 def _register_jwt_errors() -> None:

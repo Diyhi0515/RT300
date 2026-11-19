@@ -9,10 +9,15 @@ from ..config import Config
 _engine: Engine | None = None
 
 
+def _odbc(valor: str) -> str:
+    """Encierra un valor ODBC y escapa `}` para que `;` no altere la conexión."""
+    return "{" + str(valor).replace("}", "}}") + "}"
+
+
 def build_engine(cfg: Config) -> Engine:
     odbc = (
-        f"DRIVER={{{cfg.db_driver}}};SERVER={cfg.db_host},{cfg.db_port};DATABASE={cfg.db_name};"
-        f"UID={cfg.db_user};PWD={{{cfg.db_password}}};TrustServerCertificate={cfg.db_trust_cert};"
+        f"DRIVER={_odbc(cfg.db_driver)};SERVER={_odbc(f'{cfg.db_host},{cfg.db_port}')};DATABASE={_odbc(cfg.db_name)};"
+        f"UID={_odbc(cfg.db_user)};PWD={_odbc(cfg.db_password)};TrustServerCertificate={cfg.db_trust_cert};"
         "Encrypt=yes;Connection Timeout=15"
     )
     url = URL.create("mssql+pyodbc", query={"odbc_connect": odbc})

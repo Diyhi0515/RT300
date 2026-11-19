@@ -1,0 +1,21 @@
+<service>
+  <id>RT300</id>
+  <name>RT300</name>
+  <description>Servidor de pedidos RT300</description>
+  <executable>%BASE%\RT300.Server.exe</executable>
+  <arguments>--config "%ProgramData%\RT300\config.env"</arguments>
+  <logpath>%ProgramData%\RT300\logs</logpath>
+  <log mode="roll-by-size">
+    <sizeThreshold>10240</sizeThreshold>
+    <keepFiles>8</keepFiles>
+  </log>
+  <onfailure action="restart" delay="10 sec" />
+  <onfailure action="restart" delay="30 sec" />
+  <resetfailure>1 hour</resetfailure>
+  <stoptimeout>20 sec</stoptimeout>
+  <startmode>Automatic</startmode>
+  <serviceaccount>
+    <domain>NT AUTHORITY</domain>
+    <user>LocalService</user>
+  </serviceaccount>
+</service>
