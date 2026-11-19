@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import {
   BadgeCheck,
+  ClipboardList,
   DoorOpen,
   LayoutList,
   Pencil,
@@ -26,6 +27,7 @@ import {
 import { usePedidos } from '../store'
 import type { DatosCuenta, MesaDetalle } from '../types'
 import { MAXIMO_COMENSALES, MAXIMO_CUENTAS } from '../limites'
+import { ComandasMesaModal } from './ComandasMesaModal'
 import { ConfirmarAccion } from './ConfirmarAccion'
 import { Contador } from './Contador'
 import { TodasLasCuentas } from './TodasLasCuentas'
@@ -36,7 +38,6 @@ interface ResumenMesaProps {
 
 const COLUMNAS = 'grid-cols-[minmax(0,1fr)_2rem_3.6rem_4.2rem]'
 
-
 const accion =
   'flex h-11 cursor-pointer items-center justify-center gap-2 rounded-xl border border-line bg-surface px-3 text-sm font-semibold transition hover:border-primary/50 hover:bg-primary/5 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 short:h-10'
 
@@ -44,7 +45,7 @@ const foliosOrdenados = new Set<number>()
 
 export function ResumenMesa({ mesa }: ResumenMesaProps) {
   const cuentaActiva = usePedidos((s) => s.cuentaActiva)
-  const { abrirCuenta, abrirComanda } = usePedidos.getState()
+  const { abrirCuenta } = usePedidos.getState()
   const modificar = useModificarMesa()
   const actualizar = useActualizarCuenta()
   const eliminar = useEliminarCuentas()
@@ -54,6 +55,7 @@ export function ResumenMesa({ mesa }: ResumenMesaProps) {
   const navigate = useNavigate()
   const [editando, setEditando] = useState(false)
   const [verTodas, setVerTodas] = useState(false)
+  const [verComandas, setVerComandas] = useState(false)
   const [confirmando, setConfirmando] = useState<'liberar' | null>(null)
   const [comensales, setComensales] = useState(mesa.comensales)
   const [cuentas, setCuentas] = useState(mesa.cuentas.length)
@@ -389,7 +391,9 @@ export function ResumenMesa({ mesa }: ResumenMesaProps) {
                 <button
                   type="button"
                   disabled={cuenta.liquidada}
-                  onClick={() => abrirComanda(cuenta.numero)}
+                  onClick={() =>
+                    navigate(`/pedidos/comanda/${encodeURIComponent(mesa.codigo)}/${cuenta.numero}`)
+                  }
                   className="flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-club-pc to-club-tertiary text-base font-bold text-white shadow-[0_10px_24px_rgba(43,83,184,.35)] transition hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none short:h-10 short:text-sm"
                 >
                   <UtensilsCrossed className="size-5" />
@@ -419,6 +423,14 @@ export function ResumenMesa({ mesa }: ResumenMesaProps) {
                   </button>
                   <button
                     type="button"
+                    className={`${accion} col-span-2`}
+                    onClick={() => setVerComandas(true)}
+                  >
+                    <ClipboardList className="size-4" />
+                    Comandas de la mesa
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => setConfirmando('liberar')}
                     className={`${accion} col-span-2 border-danger/40 text-danger hover:border-danger hover:bg-danger/10`}
                   >
@@ -431,6 +443,13 @@ export function ResumenMesa({ mesa }: ResumenMesaProps) {
           )}
         </>
       )}
+
+      <ComandasMesaModal
+        abierto={verComandas}
+        folio={mesa.folio}
+        mesa={mesa.codigo}
+        alCerrar={() => setVerComandas(false)}
+      />
 
       <ConfirmarAccion
         abierto={confirmando === 'liberar'}

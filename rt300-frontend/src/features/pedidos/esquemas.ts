@@ -62,6 +62,7 @@ export const esquemaPlatos = z.object({
   platos: z.array(
     z.object({
       cart: z.string(),
+      cssm: z.number().nullish(),
       descripcion: z.string().nullish(),
       pvta: z.number(),
       moneda: z.string(),
@@ -77,3 +78,49 @@ export const esquemaComandaEnviada = z.object({
 export type MesaApi = z.infer<typeof esquemaMesaApi>
 export type CuentaApi = z.infer<typeof esquemaCuentaApi>
 export type ClienteApi = z.infer<typeof esquemaClienteApi>
+
+export const esquemaComandasMesa = z.object({
+  comandas: z.array(
+    z.object({
+      ncom: z.number(),
+      ncta: z.number().nullish(),
+      cven: texto.nullish(),
+      nomb: z.string().nullish(),
+      impt: z.number().nullish(),
+    }),
+  ),
+  detalle: z.array(
+    z.object({
+      ncom: z.number(),
+      item: z.number(),
+      ncta: z.number().nullish(),
+      cart: z.string(),
+      descripcion: z.string().nullish(),
+      cant: z.number().nullish(),
+      pvta: z.number().nullish(),
+    }),
+  ),
+  motivos: z.array(z.object({ codigo: z.number(), descripcion: z.string().nullish() })),
+})
+
+export type ComandasMesaApi = z.infer<typeof esquemaComandasMesa>
+
+export const esquemaAccionComanda = z.object({
+  ntmp: z.number(),
+  resultado: texto.nullish(),
+})
+
+export const esquemaExtras = z.object({
+  extras: z.array(
+    z.object({
+      cart: z.string(),
+      impt: z.number().nullish(),
+      descripcion: z.string().nullish(),
+      moneda: z.string().nullish(),
+    }),
+  ),
+})
+
+export const esquemaCentros = z.object({
+  centros: z.array(z.object({ ccpd: texto, nombre: z.string() })),
+})

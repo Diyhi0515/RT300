@@ -27,7 +27,7 @@ features/pedidos/
 ├── store.ts            solo estado de pantalla (área, mesa elegida, cuenta activa, comanda abierta)
 ├── calculos.ts         totales, conteos y tiempos
 ├── pages/              PedidosPage, DatosCuentasPage
-└── components/         PlanoMesas, MesaTarjeta, MesaPlano, PanelMesa, FormularioOcupar, ResumenMesa, TodasLasCuentas, ComandaNueva...
+└── components/         ComandasMesaModal, AutorizarComanda, NotaProductoModal, ExtrasProductoModal, CentroProduccionModal, PlanoMesas, MesaTarjeta, MesaPlano, PanelMesa, FormularioOcupar, ResumenMesa, TodasLasCuentas, CategoriasComanda, ProductosComanda, ResumenComanda...
 ```
 
 Los datos del servidor viven en TanStack Query y el estado de pantalla en Zustand, como define `docs/02-frontend-react.md`. Al cerrar sesión se vacía la caché (`features/auth/store.ts`).
@@ -57,6 +57,8 @@ Después de cada mutación se invalidan las mesas y el folio afectado. Los error
 El front envía solo el código del producto y la cantidad. **El precio, el centro de producción y los insumos los calcula el servidor** a partir de la base (con la lista de precios de la cuenta). Así un precio no se puede alterar desde el navegador, como pasaba en el sistema antiguo.
 
 Si el producto no tiene centro de producción en el local, el servidor responde un error claro (`SIN_CENTRO_PRODUCCION`) y el aviso lo muestra.
+
+Borrador temporal: lo elegido (productos y cantidades) se guarda en `sessionStorage` por folio y cuenta (`borradorComanda.ts`), así sobrevive a recargar la pestaña. Se borra al registrar la comanda, al confirmar "Salir sin registrar" y vence a las 12 horas. Se pierde al cerrar la pestaña.
 
 Con el servicio de comandas en modo `fake` (desarrollo) la comanda se registra pero **no se imprime ni aparece en el consumo de la cuenta**, porque ese servicio es quien crea la comanda final.
 
@@ -107,16 +109,40 @@ npm run build
 | `mapeos.test.ts`, `calculos.test.ts` | Conversión API → interfaz y cálculos puros |
 | `esquemas.test.ts` | Contrato: las respuestas reales del backend (`src/test/fixtures`, anonimizadas) cumplen los esquemas zod |
 | `components/FormularioOcupar.test.tsx` | Ocupar mesa envía solo `{caco, ccom, ncta}` (el mesero lo pone el servidor) |
-| `components/ComandaNueva.test.tsx` | Enviar comanda manda solo `{cart, cant}` (el precio lo decide el servidor) |
+| `pages/ComandaPage.test.tsx` | Registrar comanda manda solo `{cart, cant}` (el precio lo decide el servidor) |
+| `components/ComandasMesaModal.test.tsx` | Listar, elegir y reimprimir o eliminar comandas con autorizador (la clave solo para eliminar) |
+| `api.test.ts` | El envío de la comanda se valida antes de salir y solo manda código y cantidad |
+| `borradorComanda.test.ts` | Borrador temporal de la comanda: guarda, recupera, borra y vence a las 12 horas |
 | `lib/http.test.ts` | Renovación de sesión, 401 simultáneos, errores y logout |
 
 Las llamadas HTTP se simulan con msw (`src/test/servidor.ts`). Para renovar las fixtures con el backend encendido: `npm run fixtures`.
 Flujo manual completo: [`docs/04-pruebas-locales.md`](../../../../docs/04-pruebas-locales.md).
 
+## Comandas de la mesa (eliminar y reimprimir)
+
+Botón "Comandas de la mesa" en el resumen de la mesa. Usa `GET /folios/{nfol}/comandas?mesa=`, `POST /comandas/reimprimir` y `POST /comandas/eliminar`. Se eligen productos, un motivo y un usuario autorizador; eliminar pide además la clave del autorizador (campo de contraseña, no se guarda y se borra al cerrar o si falla). Sin comandas vigentes el backend responde `SIN_COMANDAS` y la pantalla lo muestra como lista vacía. El fixture `src/test/fixtures/comandas-mesa.json` es armado a mano con datos ficticios, no capturado.
+
+## Seguridad en el front
+
+El navegador no es de fiar: cualquier cosa se puede cambiar desde el inspector, así que el servidor decide siempre (precios, permisos, autorizador). El front solo reduce el daño:
+
+- Lo que se envía se valida con zod antes de salir (`api.ts`): solo `cart` y `cant` (1 a 99), de 1 a 100 productos; los campos extra se descartan.
+- Los controladores vuelven a comprobar lo que el botón deshabilita (comanda vacía, doble envío, máximos), por si se quita el atributo `disabled` desde el inspector.
+- El borrador de `sessionStorage` se valida con zod al leerlo y se descarta si trae cantidades, precios, textos o claves alterados.
+- La clave del autorizador no se guarda en ningún almacenamiento ni se escribe en consola.
+- No sustituye al backend: eso (autorización, límites de intentos, precios) sigue en el servidor.
+
+## Detalle de cada producto en el resumen
+
+Cada producto del resumen tiene: **Nota** (texto libre de hasta 100 caracteres, va en `glos`), **Extras** (`GET /menu/secciones/{csme}/{cssm}/extras`, se envían como `extras:[{cart,cant}]`), **Centro** de producción (`GET /menu/platos/{cart}/centros-produccion`, se envía como `ccpd`; sin elegir, el servidor usa el del local) y **Eliminar**. "Vaciar comanda" quita todo con confirmación. Eliminar y vaciar son solo del front: la comanda aún no está registrada, así que no hay API que llamar (como `Limpiar` del sistema antiguo). Los precios de los extras en pantalla son una referencia; el servidor los calcula al registrar.
+
+## Vista previa del pedido
+
+Botón debajo de "Registrar comanda". Muestra el pedido como texto de 40 columnas, basado en la vista previa del sistema antiguo (`funcionTextoVisualizar` de `RT300c.js`): `PEDIDO DE MESA` centrado, mesa, cuenta y cliente; por cada producto su nombre (partido en líneas de 40) y debajo `cantidad x precio = subtotal`; las notas salen como `++ texto`, los extras como `  + nombre` con su propio cálculo, y al final `TOTAL = importe` (con extras). Los importes llevan coma decimal y punto de miles. Es un texto armado en el front (`textoVistaPrevia` en `calculos.ts`): no registra nada, no se imprime y los precios son los que muestra la pantalla (el servidor los vuelve a calcular al registrar).
+
 ## Pendientes
 
-- Insumos modificables, extras y textos de la comanda (el backend ya los expone; la pantalla aún no).
-- Eliminar y reimprimir comandas (panel ADMIN): el backend está listo, falta la pantalla.
+- Insumos modificables y textos predefinidos de la comanda (el backend ya los expone; la pantalla aún no).
 - Búsqueda de productos en todo el menú (hoy busca dentro de la sección elegida).
 - Imágenes de platos (`/menu/platos/{cart}/imagen`).
 - Ampliar el adaptador del mockup a estas pantallas.
@@ -136,7 +162,7 @@ Revisadas contra `RT300a/b/c/303 .js y .php` (2026-11-13). "Servidor" significa 
 | Cuenta liquidada no admite comandas ("Cta: liquidada.") | Servidor (la cuenta debe estar abierta) + botón desactivado en el front |
 | Comanda con al menos 1 producto y cantidad mayor a 0 | Servidor (1 a 100 líneas, cantidad 1 a 99) + botón desactivado sin productos |
 | Producto existente, con precio y centro de producción del local | Servidor (`PLATO_NO_EXISTE`, `SIN_PRECIO`, centro de producción) |
-| "Confirma: Guardar Comanda?" antes de enviar | Front: diálogo "¿Enviar la comanda?" (agregado el 2026-11-13) |
+| "Confirma: Guardar Comanda?" antes de enviar | Front: diálogo "¿Registrar la comanda?" (agregado el 2026-11-13) |
 | Cliente debe existir en la agenda | Servidor (`CLIENTE_NO_EXISTE`) |
 | Eliminar comanda: motivo y clave del autorizador | Servidor (la pantalla aún no existe) |
 | Cada usuario solo ve su local | Servidor (`OTRO_LOCAL`), nuevo respecto al sistema antiguo |

@@ -204,6 +204,19 @@ Insumos modificables, extras y textos en la comanda; pantalla de eliminar y reim
 
 ---
 
+## 2026-11-18 · Frontend: comanda en página propia, comandas de la mesa y endurecimiento del front *(sin commit al escribir esto)*
+
+Solo frontend (`rt300-frontend`); sin cambios de backend ni de base de datos.
+
+- **Nueva comanda** ya no es un modal: es la página `/pedidos/comanda/:codigo/:cuenta` (categorías → productos → resumen), responsiva para celular, tablet y escritorio.
+- **Borrador temporal** de lo elegido en `sessionStorage`, por folio y cuenta; se borra al registrar, al confirmar la salida y a las 12 horas.
+- **Comandas de la mesa** (usa los endpoints que el backend ya tenía): `GET /folios/{nfol}/comandas`, `POST /comandas/reimprimir` y `POST /comandas/eliminar`, con motivo y usuario autorizador (la clave solo para eliminar).
+- **Seguridad en el front:** las respuestas y lo enviado se validan con zod; el envío manda solo código y cantidad (1 a 99 por producto, hasta 100 productos); el borrador guardado se descarta si se altera; los botones deshabilitados no se pueden saltar desde el inspector (los controladores vuelven a comprobar); se evita el doble envío; la clave del autorizador va en un campo de contraseña, no se guarda y se borra al cerrar o fallar. La autorización real sigue siendo del servidor.
+- **Resumen de la comanda:** eliminar un producto, vaciar la comanda, nota por producto, extras y centro de producción (usan `/menu/.../extras` y `/menu/platos/{cart}/centros-produccion`; el envío manda `glos`, `extras` y `ccpd`).
+- Detalle y pruebas: [README de pedidos](../rt300-frontend/src/features/pedidos/README.md).
+
+---
+
 ## 2026-11-09 · Corrección de arquitectura: respuestas tipadas y tokens
 
 Se detectaron tres desviaciones respecto a la arquitectura documentada y se corrigieron.

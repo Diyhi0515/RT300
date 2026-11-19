@@ -1,0 +1,57 @@
+{
+  "comandas": [
+    {
+      "ncom": 1001,
+      "ncta": 1,
+      "cven": 1,
+      "nomb": "GARZON UNO",
+      "impt": 36
+    },
+    {
+      "ncom": 1002,
+      "ncta": 2,
+      "cven": 1,
+      "nomb": "GARZON UNO",
+      "impt": 15
+    }
+  ],
+  "detalle": [
+    {
+      "ncom": 1001,
+      "item": 1,
+      "ncta": 1,
+      "cart": "5101004",
+      "descripcion": "AGUA MENDOCINA 600 ML",
+      "cant": 2,
+      "pvta": 8
+    },
+    {
+      "ncom": 1001,
+      "item": 2,
+      "ncta": 1,
+      "cart": "5101002",
+      "descripcion": "AGUA VITAL 600 ML",
+      "cant": 2,
+      "pvta": 10
+    },
+    {
+      "ncom": 1002,
+      "item": 1,
+      "ncta": 2,
+      "cart": "5103001",
+      "descripcion": "ENERGIZANTE RED BULL",
+      "cant": 1,
+      "pvta": 15
+    }
+  ],
+  "motivos": [
+    {
+      "codigo": 1,
+      "descripcion": "ERROR DEL GARZON"
+    },
+    {
+      "codigo": 2,
+      "descripcion": "CLIENTE NO LO QUIERE"
+    }
+  ]
+}

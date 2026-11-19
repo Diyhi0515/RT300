@@ -1,5 +1,14 @@
-import type { ClienteApi, CuentaApi, MesaApi } from './esquemas'
-import type { AreaConsumo, ClienteRegistrado, Cuenta, MesaPlano, SeccionMenu } from './types'
+import type { ClienteApi, ComandasMesaApi, CuentaApi, MesaApi } from './esquemas'
+import type {
+  AreaConsumo,
+  CentroProduccion,
+  ExtraMenu,
+  ClienteRegistrado,
+  ComandasMesa,
+  Cuenta,
+  MesaPlano,
+  SeccionMenu,
+} from './types'
 
 const ESTADO_CUENTA_LIQUIDADA = 9
 
@@ -70,9 +79,43 @@ export const mapearSecciones = (
       secciones.push({ codigo: fila.csme, nombre, subsecciones: [] })
       continue
     }
-    secciones
-      .find((s) => s.codigo === fila.csme)
-      ?.subsecciones.push({ codigo: fila.cssm, nombre })
+    secciones.find((s) => s.codigo === fila.csme)?.subsecciones.push({ codigo: fila.cssm, nombre })
   }
   return secciones
 }
+
+export const mapearComandasMesa = (datos: ComandasMesaApi): ComandasMesa => ({
+  comandas: datos.comandas.map((c) => ({
+    numero: c.ncom,
+    cuenta: c.ncta ?? null,
+    garzon: aTexto(c.nomb),
+    importe: aNumero(c.impt),
+    items: datos.detalle
+      .filter((d) => d.ncom === c.ncom)
+      .map((d) => ({
+        comanda: d.ncom,
+        item: d.item,
+        cuenta: d.ncta ?? null,
+        codigo: d.cart.trim(),
+        descripcion: aTexto(d.descripcion) || d.cart.trim(),
+        cantidad: aNumero(d.cant),
+        precio: aNumero(d.pvta),
+      })),
+  })),
+  motivos: datos.motivos.map((m) => ({ codigo: m.codigo, descripcion: aTexto(m.descripcion) })),
+})
+
+export const mapearExtras = (
+  filas: { cart: string; impt?: number | null; descripcion?: string | null; moneda?: string | null }[],
+): ExtraMenu[] =>
+  filas.map((e) => ({
+    codigo: e.cart.trim(),
+    nombre: aTexto(e.descripcion) || e.cart.trim(),
+    precio: aNumero(e.impt),
+    moneda: aTexto(e.moneda),
+  }))
+
+export const mapearCentros = (filas: { ccpd: string | number; nombre: string }[]): CentroProduccion[] =>
+  filas
+    .map((c) => ({ codigo: Number(c.ccpd), nombre: aTexto(c.nombre) }))
+    .filter((c) => Number.isInteger(c.codigo))
