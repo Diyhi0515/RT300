@@ -211,3 +211,8 @@ export const listarCentros = async (cart: string) => {
   const { data } = await http.get(`/menu/platos/${enRuta(cart)}/centros-produccion`)
   return esquemaCentros.parse(data).centros
 }
+
+export const obtenerModoImpresion = async () => {
+  const { data } = await http.get('/health')
+  return z.object({ impresion: z.enum(['simulada', 'real']) }).parse(data).impresion
+}

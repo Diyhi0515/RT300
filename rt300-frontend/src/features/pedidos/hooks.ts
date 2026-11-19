@@ -15,6 +15,7 @@ import {
   listarMesas,
   listarPlatos,
   listarSecciones,
+  obtenerModoImpresion,
   modificarFolio,
   obtenerDetalleFolio,
   obtenerParametros,
@@ -284,4 +285,12 @@ export const useCentrosPlato = (cart: string | null) =>
     enabled: cart !== null,
     staleTime: 10 * 60_000,
     select: mapearCentros,
+  })
+
+export const useModoImpresion = () =>
+  useQuery({
+    queryKey: ['impresion', 'modo'],
+    queryFn: obtenerModoImpresion,
+    staleTime: Infinity,
+    retry: false,
   })

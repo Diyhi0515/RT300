@@ -121,7 +121,9 @@ def create_app(config: Config | None = None) -> Flask:
         except Exception:
             app.logger.exception("health: fallo de BD")
             db_ok = False
-        return responder(SaludOut, {"status": "ok" if db_ok else "degraded", "db": db_ok}, 200 if db_ok else 503)
+        impresion = "simulada" if cfg.gateway_mode.lower() == "fake" else "real"
+        return responder(SaludOut, {"status": "ok" if db_ok else "degraded", "db": db_ok, "impresion": impresion},
+                         200 if db_ok else 503)
 
     _registrar_frontend(app, cfg)
 

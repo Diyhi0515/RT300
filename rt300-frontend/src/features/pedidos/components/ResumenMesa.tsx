@@ -23,12 +23,14 @@ import {
   useHabilitarMesa,
   useImprimirCuenta,
   useModificarMesa,
+  useModoImpresion,
 } from '../hooks'
 import { usePedidos } from '../store'
 import type { DatosCuenta, MesaDetalle } from '../types'
 import { MAXIMO_COMENSALES, MAXIMO_CUENTAS } from '../limites'
 import { ComandasMesaModal } from './ComandasMesaModal'
 import { ConfirmarAccion } from './ConfirmarAccion'
+import { VistaImpresionCuenta } from './VistaImpresionCuenta'
 import { Contador } from './Contador'
 import { TodasLasCuentas } from './TodasLasCuentas'
 
@@ -52,6 +54,8 @@ export function ResumenMesa({ mesa }: ResumenMesaProps) {
   const compactar = useCompactarCuentas()
   const habilitar = useHabilitarMesa()
   const imprimir = useImprimirCuenta()
+  const modoImpresion = useModoImpresion()
+  const [vistaImpresa, setVistaImpresa] = useState(false)
   const navigate = useNavigate()
   const [editando, setEditando] = useState(false)
   const [verTodas, setVerTodas] = useState(false)
@@ -172,6 +176,13 @@ export function ResumenMesa({ mesa }: ResumenMesaProps) {
         caco: mesa.areaId,
       })
     } catch {
+      return
+    }
+    if (modoImpresion.data === 'simulada') {
+      notificar.advertencia(
+        'El servidor está en modo de prueba y no manda nada a la impresora. Usa "Vista impresa" para imprimir desde este equipo.',
+        `Mesa ${mesa.codigo}`,
+      )
       return
     }
     vibrar('exito')
@@ -424,6 +435,15 @@ export function ResumenMesa({ mesa }: ResumenMesaProps) {
                   <button
                     type="button"
                     className={`${accion} col-span-2`}
+                    disabled={cuenta.lineas.length === 0}
+                    onClick={() => setVistaImpresa(true)}
+                  >
+                    <Printer className="size-4" />
+                    Vista impresa
+                  </button>
+                  <button
+                    type="button"
+                    className={`${accion} col-span-2`}
                     onClick={() => setVerComandas(true)}
                   >
                     <ClipboardList className="size-4" />
@@ -451,6 +471,9 @@ export function ResumenMesa({ mesa }: ResumenMesaProps) {
         alCerrar={() => setVerComandas(false)}
       />
 
+      {vistaImpresa && cuenta && (
+        <VistaImpresionCuenta mesa={mesa} cuenta={cuenta} alCerrar={() => setVistaImpresa(false)} />
+      )}
       <ConfirmarAccion
         abierto={confirmando === 'liberar'}
         peligro

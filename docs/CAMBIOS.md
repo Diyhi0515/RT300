@@ -149,6 +149,21 @@ Se leyeron además `README.md`, `web.config`, `inc/config.php`, `require/*` y la
 - **Agregar cuentas** (`PATCH /salon/folios/{nfol}`): la nueva es la última + 1 (sigue funcionando aunque queden huecos por cuentas fijas).
 - Probado en vivo con un folio con huecos reales (1, 4, 5, 7, 8 → 1..5). Pruebas: 244 unitarias; 38 comprobaciones en vivo.
 
+### Revisión del front de 2026-11-18 e impresión
+- **Qué trajo el equipo:** nueva pantalla de comanda (`ComandaPage`: extras, nota por producto, centro de producción), comandas de la mesa con reimprimir y eliminar (con autorizador), renumeración de cuentas, listado de clientes. Todo usa la API real: contratos de `extras`, `centros-produccion`, `comandas`, `eliminar`, `reimprimir`, `compactar` y `eliminar cuentas` coinciden con el backend. `tsc`, `eslint`, 121 pruebas y build en verde.
+- **Todavía sin pantalla en el front (el backend ya lo acepta):** textos predefinidos del producto y de la comanda, y quitar o reemplazar insumos de un plato.
+- **Impresión:** el backend ya manda a imprimir cuenta, comanda (reimprimir) y estado de cuenta por el servicio SOAP del club (`GATEWAY_MODE=soap`), pero ese servicio (192.168.0.2) solo se alcanza desde la red del club y **no se pudo probar**. Con `GATEWAY_MODE=fake` (el modo de desarrollo) no sale nada aunque la pantalla diga "enviada".
+  - `GET /health` ahora informa `impresion: "simulada" | "real"`; el front avisa "modo de prueba: no se imprimió" en vez de confirmar una impresión falsa.
+  - **Vista impresa** (nuevo): ticket de 80 mm del estado de cuenta, armado con los datos reales de la cuenta, que se imprime con la impresora que elija el navegador (`window.print`). Sirve hoy, sin el servicio SOAP; es informativo, no una factura.
+- Pruebas: backend 247 unitarias; front 123.
+
+### Comanda: tarjetas, subcategorías y aviso al registrar (2026-11-19)
+- **Categorías:** todas las tarjetas del mismo tamaño (grilla de filas iguales), con el nombre legible (`GASEOSAS, AGUAS Y ENERGIZANTES`; antes se cortaba a mitad de palabra) y siempre una línea de detalle (`N subcategorías` o `Todos los productos`).
+- **Volver:** un solo control, `‹ Categorías`; se quitó el segundo ("Cambiar de categoría"). La flecha de arriba sigue llevando a la mesa.
+- **Subcategorías:** se reemplazó la fila de botones con scroll por un selector `Subcategoría ▾` junto al buscador, que abre la lista completa (con buscador cuando hay muchas). El filtro activo se ve como "Mostrando solo X · Quitar filtro".
+- **"Guardé la comanda y no pasó nada":** con el servicio de comandas simulado (`GATEWAY_MODE=fake`) la comanda queda registrada en `rttmp` pero no llega a cocina ni aparece en el consumo de la cuenta. Ahora el aviso lo dice ("modo de prueba") en vez de un "registrada" que parece no hacer nada. En producción (`soap`) no hay aviso.
+- Pruebas: front 125.
+
 ### Pendiente / decisiones abiertas
 `GET /auth/usuarios` sigue público; roles reales para autorizar eliminar comanda; hash de clave fuerte (requiere tabla propia); servicio SOAP real sin probar (192.168.0.2 no es alcanzable desde esta PC).
 
