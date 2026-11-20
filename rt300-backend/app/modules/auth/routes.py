@@ -32,7 +32,7 @@ def usuarios():
 def login():
     body = LoginIn.model_validate(request.get_json(silent=True) or {})
     resultado = auth_service().login(body.usuario, body.clave)
-    datos = emisor_tokens().emitir(resultado.usuario, resultado.local)
+    datos = emisor_tokens().emitir(resultado.usuario, resultado.local, body.clave)
     renovacion = datos.pop("refresh_token")
     respuesta, status = responder(LoginOut, datos)
     guardar_renovacion(respuesta, renovacion)

@@ -7,6 +7,13 @@ Documentos relacionados: [00 arquitectura](00-arquitectura-general.md) · [01 ba
 [03 puesta en marcha](03-puesta-en-marcha.md) · [04 pruebas locales](04-pruebas-locales.md) · [README del backend](../rt300-backend/README.md) ·
 [README del login (front)](../rt300-frontend/src/features/auth/README.md)
 
+## 2026-11-20 — Credencial SOAP por sesión
+
+- El login conserva temporalmente en RAM la contraseña ya validada del garzón y le asigna un identificador aleatorio de sesión.
+- La contraseña no se escribe en BD, `.env`, JWT, cookies, respuestas ni logs; el gateway SOAP la obtiene por el identificador interno.
+- Al cerrar sesión o expirar la credencial se elimina. Tras reiniciar el backend se exige iniciar sesión nuevamente.
+- `GATEWAY_PASSWORD` queda como compatibilidad opcional para servicios que usen una credencial técnica común; vacío usa la clave de cada sesión.
+
 ## 2026-11-16 — Instalación nativa en Windows Server
 
 - Se agregó un punto de entrada compilable con Nuitka que carga la configuración externa desde `C:\ProgramData\RT300\config.env`.

@@ -1,3 +1,5 @@
+from dataclasses import replace
+
 import pytest
 
 from app.core.errors import GatewayError
@@ -37,16 +39,29 @@ def test_alta_envia_los_parametros_del_contrato_y_la_credencial_tecnica():
     assert r.ok and r.codigo == 1234
 
 
+def test_alta_usa_la_clave_temporal_de_la_sesion_si_no_hay_credencial_tecnica():
+    c = ClienteFalso(1234)
+    req = replace(ALTA, sesion_id="sesion-1")
+    SoapGateway("http://x?WSDL", 5, client=c, password_provider=lambda sid: "clave-garzon" if sid == "sesion-1" else None).alta_comanda(req)
+    assert c.service.llamadas[0][1]["pass"] == "clave-garzon"
+
+
+def test_sesion_sin_clave_temporal_exige_nuevo_login():
+    gw = SoapGateway("http://x?WSDL", 5, client=ClienteFalso(1), password_provider=lambda sid: None)
+    with pytest.raises(GatewayError, match="sesión"):
+        gw.alta_comanda(replace(ALTA, sesion_id="perdida"))
+
+
 def test_respuesta_no_positiva_o_texto_es_rechazo():
-    assert not SoapGateway("u", 5, client=ClienteFalso(0)).alta_comanda(ALTA).ok
-    r = SoapGateway("u", 5, client=ClienteFalso("Error de impresora")).alta_comanda(ALTA)
+    assert not SoapGateway("u", 5, "tecnica", client=ClienteFalso(0)).alta_comanda(ALTA).ok
+    r = SoapGateway("u", 5, "tecnica", client=ClienteFalso("Error de impresora")).alta_comanda(ALTA)
     assert not r.ok and "impresora" in r.mensaje
 
 
 def test_estado_de_cuenta_exito_es_100():
     req = EstadoCuentaReq(1, 1, 1, "M1", "1", "1", "2", "2", "GP1")
-    assert SoapGateway("u", 5, client=ClienteFalso(100)).estado_cuenta(req).ok
-    assert not SoapGateway("u", 5, client=ClienteFalso(99)).estado_cuenta(req).ok
+    assert SoapGateway("u", 5, "tecnica", client=ClienteFalso(100)).estado_cuenta(req).ok
+    assert not SoapGateway("u", 5, "tecnica", client=ClienteFalso(99)).estado_cuenta(req).ok
 
 
 def test_servicio_caido_se_traduce_a_gateway_error():

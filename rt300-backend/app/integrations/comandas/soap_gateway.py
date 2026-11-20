@@ -6,8 +6,10 @@ así que `pass` sale de una credencial técnica (GATEWAY_PASSWORD) — decisión
 from __future__ import annotations
 
 import logging
+from collections.abc import Callable
 from functools import cached_property
 
+from ...core.credenciales_sesion import credenciales_sesion
 from ...core.errors import GatewayError
 from .base import (
     AltaComandaReq,
@@ -23,11 +25,13 @@ log = logging.getLogger(__name__)
 
 
 class SoapGateway:
-    def __init__(self, wsdl_url: str, timeout: int, service_password: str = "", client=None):
+    def __init__(self, wsdl_url: str, timeout: int, service_password: str = "", client=None,
+                 password_provider: Callable[[str], str | None] | None = None):
         """`client` permite inyectar un cliente zeep falso en las pruebas; en producción se crea al primer uso."""
         if not wsdl_url and client is None:
             raise GatewayError("GATEWAY_WSDL_URL no está configurado.")
         self._wsdl, self._timeout, self._pass = self.normalizar_url(wsdl_url), timeout, service_password
+        self._password_provider = password_provider or credenciales_sesion.obtener
         if client is not None:
             self.__dict__["_client"] = client
 
@@ -45,29 +49,37 @@ class SoapGateway:
 
         return Client(self._wsdl, transport=Transport(session=Session(), timeout=self._timeout, operation_timeout=self._timeout))
 
-    def _call(self, op: str, **params):
+    def _call(self, op: str, sesion_id: str = "", **params):
         try:
-            return self._invoke(op, params)
+            return self._invoke(op, params, sesion_id)
+        except GatewayError:
+            raise
         except Exception as exc:
             log.exception("SOAP %s falló", op)
             raise GatewayError("El servicio de comandas no está disponible.") from exc
 
-    def _invoke(self, op: str, params: dict):
+    def _invoke(self, op: str, params: dict, sesion_id: str):
         # El parámetro del WSDL se llama `pass` (palabra reservada en Python): se envía por diccionario.
-        return getattr(self._client.service, op)(**{**params, "pass": self._pass})
+        clave = self._pass or self._password_provider(sesion_id)
+        if clave is None:
+            raise GatewayError("La sesión no conserva la credencial del servicio. Inicie sesión nuevamente.")
+        return getattr(self._client.service, op)(**{**params, "pass": clave})
 
     def alta_comanda(self, req: AltaComandaReq) -> ResultadoGateway:
         return interpretar_positivo(self._call("alta_comanda_rt300", ntra=req.ntra, nfol=req.nfol, ncta=req.ncta,
-                                               cmon=req.cmon, glos=req.glos, cloc=req.cloc, usrn=req.usrn))
+                                               cmon=req.cmon, glos=req.glos, cloc=req.cloc, usrn=req.usrn,
+                                               sesion_id=req.sesion_id))
 
     def eliminar_comanda(self, req: EliminarComandaReq) -> ResultadoGateway:
         return interpretar_positivo(self._call("eliminar_comanda_rt300", ntra=req.ntra, nfol=req.nfol, mesa=req.mesa,
-                                               uaut=req.uaut, cont=req.cont, mtvo=req.mtvo, usrn=req.usrn))
+                                               uaut=req.uaut, cont=req.cont, mtvo=req.mtvo, usrn=req.usrn,
+                                               sesion_id=req.sesion_id))
 
     def reimprimir_comanda(self, req: ReimprimirComandaReq) -> ResultadoGateway:
         return interpretar_positivo(self._call("Reimprimir_comanda_rt300", ntra=req.ntra, nfol=req.nfol, mesa=req.mesa,
-                                               uaut=req.uaut, mtvo=req.mtvo, usrn=req.usrn))
+                                               uaut=req.uaut, mtvo=req.mtvo, usrn=req.usrn, sesion_id=req.sesion_id))
 
     def estado_cuenta(self, req: EstadoCuentaReq) -> ResultadoGateway:
         return interpretar_100(self._call("stdo_cuenta_rt303", nfol=req.nfol, ncta=req.ncta, tped=req.tped, mesa=req.mesa,
-                                          cven=req.cven, caco=req.caco, calm=req.calm, cloc=req.cloc, usrn=req.usrn))
+                                          cven=req.cven, caco=req.caco, calm=req.calm, cloc=req.cloc, usrn=req.usrn,
+                                          sesion_id=req.sesion_id))
