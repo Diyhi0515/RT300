@@ -48,7 +48,8 @@ class GuardarComandaService:
         return self._enviar(u, ntmp, nfol, ncta, glos)
 
     def _enviar(self, u: Usuario, ntmp: int, nfol: int, ncta: int, glos: str) -> dict:
-        req = AltaComandaReq(ntra=ntmp, nfol=nfol, ncta=ncta, cmon=u.cmon, glos=glos, cloc=u.cloc, usrn=u.usuario)
+        req = AltaComandaReq(ntra=ntmp, nfol=nfol, ncta=ncta, cmon=u.cmon, glos=glos, cloc=u.cloc, usrn=u.usuario,
+                             sesion_id=u.sesion_id)
         try:
             r = invocar(self._gw.alta_comanda, req)
         except GatewayError as e:

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 
 ROLES = ("garzon", "cajero", "admin")
 
@@ -16,15 +16,18 @@ class Usuario:
     rol: str
     cven: int = 0   # código de mesero en la agenda (gbage); 0 si el usuario no tiene
     caja: str = ""  # adusrcaja: solo quien tiene caja puede asignar otro mesero (regla del sistema antiguo)
+    sesion_id: str = field(default="", repr=False, compare=False)
 
     def claims(self) -> dict:
         """Lo que viaja en el JWT (nunca la clave)."""
-        return asdict(self)
+        datos = asdict(self)
+        datos.pop("sesion_id", None)
+        return datos
 
     @classmethod
     def desde_claims(cls, c: dict) -> Usuario:
         return cls(
             usuario=c["usuario"], nombre=c.get("nombre", ""), cloc=int(c["cloc"]), calm=int(c["calm"]),
             cmon=int(c["cmon"]), nreg=int(c.get("nreg") or 0), rol=c.get("rol", "garzon"), cven=int(c.get("cven") or 0),
-            caja=str(c.get("caja") or ""),
+            caja=str(c.get("caja") or ""), sesion_id=str(c.get("sid") or ""),
         )

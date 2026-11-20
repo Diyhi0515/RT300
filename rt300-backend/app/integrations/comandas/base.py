@@ -19,6 +19,7 @@ class AltaComandaReq:
     glos: str
     cloc: int
     usrn: str
+    sesion_id: str = ""
 
 
 @dataclass(frozen=True)
@@ -30,6 +31,7 @@ class EliminarComandaReq:
     cont: str
     mtvo: int
     usrn: str
+    sesion_id: str = ""
 
 
 @dataclass(frozen=True)
@@ -40,6 +42,7 @@ class ReimprimirComandaReq:
     uaut: str
     mtvo: int
     usrn: str
+    sesion_id: str = ""
 
 
 @dataclass(frozen=True)
@@ -53,6 +56,7 @@ class EstadoCuentaReq:
     calm: str
     cloc: str
     usrn: str
+    sesion_id: str = ""
 
 
 @dataclass

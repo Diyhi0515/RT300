@@ -4,6 +4,7 @@ from flask import Flask
 from flask_jwt_extended import JWTManager, decode_token
 
 from app.core.errors import Unauthorized
+from app.core.credenciales_sesion import credenciales_sesion
 from app.domain.usuario import Usuario
 from app.extensions import esta_revocado
 from app.modules.auth.tokens import EmisorTokens
@@ -25,6 +26,15 @@ def test_emitir_incluye_claims_y_nombre_del_local_sin_la_clave():
     assert r["perfil"] == {**GARZON.claims(), "local": "RESTAURANTE HOYO 19"}
     claims = decode_token(r["access_token"])
     assert claims["usuario"] == "GP1" and claims["cloc"] == 2 and not any("clave" in k for k in claims)
+
+
+def test_clave_soap_se_guarda_solo_en_memoria_y_el_jwt_lleva_un_identificador():
+    r = EmisorTokens().emitir(GARZON, "L", "secreta-garzon")
+    claims = decode_token(r["access_token"])
+    assert claims["sid"] and credenciales_sesion.obtener(claims["sid"]) == "secreta-garzon"
+    assert "secreta-garzon" not in r["access_token"] and "sid" not in r["perfil"]
+    EmisorTokens().cerrar_sesion(r["access_token"], r["refresh_token"])
+    assert credenciales_sesion.obtener(claims["sid"]) is None
 
 
 def test_renovar_entrega_un_access_token_con_los_mismos_claims():

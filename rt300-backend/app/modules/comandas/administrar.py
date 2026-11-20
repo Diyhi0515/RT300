@@ -50,7 +50,8 @@ class AdministrarComandasService:
         self._validar_pedido(b.nfol, b.mesa, b.mtvo, b.items)
         ntmp = self._registrar(TIPO_ELIMINAR, b.items)
         r = invocar(self._gw.eliminar_comanda, EliminarComandaReq(ntra=ntmp, nfol=b.nfol, mesa=b.mesa, uaut=b.uaut,
-                                                                  cont=b.cont, mtvo=b.mtvo, usrn=u.usuario))
+                                                                  cont=b.cont, mtvo=b.mtvo, usrn=u.usuario,
+                                                                  sesion_id=u.sesion_id))
         return self._resultado(r, ntmp, "eliminar la comanda")
 
     def reimprimir(self, u: Usuario, b: ReimprimirComandaIn) -> dict:
@@ -59,7 +60,8 @@ class AdministrarComandasService:
         self._validar_pedido(b.nfol, b.mesa, b.mtvo, b.items)
         ntmp = self._registrar(TIPO_REIMPRIMIR, b.items)
         r = invocar(self._gw.reimprimir_comanda, ReimprimirComandaReq(ntra=ntmp, nfol=b.nfol, mesa=b.mesa, uaut=b.uaut,
-                                                                      mtvo=b.mtvo, usrn=u.usuario))
+                                                                      mtvo=b.mtvo, usrn=u.usuario,
+                                                                      sesion_id=u.sesion_id))
         return self._resultado(r, ntmp, "reimprimir la comanda")
 
     # ───────────── Internos ─────────────
