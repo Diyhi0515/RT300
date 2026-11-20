@@ -17,7 +17,7 @@ import { NotaProductoModal } from '../components/NotaProductoModal'
 import { ProductosComanda } from '../components/ProductosComanda'
 import { ResumenComanda, type TipoEdicion } from '../components/ResumenComanda'
 import { VistaPreviaPedido } from '../components/VistaPreviaPedido'
-import { useEnviarComanda, useMesaDetalle, useSecciones } from '../hooks'
+import { useEnviarComanda, useMesaDetalle, useModoImpresion, useSecciones } from '../hooks'
 import { usePedidos } from '../store'
 import type { ItemComanda, MesaDetalle, Plato, SeccionMenu } from '../types'
 
@@ -51,6 +51,7 @@ function Contenido({ mesa, numero }: ContenidoProps) {
   const { abrirCuenta, mostrarMesa } = usePedidos.getState()
   const secciones = useSecciones()
   const envio = useEnviarComanda()
+  const modoServicio = useModoImpresion()
   const [seccionElegida, setSeccionElegida] = useState<SeccionMenu | null>(null)
   const [subseccion, setSubseccion] = useState(0)
   const [busqueda, setBusqueda] = useState('')
@@ -178,7 +179,14 @@ function Contenido({ mesa, numero }: ContenidoProps) {
     }
     borrarBorrador(mesa.folio, numero)
     vibrar('exito')
-    notificar.exito(`${etiquetaCantidad} por ${formatoMoneda(total)}.`, 'Comanda registrada')
+    if (modoServicio.data === 'simulada') {
+      notificar.advertencia(
+        `${etiquetaCantidad} por ${formatoMoneda(total)}. El servidor está en modo de prueba: la comanda quedó registrada, pero no llega a cocina ni aparece en el consumo de la cuenta.`,
+        'Comanda registrada (modo de prueba)',
+      )
+    } else {
+      notificar.exito(`${etiquetaCantidad} por ${formatoMoneda(total)}.`, 'Comanda registrada')
+    }
     volverALaMesa()
   }
 

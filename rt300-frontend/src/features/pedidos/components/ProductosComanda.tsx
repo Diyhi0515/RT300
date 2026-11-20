@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { ChevronLeft, Minus, Plus, Search, X } from 'lucide-react'
+import { useState, type ReactNode } from 'react'
+import { ChevronDown, ChevronLeft, ListFilter, Minus, Plus, Search, X } from 'lucide-react'
 import { formatoMoneda } from '@/features/salon/formato'
 import { usePlatos } from '../hooks'
+import { nombreLegible } from '../nombreLegible'
 import type { ItemComanda, Plato, SeccionMenu } from '../types'
 import { IconoSeccion } from './IconoSeccion'
 import { ModalSubsecciones } from './ModalSubsecciones'
@@ -33,13 +34,10 @@ export function ProductosComanda({
   lateral,
 }: ProductosComandaProps) {
   const [verSubsecciones, setVerSubsecciones] = useState(false)
-  const listaSubsecciones = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    listaSubsecciones.current
-      ?.querySelector('[aria-selected="true"]')
-      ?.scrollIntoView?.({ behavior: 'smooth', inline: 'center', block: 'nearest' })
-  }, [subseccion])
+  const nombreSubseccion =
+    subseccion === 0
+      ? 'Subcategoría'
+      : nombreLegible(seccion.subsecciones.find((x) => x.codigo === subseccion)?.nombre ?? 'Subcategoría')
   const platos = usePlatos(seccion.codigo, subseccion)
   const texto = busqueda.trim().toLowerCase()
   const visibles = (platos.data ?? []).filter(
@@ -49,90 +47,77 @@ export function ProductosComanda({
   return (
     <section aria-label={`Productos de ${seccion.nombre}`}>
       <div className="pb-3 pt-1 short:pb-2">
+        <button
+          type="button"
+          onClick={alVolver}
+          aria-label="Volver a las categorías"
+          className="mb-2 inline-flex h-9 cursor-pointer items-center gap-1 rounded-lg pr-3 text-sm font-semibold text-club-primary transition hover:underline active:scale-95 lg:text-base"
+        >
+          <ChevronLeft className="size-5" aria-hidden />
+          Categorías
+        </button>
         <div className="flex items-center gap-2.5 lg:gap-3.5">
-          <button
-            type="button"
-            onClick={alVolver}
-            aria-label="Volver a las categorías"
-            className={`${boton} border border-line bg-surface text-fg hover:border-primary/50`}
-          >
-            <ChevronLeft className="size-5" />
-          </button>
           <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-club-pc to-club-tertiary text-white shadow-md shadow-club-pc/30 short:size-9 lg:size-12">
             <IconoSeccion nombre={seccion.nombre} className="size-5" />
           </span>
-          <div className="min-w-0">
-            <h2 className="line-clamp-2 text-base font-extrabold uppercase leading-tight [overflow-wrap:anywhere] sm:text-lg lg:text-2xl">
-              {seccion.nombre}
-            </h2>
-            <button
-              type="button"
-              onClick={alVolver}
-              className="cursor-pointer text-xs font-semibold text-club-primary hover:underline lg:text-sm"
-            >
-              Cambiar de categoría
-            </button>
-          </div>
+          <h2 className="line-clamp-2 min-w-0 text-base font-extrabold uppercase leading-tight break-words sm:text-lg lg:text-2xl">
+            {nombreLegible(seccion.nombre)}
+          </h2>
         </div>
       </div>
 
       <div className="sticky top-[73px] z-20 -mx-4 space-y-2 bg-bg px-4 pb-1 pt-1 short:top-[57px] short:space-y-1">
-        <label className="relative block">
-          <span className="sr-only">Buscar en la categoría</span>
-          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted lg:left-4 lg:size-5" />
-          <input
-            type="search"
-            value={busqueda}
-            onChange={(e) => alCambiarBusqueda(e.target.value.toUpperCase())}
-            placeholder={`Buscar en ${seccion.nombre.toLowerCase()}`}
-            autoComplete="off"
-            className="h-12 w-full rounded-xl border border-line bg-surface pl-9 pr-10 text-base outline-none lg:h-14 lg:pl-12 lg:text-lg transition placeholder:text-muted focus:border-primary focus:ring-4 focus:ring-primary/10 short:h-10 [&::-webkit-search-cancel-button]:hidden"
-          />
-          {busqueda && (
-            <button
-              type="button"
-              onClick={() => alCambiarBusqueda('')}
-              aria-label="Limpiar búsqueda"
-              className="absolute right-1.5 top-1/2 grid size-9 -translate-y-1/2 cursor-pointer place-items-center rounded-lg text-muted transition hover:bg-primary/10 hover:text-fg active:scale-90"
-            >
-              <X className="size-4" />
-            </button>
-          )}
-        </label>
-        {seccion.subsecciones.length > 0 && (
-          <div className="flex h-14 items-center gap-2 short:h-12 lg:h-16">
-            <div
-              ref={listaSubsecciones}
-              role="tablist"
-              aria-label="Subsecciones"
-              className="-ml-1 flex min-w-0 flex-1 snap-x gap-1.5 overflow-x-auto py-1.5 pl-1 pr-9 [mask-image:linear-gradient(to_right,black_calc(100%-36px),transparent)] [scrollbar-width:none] lg:gap-2 [&::-webkit-scrollbar]:hidden"
-            >
-              {[{ codigo: 0, nombre: 'Todas' }, ...seccion.subsecciones].map((sub) => (
-                <button
-                  key={sub.codigo}
-                  type="button"
-                  role="tab"
-                  aria-selected={sub.codigo === subseccion}
-                  onClick={() => alCambiarSubseccion(sub.codigo)}
-                  className={`inline-flex h-9 max-w-[14rem] shrink-0 snap-start cursor-pointer items-center rounded-lg px-3.5 text-xs font-bold transition active:scale-95 lg:h-11 lg:px-5 lg:text-sm ${
-                    sub.codigo === subseccion
-                      ? 'bg-primary text-white shadow-md shadow-primary/30'
-                      : 'border border-line bg-surface text-muted hover:border-primary/50 hover:text-fg'
-                  }`}
-                >
-                  <span className="truncate">{sub.nombre}</span>
-                </button>
-              ))}
-            </div>
+        <div className="flex items-stretch gap-2">
+          <label className="relative block min-w-0 flex-1">
+            <span className="sr-only">Buscar en la categoría</span>
+            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted lg:left-4 lg:size-5" />
+            <input
+              type="search"
+              value={busqueda}
+              onChange={(e) => alCambiarBusqueda(e.target.value.toUpperCase())}
+              placeholder={`Buscar en ${nombreLegible(seccion.nombre).toLowerCase()}`}
+              autoComplete="off"
+              className="h-12 w-full rounded-xl border border-line bg-surface pl-9 pr-10 text-base outline-none lg:h-14 lg:pl-12 lg:text-lg transition placeholder:text-muted focus:border-primary focus:ring-4 focus:ring-primary/10 short:h-10 [&::-webkit-search-cancel-button]:hidden"
+            />
+            {busqueda && (
+              <button
+                type="button"
+                onClick={() => alCambiarBusqueda('')}
+                aria-label="Limpiar búsqueda"
+                className="absolute right-1.5 top-1/2 grid size-9 -translate-y-1/2 cursor-pointer place-items-center rounded-lg text-muted transition hover:bg-primary/10 hover:text-fg active:scale-90"
+              >
+                <X className="size-4" />
+              </button>
+            )}
+          </label>
+          {seccion.subsecciones.length > 0 && (
             <button
               type="button"
               onClick={() => setVerSubsecciones(true)}
-              className="inline-flex h-9 shrink-0 cursor-pointer items-center gap-2 rounded-lg border border-primary/40 bg-primary/10 px-3 text-xs font-bold text-primary transition hover:bg-primary/15 active:scale-95 lg:h-11 lg:px-4 lg:text-sm"
+              aria-haspopup="dialog"
+              className={`inline-flex h-12 max-w-[45%] shrink-0 cursor-pointer items-center gap-2 rounded-xl border px-3 text-sm font-bold transition active:scale-95 lg:h-14 lg:px-4 short:h-10 ${
+                subseccion === 0
+                  ? 'border-line bg-surface text-fg hover:border-primary/50'
+                  : 'border-primary bg-primary/10 text-primary'
+              }`}
             >
-              <span className="hidden sm:inline">Ver detalles</span>
-              <span className="sm:hidden">Ver</span>
+              <ListFilter className="size-4 shrink-0" aria-hidden />
+              <span className="truncate">{nombreSubseccion}</span>
+              <ChevronDown className="size-4 shrink-0" aria-hidden />
             </button>
-          </div>
+          )}
+        </div>
+        {subseccion !== 0 && (
+          <p className="flex items-center gap-2 pb-1 text-xs text-muted lg:text-sm">
+            Mostrando solo <strong className="text-fg">{nombreSubseccion}</strong>
+            <button
+              type="button"
+              onClick={() => alCambiarSubseccion(0)}
+              className="cursor-pointer font-semibold text-club-primary hover:underline"
+            >
+              Quitar filtro
+            </button>
+          </p>
         )}
       </div>
 

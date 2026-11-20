@@ -33,3 +33,4 @@ class MensajeOut(Salida):
 class SaludOut(Salida):
     status: str
     db: bool
+    impresion: str      # 'simulada' (GATEWAY_MODE=fake: no sale nada por la impresora) o 'real'

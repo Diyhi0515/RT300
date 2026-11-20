@@ -6,12 +6,18 @@ import detalle from '@/test/fixtures/detalle-folio.json'
 import mesas from '@/test/fixtures/mesas.json'
 import platos from '@/test/fixtures/platos.json'
 import secciones from '@/test/fixtures/secciones.json'
+import { useAvisos } from '@/shared/avisos/almacen'
 import { renderConProveedores } from '@/test/render'
 import { servidor } from '@/test/servidor'
+import { nombreLegible } from '../nombreLegible'
 import { ComandaPage } from './ComandaPage'
 
 const ocupada = mesas.mesas.find((m) => m.folio)!
 const primeraSeccion = secciones.secciones.find((s) => s.cssm === 0)!
+const nombreCategoria = new RegExp(
+  nombreLegible(primeraSeccion.descripcion).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
+  'i',
+)
 const plato = platos.platos[0]
 const cuenta = detalle.cuentas[0].ncta
 
@@ -30,7 +36,7 @@ const abrirPagina = () => {
 
 const entrarALaCategoria = async (usuario: ReturnType<typeof userEvent.setup>) => {
   await usuario.click(
-    await screen.findByRole('button', { name: new RegExp(primeraSeccion.descripcion, 'i') }),
+    await screen.findByRole('button', { name: nombreCategoria }),
   )
 }
 
@@ -45,7 +51,7 @@ describe('ComandaPage', () => {
 
     expect(await screen.findByText('Elige una categoría')).toBeInTheDocument()
     expect(
-      await screen.findByRole('button', { name: new RegExp(primeraSeccion.descripcion, 'i') }),
+      await screen.findByRole('button', { name: nombreCategoria }),
     ).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: `Agregar ${plato.descripcion}` })).toBeNull()
   })
@@ -237,5 +243,37 @@ describe('ComandaPage', () => {
 
     expect(enviado).toBe(false)
     expect(screen.queryByRole('button', { name: 'Sí, registrar' })).not.toBeInTheDocument()
+  })
+
+  it('la subcategoría se elige con un solo selector y se puede quitar el filtro', async () => {
+    const usuario = userEvent.setup()
+    abrirPagina()
+    await entrarALaCategoria(usuario)
+    const sub = secciones.secciones.find((x) => x.csme === primeraSeccion.csme && x.cssm > 0)!
+
+    expect(screen.queryByRole('tab')).toBeNull()                                   // ya no hay una fila de botones
+    expect(screen.getAllByRole('button', { name: /categorías/i })).toHaveLength(1)   // un solo control para volver
+    await usuario.click(await screen.findByRole('button', { name: /subcategoría/i }))
+    await usuario.click(await screen.findByRole('button', { name: new RegExp(`^${sub.descripcion}`, 'i') }))
+
+    expect(await screen.findByText(/mostrando solo/i)).toBeInTheDocument()
+    await usuario.click(screen.getByRole('button', { name: /quitar filtro/i }))
+    expect(screen.queryByText(/mostrando solo/i)).toBeNull()
+  })
+
+  it('en modo de prueba avisa que la comanda no llega a cocina ni al consumo', async () => {
+    const usuario = userEvent.setup()
+    servidor.use(
+      rutaHttp.get('*/api/v1/health', () => HttpResponse.json({ status: 'ok', db: true, impresion: 'simulada' })),
+      rutaHttp.post('*/api/v1/folios/:folio/cuentas/:cuenta/comandas', () => HttpResponse.json({ comanda: 1, ntmp: 5 }, { status: 201 })),
+    )
+    abrirPagina()
+    await entrarALaCategoria(usuario)
+    await usuario.click(await screen.findByRole('button', { name: `Agregar ${plato.descripcion}` }))
+    await usuario.click(screen.getAllByRole('button', { name: /registrar/i })[0])
+    await usuario.click(await screen.findByRole('button', { name: 'Sí, registrar' }))
+
+    await waitFor(() => expect(useAvisos.getState().notice?.title).toMatch(/modo de prueba/i))
+    expect(useAvisos.getState().notice?.message).toMatch(/no llega a cocina/i)
   })
 })

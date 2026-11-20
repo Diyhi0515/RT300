@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Check, Search, X } from 'lucide-react'
 import { Modal } from '@/shared/ui/Modal'
+import { nombreLegible } from '../nombreLegible'
 import type { SeccionMenu } from '../types'
 import { IconoSeccion } from './IconoSeccion'
 
@@ -46,7 +47,7 @@ export function ModalSubsecciones({
         </span>
         <div className="min-w-0">
           <h3 className="text-lg font-extrabold uppercase leading-tight [overflow-wrap:anywhere] lg:text-2xl">
-            {seccion.nombre}
+            {nombreLegible(seccion.nombre)}
           </h3>
           <p className="text-xs text-muted lg:text-sm">
             {total} {total === 1 ? 'subcategoría' : 'subcategorías'} · elige una para filtrar los
