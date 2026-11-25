@@ -21,8 +21,9 @@ const aplicar = (theme: Tema) => {
   const raiz = document.documentElement
   raiz.classList.add('tema-cambiando')
   raiz.classList.toggle('dark', theme === 'dark')
+  void raiz.offsetHeight
   document.querySelector('meta[name="theme-color"]')?.setAttribute('content', COLOR_BARRA[theme])
-  window.setTimeout(() => raiz.classList.remove('tema-cambiando'), 150)
+  window.setTimeout(() => raiz.classList.remove('tema-cambiando'), 80)
 }
 
 interface EstadoTema {

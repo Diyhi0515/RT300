@@ -23,7 +23,7 @@ export function CambiarTema({ className = '', onDark = true, compact = false }: 
       aria-pressed={dark}
       className={`grid ${compact ? 'size-10' : 'size-12'} place-items-center overflow-hidden rounded-xl border transition active:scale-95 ${look} ${className}`}
     >
-      <span className="relative grid size-5 place-items-center">
+      <span data-icono-tema className="relative grid size-5 place-items-center">
         <Sun
           className={`${icon} ${dark ? 'rotate-0 scale-100 opacity-100' : 'rotate-90 scale-0 opacity-0'}`}
         />

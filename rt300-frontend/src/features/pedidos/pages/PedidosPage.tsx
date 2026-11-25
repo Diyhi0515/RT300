@@ -23,7 +23,7 @@ export function PedidosPage() {
       <EncabezadoPagina titulo="Pedidos" icono={ClipboardList} />
 
       <div
-        className={`grid gap-4 md:items-start ${
+        className={`grid gap-4 md:items-stretch ${
           dockeado && seleccionada
             ? 'md:grid-cols-[minmax(0,1fr)_360px] lg:grid-cols-[minmax(0,1fr)_400px]'
             : ''
@@ -33,7 +33,7 @@ export function PedidosPage() {
         {dockeado && seleccionada && (
           <aside
             aria-label="Detalle de la mesa"
-            className="sticky top-[88px] max-h-[calc(var(--alto-app,100dvh)-176px)] overflow-y-auto overscroll-contain rounded-3xl border border-line bg-surface pb-[72px] shadow-[0_12px_32px_rgba(1,21,38,.08)] escritorio:max-h-[calc(var(--alto-app,100dvh)-104px)] escritorio:pb-0 short:top-[72px] short:max-h-[calc(var(--alto-app,100dvh)-148px)] short:escritorio:max-h-[calc(var(--alto-app,100dvh)-88px)]"
+            className="sticky top-[88px] self-start max-h-[calc(var(--alto-app,100dvh)-176px)] overflow-y-auto overscroll-contain rounded-3xl border border-line bg-surface shadow-[0_12px_32px_rgba(1,21,38,.08)] escritorio:max-h-[calc(var(--alto-app,100dvh)-104px)] short:top-[72px] short:max-h-[calc(var(--alto-app,100dvh)-148px)] short:escritorio:max-h-[calc(var(--alto-app,100dvh)-88px)]"
           >
             <PanelMesa cerrable={!!seleccionada} />
           </aside>
@@ -49,7 +49,6 @@ export function PedidosPage() {
           <PanelMesa />
         </HojaInferior>
       )}
-
     </div>
   )
 }

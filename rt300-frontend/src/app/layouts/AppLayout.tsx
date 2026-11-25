@@ -6,13 +6,10 @@ import { CargadorBloque } from '@/shared/ui/Cargador'
 import { EncabezadoApp } from './EncabezadoApp'
 import { NavegacionInferior } from './NavegacionInferior'
 
-const VERSION_APP = '0.1.0'
-
 export function AppLayout() {
   const [perfilAbierto, setPerfilAbierto] = useState(false)
   const { pathname } = useLocation()
   const registrar = useUltimoModulo((s) => s.registrar)
-  const ocultarPie = pathname.startsWith('/pedidos/comanda/')
 
   useEffect(() => {
     const modulo = moduloDeRuta(pathname)
@@ -27,11 +24,6 @@ export function AppLayout() {
           <Outlet />
         </Suspense>
       </main>
-      {!ocultarPie && (
-        <footer className="px-safe hidden pb-5 text-center text-[11px] leading-relaxed text-muted sm:text-xs escritorio:block short:escritorio:pb-3">
-          Santa Cruz, Bolivia · v{VERSION_APP}
-        </footer>
-      )}
       <NavegacionInferior
         perfilAbierto={perfilAbierto}
         alAbrirPerfil={() => setPerfilAbierto(true)}

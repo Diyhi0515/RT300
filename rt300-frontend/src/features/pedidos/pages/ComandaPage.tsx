@@ -20,6 +20,7 @@ import { VistaPreviaPedido } from '../components/VistaPreviaPedido'
 import { useEnviarComanda, useMesaDetalle, useModoImpresion, useSecciones } from '../hooks'
 import { usePedidos } from '../store'
 import type { ItemComanda, MesaDetalle, Plato, SeccionMenu } from '../types'
+import { CargadorDiferido } from '@/shared/ui/Cargador'
 
 export function ComandaPage() {
   const { codigo, cuenta } = useParams()
@@ -27,11 +28,7 @@ export function ComandaPage() {
   const numero = Number(cuenta)
 
   if (cargandoMesas || cargandoCuentas) {
-    return (
-      <p role="status" className="py-16 text-center text-sm text-muted">
-        Cargando la mesa...
-      </p>
-    )
+    return <CargadorDiferido label="Cargando la mesa..." className="py-24" />
   }
   if (!mesa || !Number.isInteger(numero) || !mesa.cuentas.some((c) => c.numero === numero)) {
     return <Navigate to="/pedidos" replace />
@@ -199,9 +196,9 @@ function Contenido({ mesa, numero }: ContenidoProps) {
   const resumenLateral = (
     <aside
       aria-label="Resumen de la comanda"
-      className={`hidden overflow-hidden rounded-3xl border border-line bg-surface shadow-[0_12px_32px_rgba(1,21,38,.06)] md:flex md:flex-col max-lg:short:md:hidden! ${
+      className={`hidden overflow-hidden rounded-3xl border border-line bg-surface shadow-[0_12px_32px_rgba(1,21,38,.06)] md:flex md:flex-col max-lg:apaisado:md:hidden! ${
         seccionElegida === null
-          ? 'md:sticky md:top-[11.25rem] md:h-[calc(var(--alto-app,100dvh)-11.25rem-var(--pie))] [--pie:calc(env(safe-area-inset-bottom)+7.5rem)] escritorio:[--pie:2rem] short:md:top-[8.5rem] short:md:h-[calc(var(--alto-app,100dvh)-8.5rem-var(--pie))] short:[--pie:calc(env(safe-area-inset-bottom)+5rem)] short:escritorio:[--pie:1rem]'
+          ? 'md:h-[calc(var(--alto-app,100dvh)-var(--tope)-var(--pie))] md:self-end'
           : 'md:max-h-full md:self-stretch'
       }`}
     >
@@ -229,9 +226,9 @@ function Contenido({ mesa, numero }: ContenidoProps) {
   )
 
   return (
-    <div className="space-y-4 pb-28 sm:space-y-5 md:pb-0 short:space-y-3">
-      <header className="shrink-0 space-y-3">
-        <div className="flex items-center gap-3">
+    <div className="space-y-4 pb-28 [--enc:4.25rem] sm:space-y-5 sm:[--enc:4.75rem] md:pb-0 short:space-y-3 short:[--enc:3.5rem]">
+      <header className="sticky top-[73px] z-30 -mx-4 flex h-[var(--enc)] shrink-0 items-center bg-bg px-4 short:top-[57px]">
+        <div className="flex w-full items-center gap-3">
           <Link
             to="/pedidos"
             onClick={(evento) => {
@@ -256,7 +253,7 @@ function Contenido({ mesa, numero }: ContenidoProps) {
               Mesa {mesa.codigo} · Cuenta {numero}
             </p>
           </div>
-          <div className="hidden flex-wrap gap-2 text-xs font-bold md:flex max-lg:short:md:hidden!">
+          <div className="hidden flex-wrap gap-2 text-xs font-bold md:flex max-lg:apaisado:md:hidden!">
             <span className="inline-flex items-center gap-1.5 rounded-lg bg-club-pc/10 px-2.5 py-1.5 text-club-primary">
               <Store className="size-3.5" aria-hidden />
               {perfil?.local ?? 'Local'}
@@ -272,7 +269,7 @@ function Contenido({ mesa, numero }: ContenidoProps) {
       <div
         className={
           seccionElegida === null
-            ? 'grid items-start gap-4 md:grid-cols-[minmax(0,1fr)_320px] lg:grid-cols-[minmax(0,1fr)_380px] min-[1400px]:grid-cols-[minmax(0,1fr)_420px] max-lg:short:md:grid-cols-[minmax(0,1fr)]!'
+            ? '[--tope:calc(73px+var(--enc)+0.5rem)] [--pie:calc(env(safe-area-inset-bottom)+7.5rem)] escritorio:[--pie:2rem] short:[--tope:calc(57px+var(--enc)+0.5rem)] short:[--pie:calc(env(safe-area-inset-bottom)+5rem)] short:escritorio:[--pie:1rem] grid items-start gap-4 md:grid-cols-[minmax(0,1fr)_320px] lg:grid-cols-[minmax(0,1fr)_380px] min-[1400px]:grid-cols-[minmax(0,1fr)_420px] max-lg:apaisado:md:grid-cols-[minmax(0,1fr)]!'
             : ''
         }
       >
@@ -305,7 +302,7 @@ function Contenido({ mesa, numero }: ContenidoProps) {
       </div>
 
       {cantidad > 0 && (
-        <div className="fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+84px)] z-30 animate-[subir_0.18s_ease-out] px-3 short:bottom-[calc(env(safe-area-inset-bottom)+56px)] md:hidden max-lg:short:md:block!">
+        <div className="fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+84px)] z-30 animate-[subir_0.18s_ease-out] px-3 short:bottom-[calc(env(safe-area-inset-bottom)+56px)] md:hidden max-lg:apaisado:md:block!">
           <div className="mx-auto flex max-w-lg items-center gap-2 rounded-2xl border border-line bg-surface p-2 shadow-[0_10px_30px_rgba(1,21,38,.22)]">
             <button
               type="button"

@@ -1,11 +1,21 @@
 import { useState, type ReactNode } from 'react'
-import { ChevronDown, ChevronLeft, ListFilter, Minus, Plus, Search, X } from 'lucide-react'
+import {
+  ChevronDown,
+  ChevronLeft,
+  LayoutGrid,
+  ListFilter,
+  Minus,
+  Plus,
+  Search,
+  X,
+} from 'lucide-react'
 import { formatoMoneda } from '@/features/salon/formato'
 import { usePlatos } from '../hooks'
 import { nombreLegible } from '../nombreLegible'
 import type { ItemComanda, Plato, SeccionMenu } from '../types'
 import { IconoSeccion } from './IconoSeccion'
 import { ModalSubsecciones } from './ModalSubsecciones'
+import { CargadorDiferido } from '@/shared/ui/Cargador'
 
 interface ProductosComandaProps {
   seccion: SeccionMenu
@@ -37,7 +47,9 @@ export function ProductosComanda({
   const nombreSubseccion =
     subseccion === 0
       ? 'Subcategoría'
-      : nombreLegible(seccion.subsecciones.find((x) => x.codigo === subseccion)?.nombre ?? 'Subcategoría')
+      : nombreLegible(
+          seccion.subsecciones.find((x) => x.codigo === subseccion)?.nombre ?? 'Subcategoría',
+        )
   const platos = usePlatos(seccion.codigo, subseccion)
   const texto = busqueda.trim().toLowerCase()
   const visibles = (platos.data ?? []).filter(
@@ -66,7 +78,7 @@ export function ProductosComanda({
         </div>
       </div>
 
-      <div className="sticky top-[73px] z-20 -mx-4 space-y-2 bg-bg px-4 pb-1 pt-1 short:top-[57px] short:space-y-1">
+      <div className="sticky top-[calc(73px+var(--enc))] z-20 -mx-4 space-y-2 bg-bg px-4 pb-1 pt-1 short:top-[calc(57px+var(--enc))] short:space-y-1">
         <div className="flex items-stretch gap-2">
           <label className="relative block min-w-0 flex-1">
             <span className="sr-only">Buscar en la categoría</span>
@@ -90,14 +102,23 @@ export function ProductosComanda({
               </button>
             )}
           </label>
+          <button
+            type="button"
+            onClick={alVolver}
+            aria-label="Cambiar de categoría"
+            className="inline-flex h-12 shrink-0 cursor-pointer items-center gap-2 rounded-xl border-2 border-club-pc/40 bg-club-pc/10 px-3 text-sm font-bold text-fg transition hover:border-club-pc/80 active:scale-95 lg:h-14 lg:px-4 short:h-10"
+          >
+            <LayoutGrid className="size-4 shrink-0" aria-hidden />
+            <span className="hidden sm:inline">Categorías</span>
+          </button>
           {seccion.subsecciones.length > 0 && (
             <button
               type="button"
               onClick={() => setVerSubsecciones(true)}
               aria-haspopup="dialog"
-              className={`inline-flex h-12 max-w-[45%] shrink-0 cursor-pointer items-center gap-2 rounded-xl border px-3 text-sm font-bold transition active:scale-95 lg:h-14 lg:px-4 short:h-10 ${
+              className={`inline-flex h-12 max-w-[45%] shrink-0 cursor-pointer items-center gap-2 rounded-xl border-2 px-3 text-sm font-bold transition active:scale-95 lg:h-14 lg:px-4 short:h-10 ${
                 subseccion === 0
-                  ? 'border-line bg-surface text-fg hover:border-primary/50'
+                  ? 'border-club-pc/40 bg-club-pc/10 text-fg hover:border-club-pc/80'
                   : 'border-primary bg-primary/10 text-primary'
               }`}
             >
@@ -108,7 +129,7 @@ export function ProductosComanda({
           )}
         </div>
         {subseccion !== 0 && (
-          <p className="flex items-center gap-2 pb-1 text-xs text-muted lg:text-sm">
+          <p className="flex h-6 items-center gap-2 text-xs text-muted lg:text-sm">
             Mostrando solo <strong className="text-fg">{nombreSubseccion}</strong>
             <button
               type="button"
@@ -121,11 +142,13 @@ export function ProductosComanda({
         )}
       </div>
 
-      <div className="items-start [--fila:7.5rem] [--hdr:73px] [--pie:calc(env(safe-area-inset-bottom)+7.5rem)] md:grid md:h-[calc(var(--alto-app,100dvh)-var(--hdr)-var(--fila)-var(--pie))] short:[--hdr:57px] short:[--pie:calc(env(safe-area-inset-bottom)+5rem)] short:[--fila:6.25rem] lg:[--fila:8.5rem] escritorio:[--pie:2rem] short:escritorio:[--pie:1rem] md:grid-cols-[minmax(0,1fr)_320px] max-lg:short:md:grid-cols-[minmax(0,1fr)]! md:grid-rows-[minmax(0,1fr)] md:gap-4 lg:grid-cols-[minmax(0,1fr)_380px] lg:gap-5 min-[1400px]:grid-cols-[minmax(0,1fr)_420px]">
-        <ul className="grid min-w-0 grid-cols-[repeat(auto-fill,minmax(15rem,1fr))] content-start md:grid-cols-[repeat(auto-fill,minmax(11rem,1fr))] max-lg:short:pb-20 lg:grid-cols-[repeat(auto-fill,minmax(14rem,1fr))] md:h-full md:overflow-y-auto md:overscroll-contain md:pr-2 gap-2.5 lg:gap-3 short:gap-2">
+      <div
+        className={`items-start [--fila:8rem] [--hdr:73px] [--pie:calc(env(safe-area-inset-bottom)+7.5rem)] md:grid md:h-[calc(var(--alto-app,100dvh)-var(--hdr)-var(--fila)-var(--pie)-var(--extra))] short:[--hdr:57px] short:[--pie:calc(env(safe-area-inset-bottom)+5rem)] short:[--fila:6.25rem] lg:[--fila:10rem] short:lg:[--fila:10rem] escritorio:[--pie:2rem] short:escritorio:[--pie:1rem] md:grid-cols-[minmax(0,1fr)_320px] max-lg:apaisado:md:grid-cols-[minmax(0,1fr)]! md:grid-rows-[minmax(0,1fr)] md:gap-4 lg:grid-cols-[minmax(0,1fr)_380px] lg:gap-5 min-[1400px]:grid-cols-[minmax(0,1fr)_420px] ${subseccion === 0 ? '[--extra:0rem]' : '[--extra:2rem] short:[--extra:1.75rem]'}`}
+      >
+        <ul className="rounded-3xl border border-line border-t-4 border-t-club-pc bg-surface p-3 shadow-[0_12px_32px_rgba(1,21,38,.06)] sm:p-3 grid min-w-0 grid-cols-[repeat(auto-fill,minmax(15rem,1fr))] content-start md:grid-cols-[repeat(auto-fill,minmax(11rem,1fr))] max-lg:apaisado:pb-20 lg:grid-cols-[repeat(auto-fill,minmax(14rem,1fr))] md:h-full md:overflow-y-auto md:overscroll-contain gap-2.5 lg:gap-3 short:gap-2">
           {platos.isPending && (
-            <li role="status" className="col-span-full py-10 text-center text-sm text-muted">
-              Cargando productos...
+            <li className="col-span-full">
+              <CargadorDiferido label="Cargando productos..." className="py-14" />
             </li>
           )}
           {platos.isError && (
@@ -151,10 +174,10 @@ export function ProductosComanda({
               <li
                 key={plato.id}
                 style={{ animationDelay: `${Math.min(i, 8) * 15}ms` }}
-                className={`flex animate-[chip-in_0.16s_ease-out_both] flex-col justify-between gap-2.5 rounded-2xl border p-3 transition duration-200 short:p-2 lg:p-4 ${
+                className={`flex animate-[chip-in_0.16s_ease-out_both] flex-col justify-between gap-2.5 rounded-2xl border-2 p-3 transition duration-200 short:p-2 lg:p-4 ${
                   c > 0
-                    ? 'border-primary/60 bg-primary/[0.07] shadow-[0_8px_20px_rgba(43,83,184,.12)]'
-                    : 'border-line bg-surface'
+                    ? 'border-primary bg-primary/10 shadow-[0_10px_26px_rgba(43,83,184,.28)]'
+                    : 'border-club-pc/40 bg-club-pc/10 hover:border-club-pc/80'
                 }`}
               >
                 <h3 className="line-clamp-3 text-sm font-bold leading-tight [overflow-wrap:anywhere] lg:text-base">

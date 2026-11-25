@@ -15,9 +15,9 @@ export function TablaCuentasMesa({ cuentas, seleccionada, alElegir }: TablaCuent
   return (
     <section
       aria-label="Cuentas de la mesa"
-      className="overflow-hidden rounded-3xl border border-line bg-surface shadow-[0_12px_32px_rgba(1,21,38,.06)]"
+      className="overflow-hidden rounded-3xl border border-line bg-surface shadow-[0_12px_32px_rgba(1,21,38,.06)] lg:flex lg:min-h-0 lg:flex-1 lg:flex-col"
     >
-      <div className="flex items-center justify-between gap-2 px-4 pb-2 pt-4 sm:px-5">
+      <div className="flex items-center justify-between gap-2 px-4 pb-2 pt-4 sm:px-5 lg:shrink-0">
         <h2 className="flex items-center gap-2 text-sm font-bold">
           <Users className="size-4 text-club-primary" aria-hidden />
           Cuentas de la mesa
@@ -26,8 +26,8 @@ export function TablaCuentasMesa({ cuentas, seleccionada, alElegir }: TablaCuent
           {cuentas.length}
         </span>
       </div>
-      <div className="overflow-x-auto">
-        <div className="min-w-[34rem]">
+      <div className="overflow-x-auto lg:flex lg:min-h-0 lg:flex-1 lg:flex-col">
+        <div className="min-w-[34rem] lg:flex lg:min-h-0 lg:flex-1 lg:flex-col">
           <div
             className={`grid ${COLUMNAS} gap-x-3 bg-club-pc/10 px-4 py-2 text-[10px] font-extrabold uppercase tracking-wide text-club-primary sm:px-5`}
           >
@@ -37,7 +37,7 @@ export function TablaCuentasMesa({ cuentas, seleccionada, alElegir }: TablaCuent
             <span>NIT / CI</span>
             <span className="text-right">Total</span>
           </div>
-          <ul className="max-h-[min(40dvh,22rem)] divide-y divide-line overflow-y-auto overscroll-contain">
+          <ul className="max-h-[min(40dvh,22rem)] divide-y divide-line overflow-y-auto overscroll-contain lg:max-h-none lg:min-h-0 lg:flex-1">
             {cuentas.map((c) => {
               const activa = c.numero === seleccionada
               return (
@@ -46,7 +46,7 @@ export function TablaCuentasMesa({ cuentas, seleccionada, alElegir }: TablaCuent
                     type="button"
                     onClick={() => alElegir(c)}
                     aria-pressed={activa}
-                    className={`grid w-full cursor-pointer ${COLUMNAS} items-center gap-x-3 px-4 py-2.5 text-left text-sm transition sm:px-5 ${
+                    className={`grid w-full cursor-pointer ${COLUMNAS} items-center gap-x-3 px-4 py-2.5 text-left text-sm transition sm:px-5 [@media(max-height:900px)]:lg:py-1.5 ${
                       activa ? 'bg-club-pc/10' : 'hover:bg-club-pc/5'
                     }`}
                   >

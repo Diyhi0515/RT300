@@ -1,7 +1,10 @@
+import { memo, useEffect, useRef, useState, type PointerEvent } from 'react'
 import { type LucideIcon } from 'lucide-react'
-import { tiempoCorto, totalMesa } from '../calculos'
+import { motion } from 'motion/react'
+import { totalMesa } from '../calculos'
 import type { MesaPlano as MesaPlanoTipo } from '../types'
 import { estilosMesa } from './estilosMesa'
+import { InfoMesaFlotante } from './InfoMesaFlotante'
 
 interface MesaPlanoProps {
   mesa: MesaPlanoTipo
@@ -10,107 +13,190 @@ interface MesaPlanoProps {
   alElegir: (codigo: string) => void
 }
 
-const sillasRedondas = (capacidad: number) =>
-  Array.from({ length: capacidad }, (_, i) => (360 / capacidad) * i)
+const SILLAS_VISIBLES_MAXIMO = 12
+const ANCHO_MESA = 66
+const ANCHO_MAXIMO_SILLA = 12
+const LARGO_SILLA = 4.5
+const ESPERA_PULSACION_LARGA_MS = 450
 
-const sillasLargas = (capacidad: number) => {
-  const arriba = Math.ceil(capacidad / 2)
-  const abajo = capacidad - arriba
-  return { arriba, abajo }
+interface InfoAbierta {
+  ancla: DOMRect
+  fija: boolean
 }
 
-export function MesaPlano({ mesa, seleccionada, indice, alElegir }: MesaPlanoProps) {
+const repartirSillas = (capacidad: number) => {
+  const total = Math.max(1, Math.min(capacidad, SILLAS_VISIBLES_MAXIMO))
+  const lateral = Math.floor(total / 6)
+  const resto = total - lateral * 2
+  const arriba = Math.ceil(resto / 2)
+  const abajo = resto - arriba
+  const ancho = Math.min(ANCHO_MAXIMO_SILLA, (ANCHO_MESA * 0.85) / Math.max(arriba, 1))
+  return { total, arriba, abajo, lateral, ancho }
+}
+
+const sillasTomadas = (mesa: MesaPlanoTipo, total: number) => {
+  if (mesa.estado !== 'ocupada' || mesa.capacidad <= 0) return 0
+  return Math.min(total, Math.max(1, Math.round((mesa.comensales / mesa.capacidad) * total)))
+}
+
+export const MesaPlano = memo(function MesaPlano({
+  mesa,
+  seleccionada,
+  indice,
+  alElegir,
+}: MesaPlanoProps) {
   const estilo = estilosMesa[mesa.estado]
   const Icono = estilo.icono
   const ocupada = mesa.estado === 'ocupada'
-  const larga = mesa.forma === 'larga'
+  const { total, arriba, abajo, lateral, ancho } = repartirSillas(mesa.capacidad)
+  const tomadas = sillasTomadas(mesa, total)
+  const vacia = ocupada ? 'bg-club-pc/15 ring-1 ring-inset ring-club-pc/35' : estilo.silla
+  const [info, setInfo] = useState<InfoAbierta | null>(null)
+  const temporizador = useRef<number | null>(null)
+  const pulsacionLarga = useRef(false)
+
+  const cancelarEspera = () => {
+    if (temporizador.current !== null) window.clearTimeout(temporizador.current)
+    temporizador.current = null
+  }
+
+  useEffect(() => cancelarEspera, [])
+
+  const infoFija = info?.fija ?? false
+  useEffect(() => {
+    if (!infoFija) return
+    const cerrar = () => setInfo(null)
+    document.addEventListener('pointerdown', cerrar, true)
+    document.addEventListener('scroll', cerrar, true)
+    return () => {
+      document.removeEventListener('pointerdown', cerrar, true)
+      document.removeEventListener('scroll', cerrar, true)
+    }
+  }, [infoFija])
+
+  const alEntrar = (evento: PointerEvent<HTMLButtonElement>) => {
+    if (evento.pointerType !== 'mouse') return
+    setInfo({ ancla: evento.currentTarget.getBoundingClientRect(), fija: false })
+  }
+
+  const alSalir = (evento: PointerEvent<HTMLButtonElement>) => {
+    if (evento.pointerType === 'mouse') setInfo((actual) => (actual?.fija ? actual : null))
+    cancelarEspera()
+  }
+
+  const alPulsar = (evento: PointerEvent<HTMLButtonElement>) => {
+    if (evento.pointerType === 'mouse') return
+    pulsacionLarga.current = false
+    const boton = evento.currentTarget
+    cancelarEspera()
+    temporizador.current = window.setTimeout(() => {
+      pulsacionLarga.current = true
+      setInfo({ ancla: boton.getBoundingClientRect(), fija: true })
+    }, ESPERA_PULSACION_LARGA_MS)
+  }
+
+  const alElegirMesa = () => {
+    if (pulsacionLarga.current) {
+      pulsacionLarga.current = false
+      return
+    }
+    setInfo(null)
+    alElegir(mesa.codigo)
+  }
+
+  const silla = (numero: number, horizontal: boolean) => (
+    <span
+      key={numero}
+      style={
+        horizontal
+          ? { width: `${ancho}cqw`, height: `${LARGO_SILLA}cqw` }
+          : { width: `${LARGO_SILLA}cqw`, height: `${ancho}cqw` }
+      }
+      className={`rounded-md shadow-sm transition-colors duration-300 ${
+        numero < tomadas ? estilo.silla : vacia
+      }`}
+    />
+  )
+
+  const inicioAbajo = arriba
+  const inicioIzquierda = arriba + abajo
+  const inicioDerecha = arriba + abajo + lateral
 
   return (
     <button
       type="button"
-      onClick={() => alElegir(mesa.codigo)}
+      onClick={alElegirMesa}
+      onPointerEnter={alEntrar}
+      onPointerLeave={alSalir}
+      onPointerDown={alPulsar}
+      onPointerUp={cancelarEspera}
+      onPointerCancel={cancelarEspera}
+      onContextMenu={(evento) => evento.preventDefault()}
       aria-pressed={seleccionada}
       aria-label={`Mesa ${mesa.codigo}, ${estilo.etiqueta}, ${mesa.capacidad} personas`}
       style={{ animationDelay: `${Math.min(indice, 8) * 15}ms` }}
-      className={`@container group relative animate-[chip-in_0.16s_ease-out_both] cursor-pointer rounded-3xl p-1 transition duration-200 hover:-translate-y-0.5 active:scale-95 ${
-        larga ? 'col-span-2 aspect-[2/1]' : 'aspect-square'
-      } ${seleccionada ? 'z-10 scale-[1.04] bg-primary/10 ring-2 ring-primary' : ''}`}
+      className="@container group relative aspect-square animate-[chip-in_0.16s_ease-out_both] cursor-pointer rounded-3xl p-1 transition duration-150 hover:-translate-y-1 active:scale-95"
     >
-      {larga ? (
+      {seleccionada && (
+        <motion.span
+          layoutId="mesa-seleccionada"
+          aria-hidden
+          transition={{ type: 'spring', stiffness: 700, damping: 46 }}
+          className="absolute inset-0 rounded-3xl bg-primary/10 shadow-[0_10px_26px_rgba(43,83,184,.28)] ring-2 ring-primary"
+        />
+      )}
+      <span aria-hidden className="absolute inset-x-[17%] top-[10%] flex justify-evenly">
+        {Array.from({ length: arriba }, (_, i) => silla(i, true))}
+      </span>
+      <span aria-hidden className="absolute inset-x-[17%] bottom-[10%] flex justify-evenly">
+        {Array.from({ length: abajo }, (_, i) => silla(inicioAbajo + i, true))}
+      </span>
+      {lateral > 0 && (
         <>
-          <span className="absolute inset-x-[12%] top-[4%] flex justify-between" aria-hidden>
-            {Array.from({ length: sillasLargas(mesa.capacidad).arriba }, (_, i) => (
-              <span
-                key={i}
-                className={`h-[8cqw] w-[10cqw] rounded-md transition ${estilo.silla}`}
-              />
-            ))}
-          </span>
-          <span className="absolute inset-x-[12%] bottom-[4%] flex justify-around" aria-hidden>
-            {Array.from({ length: sillasLargas(mesa.capacidad).abajo }, (_, i) => (
-              <span
-                key={i}
-                className={`h-[8cqw] w-[10cqw] rounded-md transition ${estilo.silla}`}
-              />
-            ))}
+          <span
+            aria-hidden
+            className="absolute inset-y-[30%] left-[8%] flex flex-col justify-evenly"
+          >
+            {Array.from({ length: lateral }, (_, i) => silla(inicioIzquierda + i, false))}
           </span>
           <span
-            className={`absolute inset-x-[7%] inset-y-[22%] flex flex-col items-center justify-center rounded-[18cqw] border-2 transition duration-200 ${estilo.cuerpo}`}
+            aria-hidden
+            className="absolute inset-y-[30%] right-[8%] flex flex-col justify-evenly"
           >
-            <Contenido mesa={mesa} Icono={Icono} ocupada={ocupada} ancho />
-          </span>
-        </>
-      ) : (
-        <>
-          <span className="absolute inset-0" aria-hidden>
-            {sillasRedondas(mesa.capacidad).map((angulo) => (
-              <span
-                key={angulo}
-                style={{
-                  transform: `rotate(${angulo}deg) translateY(-41cqw)`,
-                }}
-                className={`absolute left-1/2 top-1/2 -ml-[10cqw] -mt-[4.5cqw] h-[9cqw] w-[20cqw] rounded-md transition ${estilo.silla}`}
-              />
-            ))}
-          </span>
-          <span
-            className={`absolute inset-[19%] flex flex-col items-center justify-center rounded-full border-2 transition duration-200 ${estilo.cuerpo}`}
-          >
-            <Contenido mesa={mesa} Icono={Icono} ocupada={ocupada} />
+            {Array.from({ length: lateral }, (_, i) => silla(inicioDerecha + i, false))}
           </span>
         </>
       )}
-      {ocupada && mesa.apertura && (
-        <span className="sr-only">Abierta hace {tiempoCorto(mesa.apertura)}</span>
-      )}
+      <span
+        className={`absolute inset-x-[17%] inset-y-[24%] flex flex-col items-center justify-center rounded-2xl border-2 transition-colors duration-300 ${estilo.cuerpo} ${
+          ocupada ? 'shadow-[0_10px_24px_rgba(43,83,184,.4)]' : 'shadow-md shadow-success/15'
+        }`}
+      >
+        <Contenido mesa={mesa} Icono={Icono} ocupada={ocupada} />
+      </span>
+      {info && <InfoMesaFlotante mesa={mesa} ancla={info.ancla} />}
     </button>
   )
-}
+})
 
 interface ContenidoProps {
   mesa: MesaPlanoTipo
   Icono: LucideIcon
   ocupada: boolean
-  ancho?: boolean
 }
 
-function Contenido({ mesa, Icono, ocupada, ancho = false }: ContenidoProps) {
+function Contenido({ mesa, Icono, ocupada }: ContenidoProps) {
   return (
     <>
-      <strong className={`${ancho ? 'text-[7cqw]' : 'text-[15cqw]'} font-extrabold leading-none`}>
-        {mesa.codigo.slice(-2)}
-      </strong>
-      {!ocupada && (
-        <span
-          className={`mt-[1.5cqw] flex items-center gap-[1.2cqw] ${ancho ? 'text-[4.4cqw]' : 'text-[9.5cqw]'} font-semibold opacity-90`}
-        >
+      <strong className="text-[17cqw] font-extrabold leading-none">{mesa.codigo.slice(-2)}</strong>
+      {ocupada ? (
+        <span className="mt-[1.5cqw] text-[9cqw] font-bold tabular-nums">
+          Bs {Math.round(totalMesa(mesa))}
+        </span>
+      ) : (
+        <span className="mt-[1.5cqw] flex items-center gap-[1.2cqw] text-[9.5cqw] font-semibold opacity-90">
           <Icono className="size-[1.1em]" />
           {mesa.capacidad}
-        </span>
-      )}
-      {ocupada && (
-        <span className={`${ancho ? 'text-[4cqw]' : 'text-[8.5cqw]'} font-bold tabular-nums`}>
-          Bs {Math.round(totalMesa(mesa))}
         </span>
       )}
     </>
