@@ -71,7 +71,7 @@ export function AjustesAdminPage() {
               />
             </label>
             <p className="text-xs text-muted">
-              Se muestra en la pantalla de ingreso. El cambio es solo para esta aplicación: la base
+              Se muestra en la pantalla de ingreso y en la barra superior. El cambio es solo para esta aplicación: la base
               de datos de la empresa no se modifica.
               {ajuste.data.nombre_base && (
                 <>

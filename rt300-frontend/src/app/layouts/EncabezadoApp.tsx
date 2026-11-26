@@ -1,8 +1,9 @@
 import { CalendarDays, House } from 'lucide-react'
 import { Link, useLocation } from 'react-router-dom'
-import { useSesion } from '@/features/auth'
+import { useNombreNegocio, useSesion } from '@/features/auth'
 import { fechaLarga, primerNombre, saludoSegunHora } from '@/features/inicio/saludo'
 import { CambiarTema } from '@/shared/ui/CambiarTema'
+import { MarcaNegocio } from './MarcaNegocio'
 import { MenuUsuario } from './MenuUsuario'
 
 interface EncabezadoAppProps {
@@ -12,6 +13,7 @@ interface EncabezadoAppProps {
 
 export function EncabezadoApp({ perfilAbierto, alCambiarPerfil }: EncabezadoAppProps) {
   const perfil = useSesion((s) => s.perfil)
+  const negocio = useNombreNegocio().data
   const { pathname } = useLocation()
   const esInicio = pathname === '/inicio'
   const nombre = primerNombre(perfil?.nombre || perfil?.usuario || '')
@@ -31,14 +33,17 @@ export function EncabezadoApp({ perfilAbierto, alCambiarPerfil }: EncabezadoAppP
 
       <div className="px-safe relative mx-auto max-w-6xl">
         <div className="flex h-16 items-center justify-between gap-3 sm:h-[72px] short:h-14">
-          <img
-            src="/logo-software.png"
-            alt="AXON"
-            width={180}
-            height={60}
-            className="h-9 w-auto sm:h-10 short:h-8"
-          />
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex min-w-0 items-center gap-2.5 sm:gap-4">
+            <img
+              src="/logo-software.png"
+              alt="AXON"
+              width={180}
+              height={60}
+              className="h-9 w-auto shrink-0 sm:h-10 short:h-8"
+            />
+            {negocio && <MarcaNegocio nombre={negocio} />}
+          </div>
+          <div className="flex shrink-0 items-center gap-2 sm:gap-3">
             {!esInicio && (
               <Link
                 to="/inicio"
