@@ -13,6 +13,7 @@ import { usePlatos } from '../hooks'
 import { nombreLegible } from '../nombreLegible'
 import type { ItemComanda, Plato, SeccionMenu } from '../types'
 import { IconoSeccion } from './IconoSeccion'
+import { TarjetaProducto } from './TarjetaProducto'
 import { ModalSubsecciones } from './ModalSubsecciones'
 import { CargadorDiferido } from '@/shared/ui/Cargador'
 

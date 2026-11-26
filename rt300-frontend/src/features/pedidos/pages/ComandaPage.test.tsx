@@ -60,7 +60,7 @@ describe('ComandaPage', () => {
     expect(
       await screen.findByRole('button', { name: `Agregar ${plato.descripcion}` }),
     ).toBeInTheDocument()
-    await usuario.click(screen.getByRole('button', { name: 'Volver a las categorías' }))
+    await usuario.click(screen.getByRole('button', { name: 'Cambiar de categoría' }))
 
     expect(await screen.findByText('Elige una categoría')).toBeInTheDocument()
   })
@@ -251,7 +251,7 @@ describe('ComandaPage', () => {
     const sub = secciones.secciones.find((x) => x.csme === primeraSeccion.csme && x.cssm > 0)!
 
     expect(screen.queryByRole('tab')).toBeNull() // ya no hay una fila de botones
-    expect(screen.getAllByRole('button', { name: /categorías/i })).toHaveLength(1) // un solo control para volver
+    expect(screen.getAllByRole('button', { name: 'Cambiar de categoría' })).toHaveLength(1) // un solo control para volver
     await usuario.click(await screen.findByRole('button', { name: /subcategoría/i }))
     await usuario.click(
       await screen.findByRole('button', { name: new RegExp(`^${sub.descripcion}`, 'i') }),
