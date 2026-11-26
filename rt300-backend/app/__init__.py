@@ -101,12 +101,14 @@ def create_app(config: Config | None = None) -> Flask:
     from .modules.comandas.routes import bp as comandas_bp
     from .modules.cuentas.routes import bp as cuentas_bp
     from .modules.menu.routes import bp as menu_bp
+    from .modules.negocio.routes import bp as negocio_bp
     from .modules.salon.routes import bp as salon_bp
 
     app.extensions["comandas_gateway"] = build_gateway(cfg)
     app.register_blueprint(auth_bp, url_prefix="/api/v1/auth")
     app.register_blueprint(salon_bp, url_prefix="/api/v1/salon")
     app.register_blueprint(menu_bp, url_prefix="/api/v1/menu")
+    app.register_blueprint(negocio_bp, url_prefix="/api/v1")
     app.register_blueprint(clientes_bp, url_prefix="/api/v1")
     app.register_blueprint(comandas_bp, url_prefix="/api/v1")
     app.register_blueprint(cuentas_bp, url_prefix="/api/v1")

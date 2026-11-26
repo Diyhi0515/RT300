@@ -2,6 +2,7 @@ import {
   ClipboardList,
   LayoutDashboard,
   Armchair,
+  Settings,
   BarChart3,
   UnlockKeyhole,
   UserCog,
@@ -23,6 +24,7 @@ export const seccionesAdmin: SeccionAdmin[] = [
   { clave: 'mesas', etiqueta: 'Mesas en servicio', icono: Armchair, ruta: '/admin/mesas' },
   { clave: 'menu', etiqueta: 'Menú', icono: UtensilsCrossed, ruta: '/admin/menu' },
   { clave: 'clientes', etiqueta: 'Clientes', icono: Users, ruta: '/admin/clientes' },
+  { clave: 'ajustes', etiqueta: 'Ajustes', icono: Settings, ruta: '/admin/ajustes' },
 ]
 
 export const seccionesProximas: SeccionAdmin[] = [

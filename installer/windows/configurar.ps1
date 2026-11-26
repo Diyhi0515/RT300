@@ -115,6 +115,8 @@ $save.Add_Click({
             ('GATEWAY_PASSWORD=' + (Quote-Env $controls.GatewayPassword.Text)),
             ('IMAGENES_DIR=' + (Quote-Env $controls.Images.Text.Trim())),
             ('IMAGENES_CACHE_DIR=' + (Quote-Env "$DataDir\cache")),
+            ('IMAGENES_SUBIDAS_DIR=' + (Quote-Env "$DataDir\subidas")),
+            ('AJUSTES_DB=' + (Quote-Env "$DataDir\data\ajustes.sqlite")),
             ('REVOCADOS_DB=' + (Quote-Env "$DataDir\data\revocados.sqlite")),
             ('CORS_ORIGINS=' + (Quote-Env "http://$serverIp`:$port,http://localhost:$port")),
             'COOKIE_SECURE=false',

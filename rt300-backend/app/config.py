@@ -58,6 +58,7 @@ class Config:
     rate_limit_default: str = field(default_factory=lambda: _env("RATE_LIMIT_DEFAULT", "300 per minute"))
     cookie_secure: str = field(default_factory=lambda: _env("COOKIE_SECURE", "").lower())
     revocados_db: str = field(default_factory=lambda: _env("REVOCADOS_DB", "data/revocados.sqlite"))
+    ajustes_db: str = field(default_factory=lambda: _env("AJUSTES_DB", "data/ajustes.sqlite"))
     redis_url: str = field(repr=False, default_factory=lambda: _env("REDIS_URL"))
     imagenes_dir: str = field(default_factory=lambda: _env("IMAGENES_DIR", "/data/imagenes"))
     imagenes_subidas_dir: str = field(default_factory=lambda: _env("IMAGENES_SUBIDAS_DIR", "/data/subidas"))

@@ -78,7 +78,7 @@ export function PlanoMesas() {
         <header className="relative space-y-3 px-4 pb-1 pt-4 md:shrink-0 short:space-y-2 short:pt-2">
           <div className="flex flex-wrap items-center justify-between gap-2.5">
             <div className="flex min-w-0 flex-wrap items-center gap-2.5">
-              <DesplegableArea local={perfil?.local ?? 'Club de Campo'} />
+              <DesplegableArea local={perfil?.local ?? 'Local'} />
             </div>
             <div
               role="group"

@@ -5,7 +5,7 @@ import { ErrorApi } from '@/lib/http'
 import { queryClient } from '@/lib/queryClient'
 import { vibrar } from '@/lib/vibrar'
 import { notificar, useAvisos } from '@/shared/avisos/almacen'
-import { listarUsuarios, iniciarSesion, cerrarSesion } from './api'
+import { listarUsuarios, iniciarSesion, cerrarSesion, obtenerNegocio } from './api'
 import { MAX_INTENTOS, useAlmacenBloqueo } from './almacenBloqueo'
 import { useSesion } from './store'
 
@@ -68,3 +68,13 @@ export const useCerrarSesion = () => {
     notificar.informacion('Cerraste sesión correctamente.', 'Sesión cerrada')
   }
 }
+
+/** Nombre del negocio según la base de datos (tabla gbpmt). */
+export const useNombreNegocio = () =>
+  useQuery({
+    queryKey: ['negocio'],
+    queryFn: obtenerNegocio,
+    staleTime: 5 * 60 * 1000,
+    meta: { silentError: true },
+    select: (datos) => datos.nombre?.trim() || undefined,
+  })

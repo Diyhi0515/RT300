@@ -1,9 +1,12 @@
 import { Flag, Wifi, WifiOff } from 'lucide-react'
 import { useOnlineStatus } from '@/shared/hooks/useOnlineStatus'
 import { CambiarTema } from '@/shared/ui/CambiarTema'
+import { useNombreNegocio } from '../hooks'
 
 export function MarcaCabecera() {
   const enLinea = useOnlineStatus()
+  // Si la base no responde se muestra el nombre de la aplicación.
+  const nombre = useNombreNegocio().data ?? 'RT - AXON'
 
   return (
     <div className="mb-4 flex shrink-0 items-center justify-between gap-2 short:mb-1">
@@ -14,8 +17,11 @@ export function MarcaCabecera() {
             fill="currentColor"
             aria-hidden
           />
-          <span className="ml-1 truncate text-lg font-semibold short:text-base tracking-wide text-club-primary 2xl:text-xl">
-            Club de Campo
+          <span
+            title={nombre}
+            className="ml-1 line-clamp-2 min-w-0 text-lg font-semibold leading-tight short:text-base tracking-wide text-club-primary 2xl:text-xl"
+          >
+            {nombre}
           </span>
         </div>
         <p

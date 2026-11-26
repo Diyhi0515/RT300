@@ -89,6 +89,7 @@ services:
       REDIS_URL: "${REDIS_URL:-}"
       COOKIE_SECURE: "${COOKIE_SECURE:-}"
       REVOCADOS_DB: "/data/app/revocados.sqlite"
+      AJUSTES_DB: "/data/app/ajustes.sqlite"       # nombre del negocio puesto desde el administrador
       FLASK_ENV: "${FLASK_ENV:-production}"
       SECRET_KEY: "${SECRET_KEY:-dev-secret-cambiar}"
       JWT_SECRET_KEY: "${JWT_SECRET_KEY:-dev-jwt-secret-cambiar-por-uno-largo-de-32-o-mas}"

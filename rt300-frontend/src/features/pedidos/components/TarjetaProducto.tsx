@@ -10,6 +10,8 @@ interface TarjetaProductoProps {
   alCambiarCantidad: (plato: Plato, delta: number) => void
 }
 
+const urlImagen = (cart: string) => `/api/v1/menu/platos/${encodeURIComponent(cart)}/imagen?w=320`
+
 const boton =
   'grid size-10 shrink-0 cursor-pointer place-items-center rounded-xl transition active:scale-90 short:size-9 lg:size-11'
 
@@ -23,6 +25,15 @@ function TarjetaProductoBase({ plato, cantidad, indice, alCambiarCantidad }: Tar
           : 'border-club-pc/40 bg-club-pc/10 hover:border-club-pc/80'
       }`}
     >
+      {plato.imagen && (
+        <img
+          src={urlImagen(plato.id)}
+          alt=""
+          loading="lazy"
+          decoding="async"
+          className="h-28 w-full rounded-xl bg-bg object-cover short:h-20 lg:h-32"
+        />
+      )}
       <h3 className="line-clamp-3 text-sm font-bold leading-tight [overflow-wrap:anywhere] lg:text-base">
         {plato.nombre}
       </h3>

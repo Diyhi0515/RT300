@@ -22,3 +22,5 @@ export const esquemaRespuestaInicio = z.object({
 export const esquemaRespuestaUsuarios = z.object({
   usuarios: z.array(z.object({ usuario: z.string(), nombre: z.string() })),
 })
+
+export const esquemaRespuestaNegocio = z.object({ nombre: z.string().nullish() })

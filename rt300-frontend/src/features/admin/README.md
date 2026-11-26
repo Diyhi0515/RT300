@@ -4,12 +4,13 @@
 
 ## Secciones
 
-| Ruta | Pantalla | Datos (endpoints existentes, solo lectura) |
+| Ruta | Pantalla | Datos (endpoints) |
 |---|---|---|
 | `/admin` | Panel: indicadores del salón y cuadrícula de mesas. Tocar una mesa abre su **detalle de solo lectura** (mozo, apertura, cuentas y productos) con un botón secundario "Abrir en Pedidos" | `GET /salon/mesas`, `/salon/parametros` |
 | `/admin/mesas` | Mesas en servicio (el código de la mesa abre el mismo detalle): ocupadas, de la más antigua a la más reciente, con mozo, comensales, cuentas y consumo | `GET /salon/mesas` |
 | `/admin/menu` | Menú: secciones, subsecciones, productos y precios con búsqueda | `GET /menu/secciones`, `/menu/secciones/{s}/{ss}/platos` |
 | `/admin/clientes` | Clientes: búsqueda por nombre (mín. 2 letras) o código, con espera de 350 ms | `GET /clientes` |
+| `/admin/ajustes` | Ajustes: nombre del negocio que muestra el ingreso. Se guarda solo en la app; "Usar el de la base" lo quita | `GET /negocio/ajustes`, `PUT /negocio/ajustes` (solo admin) |
 
 En el menú lateral hay 4 entradas bloqueadas ("Próximamente"): Liberar mesa, Comandas (eliminar/reimprimir), Usuarios y roles, Reportes. Para activarlas hay que agregar la entrada en `secciones.ts`, su ruta en `app/router.tsx` y, si escribe, el endpoint de admin en el backend.
 
