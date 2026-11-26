@@ -9,17 +9,17 @@ export function MarcaCabecera() {
   const nombre = useNombreNegocio().data ?? 'RT - AXON'
 
   return (
-    <div className="mb-4 flex shrink-0 items-center justify-between gap-2 short:mb-1">
+    <div className="mb-4 flex shrink-0 items-center justify-between gap-2 short:mb-1 laptop:mb-5">
       <div className="min-w-0">
         <div className="flex min-w-0 items-center gap-1">
           <Flag
-            className="size-7 shrink-0 short:size-6 text-club-primary"
+            className="size-7 shrink-0 short:size-6 laptop:size-7 text-club-primary"
             fill="currentColor"
             aria-hidden
           />
           <span
             title={nombre}
-            className="ml-1 line-clamp-2 min-w-0 text-lg font-semibold leading-tight short:text-base tracking-wide text-club-primary 2xl:text-xl"
+            className="ml-1 line-clamp-2 min-w-0 text-lg font-semibold leading-tight short:text-base laptop:text-lg tracking-wide text-club-primary 2xl:text-xl"
           >
             {nombre}
           </span>

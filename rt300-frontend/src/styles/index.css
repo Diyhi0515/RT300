@@ -298,6 +298,7 @@
     @slot;
   }
 }
+@custom-variant laptop (@media (min-width: 60rem) and (min-height: 521px) and (max-height: 820px));
 @custom-variant escritorio (@media (min-width: 60rem) and (hover: hover) and (pointer: fine));
 
 @keyframes chip-in {
@@ -318,26 +319,6 @@
   }
   50% {
     transform: scale(1.04);
-  }
-}
-
-/* Insignia del negocio en la barra superior */
-@keyframes marca-borde {
-  from {
-    background-position: 0% 50%;
-  }
-  to {
-    background-position: 300% 50%;
-  }
-}
-
-@keyframes marca-destello {
-  0% {
-    transform: translateX(0);
-  }
-  30%,
-  100% {
-    transform: translateX(450%);
   }
 }
 

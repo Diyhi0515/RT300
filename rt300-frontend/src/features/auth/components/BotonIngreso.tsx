@@ -10,7 +10,7 @@ interface BotonIngresoProps {
 }
 
 const estiloBase =
-  'flex h-14 w-full cursor-pointer items-center justify-center gap-2 rounded-xl text-base font-bold shadow-lg short:text-sm transition duration-150 hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 short:h-10 2xl:h-16 2xl:text-lg'
+  'flex h-14 w-full cursor-pointer items-center justify-center gap-2 rounded-xl text-base font-bold shadow-lg short:text-sm transition duration-150 hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 short:h-10 laptop:h-12 laptop:text-base 2xl:h-16 2xl:text-lg'
 
 const estiloNormal =
   'bg-club-pc text-white shadow-club-pc/30 dark:shadow-[0_8px_28px_-6px_rgba(79,124,255,0.65)]'
@@ -26,7 +26,7 @@ export function BotonIngreso({
   onBloqueado,
 }: BotonIngresoProps) {
   return (
-    <div className="mt-4 space-y-4 short:mt-2 short:space-y-2">
+    <div className="mt-4 space-y-4 short:mt-2 short:space-y-2 laptop:mt-6 laptop:space-y-4">
       {!enLinea && (
         <p
           role="alert"

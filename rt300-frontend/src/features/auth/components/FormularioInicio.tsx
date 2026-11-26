@@ -13,7 +13,7 @@ export function FormularioInicio({ formulario }: FormularioInicioProps) {
 
   return (
     <form noValidate autoComplete="off" onSubmit={f.alEnviar}>
-      <fieldset className="m-0 min-w-0 space-y-4 border-0 p-0 transition-opacity disabled:opacity-50 short:space-y-2">
+      <fieldset className="m-0 min-w-0 space-y-4 border-0 p-0 transition-opacity disabled:opacity-50 short:space-y-2 laptop:space-y-5">
         <UsuarioCarrusel seleccionado={f.usuarioActual} onSelect={f.seleccionar} />
 
         <CampoUsuario
