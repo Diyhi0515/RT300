@@ -84,7 +84,7 @@ export function CampoClave({ registro, error, deshabilitado }: CampoClaveProps) 
           type="button"
           onClick={() => setVisible((v) => !v)}
           aria-label={visible ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-          className="absolute right-2 grid size-11 place-items-center rounded-lg text-club-variant transition hover:bg-club-high hover:text-club-text short:size-9"
+          className="absolute right-2 grid size-11 place-items-center rounded-lg text-club-variant transition hover:bg-club-high hover:text-club-text short:size-9 laptop:size-11"
         >
           {visible ? <EyeOff className="size-[22px]" /> : <Eye className="size-[22px]" />}
         </button>

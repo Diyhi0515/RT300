@@ -18,7 +18,7 @@ describe('EncabezadoApp', () => {
   it('muestra el nombre del negocio junto al logo', async () => {
     renderConProveedores(<EncabezadoApp perfilAbierto={false} alCambiarPerfil={() => {}} />)
 
-    expect(await screen.findByText('NEGOCIO DE PRUEBA')).toBeInTheDocument()
+    expect(await screen.findByTitle('NEGOCIO DE PRUEBA')).toBeInTheDocument()
     expect(screen.getByRole('img', { name: 'AXON' })).toBeInTheDocument()
   })
 })

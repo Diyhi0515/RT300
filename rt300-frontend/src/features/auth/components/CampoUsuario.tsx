@@ -35,7 +35,7 @@ export function CampoUsuario({ registro, valor, error, onLimpiar }: CampoUsuario
             type="button"
             onClick={onLimpiar}
             aria-label="Borrar usuario"
-            className="absolute right-2 grid size-11 place-items-center rounded-lg text-club-variant transition hover:bg-club-error-c hover:text-club-error short:size-9"
+            className="absolute right-2 grid size-11 place-items-center rounded-lg text-club-variant transition hover:bg-club-error-c hover:text-club-error short:size-9 laptop:size-11"
           >
             <Delete className="size-5" />
           </button>
