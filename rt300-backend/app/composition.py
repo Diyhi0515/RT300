@@ -21,6 +21,8 @@ from .modules.comandas.guardar import GuardarComandaService
 from .modules.comandas.repository import SqlComandasRepository
 from .modules.cuentas.repository import SqlCuentasRepository
 from .modules.cuentas.service import CuentasService
+from .modules.menu.administrar_imagenes import ImagenesPlatosService
+from .modules.menu.almacen_imagenes import AlmacenImagenes
 from .modules.menu.cache import MenuRepoConCache
 from .modules.menu.repository import SqlMenuRepository
 from .modules.menu.service import MenuService
@@ -55,6 +57,13 @@ def clientes_service() -> ClientesService:
 
 def menu_service() -> MenuService:
     return MenuService(MenuRepoConCache(SqlMenuRepository(get_db()), current_app.extensions["cache_menu"]))
+
+
+def imagenes_platos_service() -> ImagenesPlatosService:
+    repo = SqlMenuRepository(get_db())
+    cache = MenuRepoConCache(repo, current_app.extensions["cache_menu"])
+    almacen = AlmacenImagenes(current_app.config["APP_CONFIG"].imagenes_subidas_dir)
+    return ImagenesPlatosService(repo, _uow(), almacen, cache.invalidar)
 
 
 def guardar_comanda_service() -> GuardarComandaService:

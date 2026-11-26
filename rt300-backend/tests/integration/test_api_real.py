@@ -44,7 +44,9 @@ def auth(sesion):
 
 def test_health_con_base_de_datos(cliente):
     r = cliente.get("/api/v1/health")
-    assert r.status_code == 200 and r.get_json() == {"status": "ok", "db": True}
+    datos = r.get_json()
+    assert r.status_code == 200 and datos["status"] == "ok" and datos["db"] is True
+    assert datos["impresion"] in {"simulada", "real"}
 
 
 def test_login_entrega_el_perfil_que_necesita_el_front(sesion):

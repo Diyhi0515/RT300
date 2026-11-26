@@ -2,16 +2,19 @@ from __future__ import annotations
 
 from flask import Blueprint, current_app, request
 
-from ...composition import menu_service
+from ...composition import imagenes_platos_service, menu_service
+from ...core.errors import ValidationFailed
 from ...core.respuesta import responder
 from ...core.security import autenticado, usuario_actual
 from ...extensions import limiter
 from . import images
+from .almacen_imagenes import MAXIMO_BYTES
 from .schemas import (
     AlternativosOut,
     CentrosOut,
     ExtrasOut,
     FichaPlatoOut,
+    ImagenAsignadaOut,
     PlatosOut,
     SeccionesOut,
     TextosOut,
@@ -86,9 +89,23 @@ def centros(cart: str):
 
 
 @bp.get("/platos/<cart>/imagen")
-@limiter.exempt
+@limiter.limit(lambda: current_app.config["APP_CONFIG"].rate_limit_imagenes)
 def imagen(cart: str):
-    """Pública a propósito: la consume <img src>, que no puede enviar el JWT. Solo sirve archivos de IMAGENES_DIR."""
+    """Pública a propósito: la consume <img src>, que no puede enviar el JWT. Solo sirve imágenes de producto de las carpetas
+    configuradas (nunca otro archivo) y con un límite por IP, porque convertir una imagen cuesta CPU."""
     cfg = current_app.config["APP_CONFIG"]
-    return images.servir(menu_service().nombre_imagen(cart), request.args.get("w", 480, int), cfg.imagenes_dir,
-                         cfg.imagenes_cache_dir)
+    return images.servir(menu_service().nombre_imagen(cart), request.args.get("w", 480, int),
+                         [cfg.imagenes_subidas_dir, cfg.imagenes_dir], cfg.imagenes_cache_dir)
+
+
+@bp.post("/platos/<cart>/imagen")
+@autenticado
+@limiter.limit("60/hour")
+def subir_imagen(cart: str):
+    """Solo administradores. Recibe `imagen` (multipart); la vincula al producto únicamente si no tiene una."""
+    request.max_content_length = MAXIMO_BYTES + 64 * 1024     # el tope general de la API (1 MB) es muy chico para una foto
+    archivo = request.files.get("imagen")
+    if archivo is None:
+        raise ValidationFailed("Falta el archivo en el campo 'imagen'.", "IMAGEN_FALTA")
+    resultado = imagenes_platos_service().asignar(usuario_actual(), cart, archivo.read(MAXIMO_BYTES + 1))
+    return responder(ImagenAsignadaOut, resultado, 201)

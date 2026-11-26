@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from flask import Blueprint, request
+from flask import Blueprint, current_app, request
 from flask_jwt_extended import get_jwt, jwt_required
 from flask_limiter.util import get_remote_address
 
@@ -27,7 +27,7 @@ def usuarios():
 
 
 @bp.post("/login")
-@limiter.limit("10/minute")
+@limiter.limit(lambda: current_app.config["APP_CONFIG"].rate_limit_login_ip)       # por IP: subir si todo el personal sale por una sola IP
 @limiter.limit("10 per 10 minutes", key_func=_clave_por_usuario)
 def login():
     body = LoginIn.model_validate(request.get_json(silent=True) or {})

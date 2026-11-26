@@ -3,8 +3,8 @@ import pytest
 from flask import Flask
 from flask_jwt_extended import JWTManager, decode_token
 
-from app.core.errors import Unauthorized
 from app.core.credenciales_sesion import credenciales_sesion
+from app.core.errors import Unauthorized
 from app.domain.usuario import Usuario
 from app.extensions import esta_revocado
 from app.modules.auth.tokens import EmisorTokens

@@ -139,6 +139,14 @@ class SqlMenuRepository(PreciosQueries):
               JOIN rtcpd d ON d.rtcpdccpd = a.rtaacccpd
              WHERE a.rtaaccart = :cart AND o.rtacocloc = :cloc""", cart=cart, cloc=cloc)
 
+    def existe_plato(self, cart: str) -> bool:
+        return self._one("SELECT 1 AS x FROM rtalb WHERE LTRIM(RTRIM(rtalbcart)) = :c", c=cart) is not None
+
+    def vincular_imagen_si_vacia(self, cart: str, nombre: str) -> int:
+        """Escribe el nombre solo si la columna está vacía: nunca pisa una imagen ya asignada."""
+        return self._exec("UPDATE rtalb SET rtalbnimg = :n WHERE LTRIM(RTRIM(rtalbcart)) = :c "
+                          "AND (rtalbnimg IS NULL OR LTRIM(RTRIM(rtalbnimg)) = '')", n=nombre, c=cart)
+
     def nombre_imagen(self, cart: str) -> str | None:
         r = self._one("SELECT rtalbnimg FROM rtalb WHERE rtalbcart = :c", c=cart)
         return (r or {}).get("rtalbnimg") or None

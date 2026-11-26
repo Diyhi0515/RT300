@@ -64,6 +64,7 @@ export const esquemaPlatos = z.object({
       cart: z.string(),
       cssm: z.number().nullish(),
       descripcion: z.string().nullish(),
+      imagen: z.string().nullish(),
       pvta: z.number(),
       moneda: z.string(),
     }),

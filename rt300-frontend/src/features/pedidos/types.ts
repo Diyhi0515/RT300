@@ -73,6 +73,7 @@ export interface Plato {
   precio: number
   moneda: string
   subseccion?: number
+  imagen?: string
 }
 
 export interface ExtraElegido {

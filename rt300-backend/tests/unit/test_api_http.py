@@ -1,5 +1,6 @@
 """Comportamiento HTTP transversal (cabeceras, CORS, compresión, límites, errores) sin base de datos."""
 import gzip
+import io
 import json
 
 import pytest
@@ -255,3 +256,67 @@ def test_instalacion_windows_sirve_frontend_y_fallback_spa(tmp_path):
     assert "RT300" in cliente_front.get("/pedidos/mesa/1").get_data(as_text=True)
     asset = cliente_front.get("/assets/app.js")
     assert asset.status_code == 200 and "default-src 'self'" in asset.headers["Content-Security-Policy"]
+
+
+class ServicioImagenFalso:
+    def __init__(self):
+        self.recibido = None
+
+    def asignar(self, u, cart, contenido):
+        self.recibido = (u.rol, cart, len(contenido))
+        return {"cart": cart, "imagen": f"{cart}.jpg"}
+
+
+def _subir(cliente, acceso, contenido=b"x" * 10, campo="imagen"):
+    return cliente.post("/api/v1/menu/platos/A1/imagen", headers={"Authorization": f"Bearer {acceso}"},
+                        data={campo: (io.BytesIO(contenido), "foto.png")}, content_type="multipart/form-data")
+
+
+def test_subir_imagen_acepta_un_archivo_mayor_al_tope_general_de_1mb(cliente, sesion, monkeypatch):
+    falso = ServicioImagenFalso()
+    monkeypatch.setattr("app.modules.menu.routes.imagenes_platos_service", lambda: falso)
+    r = _subir(cliente, sesion.get_json()["access_token"], b"x" * (2 * 1024 * 1024))
+    assert r.status_code == 201 and r.get_json() == {"cart": "A1", "imagen": "A1.jpg"}
+    assert falso.recibido == ("garzon", "A1", 2 * 1024 * 1024)
+
+
+def test_subir_imagen_rechaza_un_envio_enorme_con_413(cliente, sesion, monkeypatch):
+    monkeypatch.setattr("app.modules.menu.routes.imagenes_platos_service", lambda: ServicioImagenFalso())
+    r = _subir(cliente, sesion.get_json()["access_token"], b"x" * (6 * 1024 * 1024))
+    assert r.status_code == 413
+
+
+def test_subir_imagen_sin_el_campo_responde_422(cliente, sesion, monkeypatch):
+    monkeypatch.setattr("app.modules.menu.routes.imagenes_platos_service", lambda: ServicioImagenFalso())
+    r = _subir(cliente, sesion.get_json()["access_token"], campo="otro")
+    assert r.status_code == 422 and r.get_json()["error"]["code"] == "IMAGEN_FALTA"
+
+
+def test_subir_imagen_exige_sesion(cliente):
+    r = cliente.post("/api/v1/menu/platos/A1/imagen", data={"imagen": (io.BytesIO(b"x"), "f.png")}, content_type="multipart/form-data")
+    assert r.status_code == 401
+
+
+def test_el_limite_de_login_por_ip_se_configura(monkeypatch):
+    app = create_app(Config(env="development", cors_origins=(ORIGEN,), db_host="no-existe", gateway_mode="fake", revocados_db="",
+                            rate_limit_login_ip="3/minute"))
+    limiter.reset()
+    monkeypatch.setattr("app.modules.auth.routes.auth_service", lambda: AuthFalso())
+    cliente = app.test_client()
+    estados = [intentar(cliente, f"U{i}", "10.7.7.7").status_code for i in range(5)]
+    assert estados == [401, 401, 401, 429, 429]
+
+
+def test_la_imagen_de_un_producto_es_publica_pero_tiene_limite(monkeypatch):
+    app = create_app(Config(env="development", cors_origins=(ORIGEN,), db_host="no-existe", gateway_mode="fake", revocados_db="",
+                            rate_limit_imagenes="2/minute"))
+    limiter.reset()
+
+    class Falso:
+        def nombre_imagen(self, cart):
+            return None
+
+    monkeypatch.setattr("app.modules.menu.routes.menu_service", lambda: Falso())
+    cliente = app.test_client()
+    estados = [cliente.get("/api/v1/menu/platos/A1/imagen").status_code for _ in range(3)]
+    assert estados == [200, 200, 429]

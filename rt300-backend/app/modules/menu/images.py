@@ -26,13 +26,26 @@ def placeholder() -> Response:
 
 
 def _seguro(base: Path, nombre: str) -> Path | None:
-    """Evita path traversal: solo el nombre de archivo, y que quede dentro de `base`."""
-    candidato = (base / Path(nombre.replace("\\", "/")).name).resolve()
+    """Evita path traversal: solo el nombre de archivo, y que quede dentro de `base`.
+
+    El sistema antiguo corría en Windows (nombres sin distinguir mayúsculas); en Linux 'Coke.BMP' no encuentra 'Coke.bmp',
+    así que si no hay coincidencia exacta se busca ignorando mayúsculas."""
+    archivo = Path(nombre.replace("\\", "/")).name
+    candidato = (base / archivo).resolve()
     try:
         candidato.relative_to(base.resolve())
     except ValueError:
         return None
-    return candidato if candidato.is_file() else None
+    if candidato.is_file():
+        return candidato
+    return _sin_distinguir_mayusculas(base, archivo)
+
+
+def _sin_distinguir_mayusculas(base: Path, archivo: str) -> Path | None:
+    try:
+        return next((f for f in base.iterdir() if f.is_file() and f.name.lower() == archivo.lower()), None)
+    except OSError:
+        return None
 
 
 def _webp(datos: bytes) -> Response:
@@ -41,10 +54,15 @@ def _webp(datos: bytes) -> Response:
     return resp
 
 
-def servir(nombre: str | None, ancho: int, imagenes_dir: str, cache_dir: str) -> Response:
+def buscar(nombre: str | None, carpetas: list[str]) -> Path | None:
+    """Primero la carpeta de lo subido desde el administrador; después la heredada (img/Restaurantes, solo lectura)."""
     if not nombre:
-        return placeholder()
-    origen = _seguro(Path(imagenes_dir), nombre)
+        return None
+    return next((o for o in (_seguro(Path(c), nombre) for c in carpetas) if o is not None), None)
+
+
+def servir(nombre: str | None, ancho: int, carpetas: list[str], cache_dir: str) -> Response:
+    origen = buscar(nombre, carpetas)
     if origen is None:
         return placeholder()
 

@@ -1,13 +1,15 @@
 import { useEffect, useState } from 'react'
-import { ArrowLeft, Check, Hash, Store, UserRoundSearch, UserRoundPen } from 'lucide-react'
+import { ArrowLeft, Check, Hash, Search, Store, UserRoundSearch, UserRoundPen } from 'lucide-react'
 import { Link, Navigate, useParams } from 'react-router-dom'
 import { useSesion } from '@/features/auth'
 import { vibrar } from '@/lib/vibrar'
 import { notificar } from '@/shared/avisos/almacen'
+import { buscarClientes } from '../api'
 import { ListadoClientes } from '../components/ListadoClientes'
 import { SelectorCuentas } from '../components/SelectorCuentas'
 import { TablaCuentasMesa } from '../components/TablaCuentasMesa'
 import { useActualizarCuenta, useMesaDetalle } from '../hooks'
+import { mapearCliente } from '../mapeos'
 import { usePedidos } from '../store'
 import type { ClienteRegistrado, Cuenta, MesaDetalle } from '../types'
 import { CargadorDiferido } from '@/shared/ui/Cargador'
@@ -81,6 +83,21 @@ function Contenido({ mesa }: ContenidoProps) {
     setVista('datos')
     window.scrollTo({ top: 0, behavior: 'smooth' })
     vibrar('toque')
+  }
+
+  const buscarCodigo = async () => {
+    const buscado = Number(codigoCliente.trim())
+    if (!Number.isInteger(buscado) || buscado <= 0) {
+      notificar.advertencia('Escribe el código del cliente.', 'Falta el código')
+      return
+    }
+    try {
+      const [cliente] = await buscarClientes({ codigo: buscado })
+      if (cliente) aplicarCliente(mapearCliente(cliente))
+      else notificar.advertencia('No existe un cliente con ese código.', 'Cliente no encontrado')
+    } catch {
+      notificar.advertencia('No existe un cliente con ese código.', 'Cliente no encontrado')
+    }
   }
 
   const modificar = async () => {
@@ -221,17 +238,33 @@ function Contenido({ mesa }: ContenidoProps) {
                   <label htmlFor="datos-cuenta-codigo" className={etiqueta}>
                     Código cliente
                   </label>
-                  <input
-                    id="datos-cuenta-codigo"
-                    value={codigoCliente}
-                    onChange={(e) => {
-                      setCodigoCliente(e.target.value)
-                      setClienteCargado(null)
-                    }}
-                    className={campo}
-                    inputMode="numeric"
-                    autoComplete="off"
-                  />
+                  <div className="flex gap-1.5">
+                    <input
+                      id="datos-cuenta-codigo"
+                      value={codigoCliente}
+                      onChange={(e) => {
+                        setCodigoCliente(e.target.value)
+                        setClienteCargado(null)
+                      }}
+                      onKeyDown={(e) => {
+                        // Enter busca el cliente; no debe guardar la cuenta con el nombre anterior.
+                        if (e.key !== 'Enter') return
+                        e.preventDefault()
+                        void buscarCodigo()
+                      }}
+                      className={`${campo} min-w-0 flex-1`}
+                      inputMode="numeric"
+                      autoComplete="off"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => void buscarCodigo()}
+                      aria-label="Buscar cliente por código"
+                      className={`${botonSecundario} w-12 !px-0 lg:w-11 short:lg:w-9`}
+                    >
+                      <Search className="size-4" aria-hidden />
+                    </button>
+                  </div>
                 </div>
               </div>
               <div className="grid gap-3 sm:grid-cols-[12rem_minmax(0,1fr)] lg:grid-cols-[9rem_minmax(0,1fr)_auto] lg:items-end min-[1200px]:contents short:lg:contents">

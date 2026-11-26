@@ -112,11 +112,14 @@ services:
       MENU_CACHE_SECONDS: "${MENU_CACHE_SECONDS:-300}"
       PROXY_HOPS: "${PROXY_HOPS:-0}"
       RATE_LIMIT_DEFAULT: "${RATE_LIMIT_DEFAULT:-300 per minute}"
+      RATE_LIMIT_LOGIN_IP: "${RATE_LIMIT_LOGIN_IP:-10/minute}"
+      RATE_LIMIT_IMAGENES: "${RATE_LIMIT_IMAGENES:-1200 per minute}"
       ADMIN_USERS: "${ADMIN_USERS:-}"
       CAJERO_USERS: "${CAJERO_USERS:-}"
       GATEWAY_TIMEOUT_SECONDS: "30"
 
       IMAGENES_DIR: "/data/imagenes"
+      IMAGENES_SUBIDAS_DIR: "/data/subidas"
       IMAGENES_CACHE_DIR: "/data/cache"
     ports:
       - "127.0.0.1:5000:5000"
@@ -124,6 +127,7 @@ services:
       - ./rt300-backend:/app                       # recarga en caliente
       - "${IMAGENES_DIR:-./img/Restaurantes}:/data/imagenes:ro"
       - imgcache:/data/cache
+      - imgsubidas:/data/subidas                  # imágenes subidas desde el administrador
       - appdata:/data/app
     # Desarrollo: servidor Flask con recarga, SIN depurador interactivo (la consola de Werkzeug permite ejecutar código). Producción: quitar esta línea y usar el CMD (waitress) del Dockerfile.
     command: ["flask", "--app", "wsgi", "run", "--host=0.0.0.0", "--port=5000", "--reload", "--no-debugger"]
@@ -136,6 +140,7 @@ services:
     environment:
       VITE_API_URL: "${VITE_API_URL:-http://127.0.0.1:5000/api/v1}"
       CHOKIDAR_USEPOLLING: "true"                  # detectar cambios en carpetas montadas desde Windows
+      API_PROXY_TARGET: "http://backend:5000"      # proxy /api de Vite (imágenes de productos)
     ports:
       - "127.0.0.1:5173:5173"
     volumes:
@@ -145,6 +150,7 @@ services:
 volumes:
   sqldata:
   imgcache:
+  imgsubidas:
   appdata:
   frontend_node_modules:
   caddy_data:

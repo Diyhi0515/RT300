@@ -216,3 +216,13 @@ export const obtenerModoImpresion = async () => {
   const { data } = await http.get('/health')
   return z.object({ impresion: z.enum(['simulada', 'real']) }).parse(data).impresion
 }
+
+export const subirImagenPlato = async (cart: string, archivo: File) => {
+  const formulario = new FormData()
+  formulario.append('imagen', archivo)
+  const { data } = await http.post(`/menu/platos/${enRuta(cart)}/imagen`, formulario, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+    timeout: 60_000,
+  })
+  return z.object({ cart: z.string(), imagen: z.string() }).parse(data)
+}
