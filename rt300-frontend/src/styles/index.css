@@ -321,6 +321,26 @@
   }
 }
 
+/* Insignia del negocio en la barra superior */
+@keyframes marca-borde {
+  from {
+    background-position: 0% 50%;
+  }
+  to {
+    background-position: 300% 50%;
+  }
+}
+
+@keyframes marca-destello {
+  0% {
+    transform: translateX(0);
+  }
+  30%,
+  100% {
+    transform: translateX(450%);
+  }
+}
+
 @keyframes barrido {
   0% {
     transform: translateX(-100%);
