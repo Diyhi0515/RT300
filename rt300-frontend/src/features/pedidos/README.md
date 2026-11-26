@@ -140,6 +140,28 @@ Cada producto del resumen tiene: **Nota** (texto libre de hasta 100 caracteres, 
 
 Botón debajo de "Registrar comanda". Muestra el pedido como texto de 40 columnas, basado en la vista previa del sistema antiguo (`funcionTextoVisualizar` de `RT300c.js`): `PEDIDO DE MESA` centrado, mesa, cuenta y cliente; por cada producto su nombre (partido en líneas de 40) y debajo `cantidad x precio = subtotal`; las notas salen como `++ texto`, los extras como `  + nombre` con su propio cálculo, y al final `TOTAL = importe` (con extras). Los importes llevan coma decimal y punto de miles. Es un texto armado en el front (`textoVistaPrevia` en `calculos.ts`): no registra nada, no se imprime y los precios son los que muestra la pantalla (el servidor los vuelve a calcular al registrar).
 
+## Alto del cuadro de mesas
+
+Desde tablet ancha (768 px) el cuadro de mesas queda fijo al desplazar la página y tiene la misma altura que el panel de detalle de la derecha (que ocupa siempre todo el alto disponible hasta el menú de abajo y se desplaza con su propia barra si su contenido es más largo); el área de las mesas se desplaza con su propia barra vertical, y el encabezado con el área y los filtros se queda a la vista. En celular no cambia (la página se desplaza normal).
+
+## Vista Plano de mesas
+
+Todas las mesas se dibujan del mismo tamaño: una mesa rectangular con su número y, dentro, el consumo si está ocupada o la capacidad si está libre. Las sillas se reparten por los cuatro lados (máximo 12 dibujadas) y en las mesas ocupadas las sillas tomadas se ven más oscuras según los comensales. Al pasar el mouse en laptop, o al mantener apretada la mesa en celular y tablet (0,45 s), sale una tarjeta flotante (`InfoMesaFlotante`) con el número de mesa, su estado, comensales, cuentas y consumo (o las sillas si está libre). En táctil la tarjeta se cierra con cualquier toque o al desplazar, sin bloquear la pantalla: mantener apretada otra mesa cierra la anterior y abre la nueva, y esa pulsación larga no elige la mesa.
+
+Usa la librería **motion** (`motion/react`) solo para el anillo de selección, que se desliza de una mesa a otra (`layoutId`); respeta "reducir movimiento" del sistema. El resto (entrada, elevación al pasar el mouse, pulsación) es CSS, y cada mesa está memorizada (`memo`) para que elegir una no vuelva a dibujar las demás: se probó que animar cada mesa con la librería hacía lenta la selección.
+
+## Filtros de mesas
+
+Bajo el selector de área hay botones de filtro: **Todos** (siempre visible y activo al entrar), **Libre**, **Ocupada** y **Selección** (solo la mesa elegida). Cada uno muestra su cantidad entre paréntesis. Es un filtro solo del front sobre las mesas que ya trajo la API; no se llama al backend de nuevo. Si un filtro no tiene mesas se avisa con un enlace "Ver todas".
+
+## Datos de cuentas en tablet y escritorio
+
+Desde 1024 px de ancho la pantalla `/pedidos/cuentas/:codigo` ocupa todo el alto hasta los menús de abajo y la página no se desplaza: "Cuentas de la mesa" y "Listado de clientes" tienen cada uno su propia barra vertical. Por debajo de 1024 px se mantiene el desplazamiento normal de la página.
+
+## Pantallas de carga
+
+Mesas, cuentas, categorías, productos (y al cambiar de subcategoría) usan `CargadorDiferido` (`shared/ui/Cargador.tsx`): el logo de RT - AXON con su barra de avance y un texto ("Cargando mesas..."). Aparece solo si la carga pasa de 250 ms, así una respuesta rápida no hace parpadear la pantalla.
+
 ## Pendientes
 
 - Insumos modificables y textos predefinidos de la comanda (el backend ya los expone; la pantalla aún no).

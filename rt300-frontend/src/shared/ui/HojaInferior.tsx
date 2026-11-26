@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useId, useRef, type PointerEvent, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { X } from 'lucide-react'
 import { bloquearScroll } from './bloquearScroll'
@@ -10,20 +10,25 @@ interface HojaInferiorProps {
   children: ReactNode
 }
 
-const DURACION_MS = 180
-const DISTANCIA_CIERRE = 120
-const VELOCIDAD_CIERRE = 0.5
-const DISTANCIA_MINIMA_VELOCIDAD = 40
+const DURACION_MS = 160
+const CURVA = 'cubic-bezier(0.22, 1, 0.36, 1)'
+const DISTANCIA_CIERRE = 100
+const VELOCIDAD_CIERRE = 0.45
+const DISTANCIA_MINIMA_VELOCIDAD = 30
+
+interface Arrastre {
+  y: number
+  instante: number
+  alto: number
+}
 
 export function HojaInferior({ abierta, alCerrar, titulo, children }: HojaInferiorProps) {
   const idTitulo = useId()
   const hoja = useRef<HTMLElement>(null)
-  const arrastreInicial = useRef<{ y: number; instante: number } | null>(null)
+  const fondo = useRef<HTMLDivElement>(null)
+  const arrastre = useRef<Arrastre | null>(null)
   const temporizador = useRef<number | null>(null)
-  const [desplazamiento, setDesplazamiento] = useState(0)
-  const [animando, setAnimando] = useState(false)
-  const [saliendo, setSaliendo] = useState(false)
-  const [alto, setAlto] = useState(1)
+  const saliendo = useRef(false)
 
   useEffect(
     () => () => {
@@ -32,20 +37,27 @@ export function HojaInferior({ abierta, alCerrar, titulo, children }: HojaInferi
     [],
   )
 
+  const mover = (desplazamiento: number, alto: number, transicion: boolean) => {
+    const panel = hoja.current
+    const velo = fondo.current
+    if (!panel || !velo) return
+    const duracion = transicion ? `${DURACION_MS}ms` : '0ms'
+    panel.style.transition = `transform ${duracion} ${CURVA}`
+    velo.style.transition = `opacity ${duracion} ease-out`
+    panel.style.transform = desplazamiento ? `translate3d(0, ${desplazamiento}px, 0)` : ''
+    velo.style.opacity = desplazamiento ? String(1 - Math.min(1, desplazamiento / alto)) : ''
+  }
+
   const cerrarAnimado = useCallback(() => {
-    if (saliendo) return
-    setSaliendo(true)
-    setAnimando(true)
-    const altura = hoja.current?.offsetHeight ?? window.innerHeight
-    setAlto(altura)
-    setDesplazamiento(altura)
+    if (saliendo.current) return
+    saliendo.current = true
+    const alto = hoja.current?.offsetHeight ?? window.innerHeight
+    mover(alto, alto, true)
     temporizador.current = window.setTimeout(() => {
+      saliendo.current = false
       alCerrar()
-      setSaliendo(false)
-      setAnimando(false)
-      setDesplazamiento(0)
     }, DURACION_MS)
-  }, [saliendo, alCerrar])
+  }, [alCerrar])
 
   useEffect(() => {
     if (!abierta) return
@@ -62,26 +74,25 @@ export function HojaInferior({ abierta, alCerrar, titulo, children }: HojaInferi
 
   if (!abierta) return null
 
-  const opacidadFondo = 1 - Math.min(1, desplazamiento / alto)
-
-  const alEmpezar = (evento: React.PointerEvent<HTMLDivElement>) => {
-    if (saliendo) return
+  const alEmpezar = (evento: PointerEvent<HTMLDivElement>) => {
+    if (saliendo.current) return
     evento.currentTarget.setPointerCapture(evento.pointerId)
-    setAlto(hoja.current?.offsetHeight ?? 1)
-    arrastreInicial.current = { y: evento.clientY, instante: performance.now() }
-    setAnimando(false)
+    const alto = hoja.current?.offsetHeight ?? 1
+    arrastre.current = { y: evento.clientY, instante: performance.now(), alto }
+    if (hoja.current) hoja.current.style.willChange = 'transform'
   }
 
-  const alMover = (evento: React.PointerEvent<HTMLDivElement>) => {
-    const inicio = arrastreInicial.current
+  const alMover = (evento: PointerEvent<HTMLDivElement>) => {
+    const inicio = arrastre.current
     if (!inicio) return
-    setDesplazamiento(Math.max(0, evento.clientY - inicio.y))
+    mover(Math.max(0, evento.clientY - inicio.y), inicio.alto, false)
   }
 
-  const alSoltar = (evento: React.PointerEvent<HTMLDivElement>) => {
-    const inicio = arrastreInicial.current
+  const alSoltar = (evento: PointerEvent<HTMLDivElement>) => {
+    const inicio = arrastre.current
     if (!inicio) return
-    arrastreInicial.current = null
+    arrastre.current = null
+    if (hoja.current) hoja.current.style.willChange = ''
     const distancia = Math.max(0, evento.clientY - inicio.y)
     const velocidad = distancia / Math.max(1, performance.now() - inicio.instante)
     if (
@@ -91,19 +102,15 @@ export function HojaInferior({ abierta, alCerrar, titulo, children }: HojaInferi
       cerrarAnimado()
       return
     }
-    setAnimando(true)
-    setDesplazamiento(0)
+    mover(0, inicio.alto, true)
   }
 
   return createPortal(
     <div className="fixed inset-0 z-[60] flex items-end">
       <div
+        ref={fondo}
         aria-hidden
-        style={{
-          opacity: opacidadFondo,
-          transition: animando ? `opacity ${DURACION_MS}ms ease-out` : 'none',
-        }}
-        className="absolute inset-0 animate-[fade_0.15s_ease-out] bg-black/55 escritorio:backdrop-blur-sm"
+        className="absolute inset-0 animate-[fade_0.12s_ease-out] bg-black/55"
       />
       <button
         type="button"
@@ -117,18 +124,14 @@ export function HojaInferior({ abierta, alCerrar, titulo, children }: HojaInferi
         role="dialog"
         aria-modal="true"
         aria-labelledby={idTitulo}
-        style={{
-          transform: desplazamiento ? `translateY(${desplazamiento}px)` : undefined,
-          transition: animando ? `transform ${DURACION_MS}ms ease-out` : 'none',
-        }}
-        className="relative mx-auto flex max-h-[88dvh] w-full max-w-lg animate-[subir_0.22s_cubic-bezier(0.2,0.9,0.3,1)] flex-col overflow-hidden rounded-t-[28px] border-t border-line bg-surface text-fg shadow-[0_-24px_70px_rgba(1,21,38,.35)]"
+        className="relative mx-auto flex max-h-[88dvh] w-full max-w-lg animate-[subir_0.18s_cubic-bezier(0.22,1,0.36,1)] flex-col overflow-hidden rounded-t-[28px] border-t border-line bg-surface text-fg shadow-[0_-12px_36px_rgba(1,21,38,.28)]"
       >
         <div
           onPointerDown={alEmpezar}
           onPointerMove={alMover}
           onPointerUp={alSoltar}
           onPointerCancel={alSoltar}
-          className="relative flex h-9 shrink-0 cursor-grab touch-none items-center justify-center active:cursor-grabbing"
+          className="relative flex h-12 shrink-0 cursor-grab touch-none items-center justify-center active:cursor-grabbing"
         >
           <span className="h-1.5 w-11 rounded-full bg-line" aria-hidden />
           <h2 id={idTitulo} className="sr-only">

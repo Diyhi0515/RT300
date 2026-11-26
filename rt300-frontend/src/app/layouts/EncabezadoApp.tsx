@@ -1,5 +1,5 @@
-import { CalendarDays } from 'lucide-react'
-import { useLocation } from 'react-router-dom'
+import { CalendarDays, House } from 'lucide-react'
+import { Link, useLocation } from 'react-router-dom'
 import { useSesion } from '@/features/auth'
 import { fechaLarga, primerNombre, saludoSegunHora } from '@/features/inicio/saludo'
 import { CambiarTema } from '@/shared/ui/CambiarTema'
@@ -39,6 +39,19 @@ export function EncabezadoApp({ perfilAbierto, alCambiarPerfil }: EncabezadoAppP
             className="h-9 w-auto sm:h-10 short:h-8"
           />
           <div className="flex items-center gap-2 sm:gap-3">
+            <Link
+              to="/inicio"
+              aria-label="Ir al inicio"
+              title="Inicio"
+              aria-current={esInicio ? 'page' : undefined}
+              className={`hidden size-10 place-items-center rounded-xl border transition active:scale-95 escritorio:grid ${
+                esInicio
+                  ? 'border-[#1b8ef2]/60 bg-[#1b8ef2]/20 text-white'
+                  : 'border-white/10 bg-white/5 text-white hover:bg-white/10'
+              }`}
+            >
+              <House className="size-5" aria-hidden />
+            </Link>
             <CambiarTema compact />
             <MenuUsuario abierto={perfilAbierto} alCambiar={alCambiarPerfil} />
           </div>

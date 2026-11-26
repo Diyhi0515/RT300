@@ -85,7 +85,7 @@ export function ModalSubsecciones({
           </label>
         )}
 
-        <ul className="grid max-h-[55dvh] grid-cols-2 gap-2.5 overflow-y-auto overscroll-contain p-1 sm:grid-cols-3 lg:grid-cols-4 lg:gap-3 short:max-h-[50dvh]">
+        <ul className="grid max-h-[55dvh] grid-cols-2 gap-2.5 overflow-y-auto overscroll-contain rounded-2xl border border-line border-t-4 border-t-club-pc bg-surface p-2.5 sm:grid-cols-3 lg:grid-cols-4 lg:gap-3 short:max-h-[50dvh]">
           {opciones.map((sub, i) => {
             const activa = sub.codigo === subseccion
             return (
@@ -99,8 +99,8 @@ export function ModalSubsecciones({
                   style={{ animationDelay: `${Math.min(i, 8) * 15}ms` }}
                   className={`flex min-h-14 w-full animate-[chip-in_0.16s_ease-out_both] cursor-pointer items-center gap-2 rounded-xl px-3 py-2 text-left text-xs font-bold uppercase leading-tight transition active:scale-95 lg:min-h-16 lg:px-4 lg:text-sm [overflow-wrap:anywhere] ${
                     activa
-                      ? 'bg-gradient-to-br from-club-pc to-club-tertiary text-white shadow-lg shadow-club-pc/30'
-                      : 'border border-line bg-surface hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-md'
+                      ? 'border-2 border-primary bg-primary/10 shadow-[0_10px_26px_rgba(43,83,184,.28)]'
+                      : 'border-2 border-club-pc/40 bg-club-pc/10 hover:border-club-pc/80 hover:-translate-y-0.5 hover:shadow-lg'
                   }`}
                 >
                   <span className="min-w-0 flex-1">{sub.nombre}</span>

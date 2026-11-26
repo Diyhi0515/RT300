@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { BandaAxon } from './BandaAxon'
 import { tonos, type Tono } from './tonos'
 
@@ -57,6 +58,39 @@ export function CargadorBloque({ tone, label }: { tone?: Tono; label?: string })
   return (
     <div className="grid place-items-center py-24">
       <Cargador tone={tone} label={label} />
+    </div>
+  )
+}
+
+interface CargadorDiferidoProps {
+  tone?: Tono
+  label?: string
+  size?: Tamano
+  retardoMs?: number
+  className?: string
+}
+
+export function CargadorDiferido({
+  tone,
+  label,
+  size = 'md',
+  retardoMs = 250,
+  className = 'py-14',
+}: CargadorDiferidoProps) {
+  const [visible, setVisible] = useState(false)
+
+  useEffect(() => {
+    const temporizador = window.setTimeout(() => setVisible(true), retardoMs)
+    return () => window.clearTimeout(temporizador)
+  }, [retardoMs])
+
+  return (
+    <div className={`grid min-h-40 place-items-center ${className}`}>
+      {visible && (
+        <div className="animate-[fade_0.2s_ease-out]">
+          <Cargador tone={tone} label={label} size={size} />
+        </div>
+      )}
     </div>
   )
 }

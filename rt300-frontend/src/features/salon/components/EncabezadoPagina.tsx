@@ -27,7 +27,7 @@ export function EncabezadoPagina({ titulo, icono: Icono }: EncabezadoPaginaProps
       </div>
       <Link
         to="/inicio"
-        className="ml-auto hidden h-10 shrink-0 items-center gap-2 rounded-xl border border-line px-3 text-sm font-semibold text-muted transition hover:border-primary/50 hover:text-fg active:scale-95 md:inline-flex"
+        className="ml-auto hidden h-10 shrink-0 items-center gap-2 rounded-xl border border-line px-3 text-sm font-semibold text-muted transition hover:border-primary/50 hover:text-fg active:scale-95 md:inline-flex escritorio:hidden"
       >
         <ArrowLeft className="size-4" />
         Inicio

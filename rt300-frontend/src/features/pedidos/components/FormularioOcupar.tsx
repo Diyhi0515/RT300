@@ -42,7 +42,7 @@ export function FormularioOcupar({ mesa }: FormularioOcuparProps) {
   }
 
   return (
-    <div className="space-y-4 p-5 short:space-y-2 short:p-3">
+    <div className="space-y-4 px-5 pb-4 pt-5 short:space-y-2 short:p-3">
       <h4 className="text-sm font-bold text-primary">Ocupar {mesa.codigo}</h4>
       <Contador
         etiqueta="Comensales"

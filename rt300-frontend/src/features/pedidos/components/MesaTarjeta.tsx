@@ -1,4 +1,4 @@
-import { Armchair, Users } from 'lucide-react'
+import { Armchair, ReceiptText, Users } from 'lucide-react'
 import { formatoMonedaEntera } from '@/features/salon/formato'
 import { totalMesa } from '../calculos'
 import type { EstadoMesaPlano, MesaPlano } from '../types'
@@ -67,10 +67,16 @@ export function MesaTarjeta({ mesa, seleccionada, indice, alElegir }: MesaTarjet
 
       {ocupada ? (
         <span className="mt-3 block space-y-1 short:mt-1.5">
-          <span className="flex items-center gap-1 text-xs text-muted">
-            <Users className="size-3.5 shrink-0" aria-hidden />
-            <span className="truncate">
-              {mesa.comensales} {mesa.comensales === 1 ? 'comensal' : 'comensales'}
+          <span className="flex flex-wrap items-center justify-between gap-x-2 gap-y-0.5 text-xs text-muted">
+            <span className="flex min-w-0 items-center gap-1">
+              <Users className="size-3.5 shrink-0" aria-hidden />
+              <span className="truncate">
+                {mesa.comensales} {mesa.comensales === 1 ? 'comensal' : 'comensales'}
+              </span>
+            </span>
+            <span className="flex shrink-0 items-center gap-1">
+              <ReceiptText className="size-3.5 shrink-0" aria-hidden />
+              {mesa.numeroCuentas} {mesa.numeroCuentas === 1 ? 'cuenta' : 'cuentas'}
             </span>
           </span>
           <strong className="truncate text-sm font-extrabold tabular-nums text-fg">

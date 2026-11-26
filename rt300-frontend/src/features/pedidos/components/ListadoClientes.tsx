@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Search, UserRoundSearch, X } from 'lucide-react'
+import { CargadorDiferido } from '@/shared/ui/Cargador'
 import { iniciales } from '../calculos'
 import { useClientes } from '../hooks'
 import type { ClienteRegistrado } from '../types'
@@ -53,7 +54,7 @@ export function ListadoClientes({ seleccionado, alElegir }: ListadoClientesProps
   return (
     <section
       aria-label="Listado de clientes"
-      className="min-w-0 space-y-3 rounded-3xl border border-line bg-surface p-4 shadow-[0_12px_32px_rgba(1,21,38,.06)] sm:p-5 lg:sticky lg:top-[88px]"
+      className="min-w-0 space-y-3 rounded-3xl border border-line bg-surface p-4 shadow-[0_12px_32px_rgba(1,21,38,.06)] sm:p-5 lg:flex lg:h-full lg:min-h-0 lg:flex-col lg:space-y-0 lg:gap-3"
     >
       <h2 className="flex items-center gap-2 text-sm font-bold">
         <UserRoundSearch className="size-4 text-club-primary" aria-hidden />
@@ -90,22 +91,20 @@ export function ListadoClientes({ seleccionado, alElegir }: ListadoClientesProps
         )}
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-line">
-        <div className="grid grid-cols-[4.5rem_minmax(0,1fr)] gap-x-2 bg-club-pc/10 px-3 py-2 text-[10px] font-extrabold uppercase tracking-wide text-club-primary">
+      <div className="overflow-hidden rounded-2xl border border-line lg:flex lg:min-h-0 lg:flex-1 lg:flex-col">
+        <div className="grid grid-cols-[4.5rem_minmax(0,1fr)] lg:shrink-0 gap-x-2 bg-club-pc/10 px-3 py-2 text-[10px] font-extrabold uppercase tracking-wide text-club-primary">
           <span>Código</span>
           <span>Nombre</span>
         </div>
         {cargando && listado.length === 0 ? (
-          <p role="status" className="px-4 py-8 text-center text-sm text-muted">
-            Cargando clientes...
-          </p>
+          <CargadorDiferido size="sm" label="Cargando clientes..." className="py-8" />
         ) : listado.length === 0 ? (
           <p className="px-4 py-8 text-center text-sm text-muted">Sin resultados.</p>
         ) : (
           <ul
             tabIndex={0}
             aria-label="Clientes"
-            className="max-h-[min(58dvh,32rem)] lg:max-h-[min(52dvh,26rem)] divide-y divide-line overflow-y-auto overscroll-contain outline-none [scrollbar-color:var(--color-club-pc)_transparent] [scrollbar-width:thin]"
+            className="max-h-[min(58dvh,32rem)] lg:max-h-none lg:min-h-0 lg:flex-1 divide-y divide-line overflow-y-auto overscroll-contain outline-none [scrollbar-color:var(--color-club-pc)_transparent] [scrollbar-width:thin]"
           >
             {listado.map((c) => {
               const activo = c.codigo === seleccionado

@@ -19,7 +19,7 @@ interface ResumenComandaProps {
 }
 
 const herramienta = (activa: boolean) =>
-  `inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-lg border px-2.5 text-[11px] font-bold transition active:scale-95 lg:h-9 lg:text-xs ${
+  `inline-flex h-8 shrink-0 cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-lg border px-2.5 text-[11px] font-bold transition active:scale-95 lg:h-9 lg:text-xs ${
     activa
       ? 'border-primary/50 bg-primary/10 text-primary'
       : 'border-line bg-surface text-muted hover:border-primary/50 hover:text-fg'
@@ -73,7 +73,7 @@ export function ResumenComanda({
                     key={plato.id}
                     className="rounded-xl border border-line bg-bg/60 p-2.5 short:p-2"
                   >
-                    <p className="line-clamp-2 text-sm font-bold uppercase leading-tight [overflow-wrap:anywhere] lg:text-base">
+                    <p className="line-clamp-2 text-sm font-bold uppercase leading-tight [overflow-wrap:anywhere] lg:text-base short:lg:text-sm">
                       {plato.nombre}
                     </p>
                     <div className="mt-2 flex items-center justify-between gap-2">
@@ -106,7 +106,7 @@ export function ResumenComanda({
                       </span>
                     </div>
                     {(categoria || subcategoria) && (
-                      <p className="mt-1.5 line-clamp-1 text-[10px] font-semibold uppercase tracking-wide text-muted lg:text-[11px]">
+                      <p className="mt-1.5 line-clamp-1 short:hidden text-[10px] font-semibold uppercase tracking-wide text-muted lg:text-[11px]">
                         {[categoria, subcategoria].filter(Boolean).join(' · ')}
                       </p>
                     )}
@@ -138,39 +138,41 @@ export function ResumenComanda({
                         )}
                       </dl>
                     )}
-                    <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                      <button
-                        type="button"
-                        aria-label={`Nota de ${plato.nombre}`}
-                        onClick={() => alEditar(plato.id, 'nota')}
-                        className={herramienta(!!nota)}
-                      >
-                        <NotebookPen className="size-3.5" aria-hidden />
-                        Nota
-                      </button>
-                      <button
-                        type="button"
-                        aria-label={`Extras de ${plato.nombre}`}
-                        onClick={() => alEditar(plato.id, 'extras')}
-                        className={herramienta(!!extras?.length)}
-                      >
-                        <CirclePlus className="size-3.5" aria-hidden />
-                        Extras
-                      </button>
-                      <button
-                        type="button"
-                        aria-label={`Centro de producción de ${plato.nombre}`}
-                        onClick={() => alEditar(plato.id, 'centro')}
-                        className={herramienta(!!centro)}
-                      >
-                        <House className="size-3.5" aria-hidden />
-                        Centro
-                      </button>
+                    <div className="mt-2 flex items-start gap-1.5 short:mt-1.5">
+                      <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
+                        <button
+                          type="button"
+                          aria-label={`Nota de ${plato.nombre}`}
+                          onClick={() => alEditar(plato.id, 'nota')}
+                          className={herramienta(!!nota)}
+                        >
+                          <NotebookPen className="size-3.5" aria-hidden />
+                          Nota
+                        </button>
+                        <button
+                          type="button"
+                          aria-label={`Extras de ${plato.nombre}`}
+                          onClick={() => alEditar(plato.id, 'extras')}
+                          className={herramienta(!!extras?.length)}
+                        >
+                          <CirclePlus className="size-3.5" aria-hidden />
+                          Extras
+                        </button>
+                        <button
+                          type="button"
+                          aria-label={`Centro de producción de ${plato.nombre}`}
+                          onClick={() => alEditar(plato.id, 'centro')}
+                          className={herramienta(!!centro)}
+                        >
+                          <House className="size-3.5" aria-hidden />
+                          Centro
+                        </button>
+                      </div>
                       <button
                         type="button"
                         aria-label={`Eliminar ${plato.nombre}`}
                         onClick={() => alEliminar(plato.id)}
-                        className="ml-auto grid size-8 cursor-pointer place-items-center rounded-lg border border-danger/40 text-danger transition hover:bg-danger/10 active:scale-90 lg:size-9"
+                        className="grid size-8 shrink-0cursor-pointer place-items-center rounded-lg border border-danger/40 text-danger transition hover:bg-danger/10 active:scale-90 lg:size-9"
                       >
                         <Trash2 className="size-3.5" aria-hidden />
                       </button>

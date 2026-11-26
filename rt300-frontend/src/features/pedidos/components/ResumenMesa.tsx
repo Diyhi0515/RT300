@@ -7,6 +7,7 @@ import {
   Pencil,
   Plus,
   Printer,
+  ReceiptText,
   UserRound,
   Users,
   UtensilsCrossed,
@@ -42,6 +43,12 @@ const COLUMNAS = 'grid-cols-[minmax(0,1fr)_2rem_3.6rem_4.2rem]'
 
 const accion =
   'flex h-11 cursor-pointer items-center justify-center gap-2 rounded-xl border border-line bg-surface px-3 text-sm font-semibold transition hover:border-primary/50 hover:bg-primary/5 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 short:h-10'
+
+const baldosa =
+  'group flex min-h-[4.75rem] cursor-pointer flex-col items-center justify-center gap-1.5 rounded-2xl border border-line bg-surface px-2 py-2.5 text-center text-xs font-bold leading-tight transition hover:-translate-y-0.5 hover:border-club-pc/60 hover:bg-club-pc/5 hover:shadow-md active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0 disabled:hover:bg-surface disabled:hover:shadow-none short:min-h-0 short:flex-row short:justify-start short:gap-2 short:px-3 short:py-2 short:text-sm'
+
+const iconoBaldosa =
+  'grid size-8 shrink-0 place-items-center rounded-lg bg-club-pc/10 text-club-primary transition group-hover:bg-club-pc group-hover:text-white group-disabled:group-hover:bg-club-pc/10 group-disabled:group-hover:text-club-primary short:size-7'
 
 const foliosOrdenados = new Set<number>()
 
@@ -201,7 +208,7 @@ export function ResumenMesa({ mesa }: ResumenMesaProps) {
   }
 
   return (
-    <div className="space-y-4 p-5 short:space-y-2.5 short:p-3">
+    <div className="flex flex-1 flex-col gap-4 px-5 pb-4 pt-5 short:gap-2.5 short:p-3">
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 text-xs">
         <p className="flex flex-wrap items-center gap-x-3 gap-y-1 font-semibold text-muted">
           <span className="inline-flex items-center gap-1.5">
@@ -266,7 +273,7 @@ export function ResumenMesa({ mesa }: ResumenMesaProps) {
       ) : (
         <>
           {mesa.cuentas.length > 1 && (
-            <div className="-mb-1 flex justify-end">
+            <div className="-mb-1 -mt-3 flex justify-end">
               <button
                 type="button"
                 onClick={() => setVerTodas(true)}
@@ -336,12 +343,12 @@ export function ResumenMesa({ mesa }: ResumenMesaProps) {
 
           {cuenta && (
             <>
-              <h4 className="min-w-0 truncate text-sm font-bold">
+              <h4 className="mt-3 min-w-0 truncate text-sm font-bold">
                 Cuenta {cuenta.numero}
                 <span className="font-medium text-muted"> · {cuenta.nombre}</span>
               </h4>
 
-              <div className="overflow-hidden rounded-2xl border border-line">
+              <div className="flex min-h-[9rem] flex-col overflow-hidden rounded-2xl border border-line md:flex-1">
                 <div
                   className={`grid ${COLUMNAS} gap-x-2 bg-club-pc/10 px-3 py-2 text-[10px] font-extrabold uppercase tracking-wide text-club-primary`}
                 >
@@ -351,12 +358,12 @@ export function ResumenMesa({ mesa }: ResumenMesaProps) {
                   <span className="text-right">Total</span>
                 </div>
                 {cuenta.lineas.length === 0 ? (
-                  <div className="flex flex-col items-center gap-2 px-4 py-7 text-center short:py-4">
+                  <div className="flex flex-1 flex-col items-center justify-center gap-2 px-4 py-7 text-center short:py-4">
                     <UtensilsCrossed className="size-6 text-muted" aria-hidden />
                     <p className="text-sm text-muted">Esta cuenta todavía no tiene pedidos.</p>
                   </div>
                 ) : (
-                  <ul className="max-h-[min(34dvh,16rem)] divide-y divide-line overflow-y-auto overscroll-contain short:max-h-[28dvh]">
+                  <ul className="max-h-[min(34dvh,16rem)] divide-y divide-line overflow-y-auto overscroll-contain md:max-h-none md:min-h-0 md:flex-1 short:max-h-[28dvh]">
                     {cuenta.lineas.map((l) => (
                       <li
                         key={l.id}
@@ -413,51 +420,55 @@ export function ResumenMesa({ mesa }: ResumenMesaProps) {
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
-                    className={accion}
+                    className={baldosa}
                     disabled={cuenta.lineas.length === 0 || imprimir.isPending}
                     onClick={() => void imprimirCuenta()}
                   >
-                    <Printer className="size-4" />
+                    <span className={iconoBaldosa}>
+                      <Printer className="size-4" aria-hidden />
+                    </span>
                     {imprimir.isPending ? 'Enviando...' : 'Imprimir cuenta'}
                   </button>
                   <button
                     type="button"
-                    className={accion}
+                    className={baldosa}
+                    disabled={cuenta.lineas.length === 0}
+                    onClick={() => setVistaImpresa(true)}
+                  >
+                    <span className={iconoBaldosa}>
+                      <ReceiptText className="size-4" aria-hidden />
+                    </span>
+                    Vista impresa
+                  </button>
+                  <button
+                    type="button"
+                    className={baldosa}
                     onClick={() => {
                       setComensales(mesa.comensales)
                       setCuentas(mesa.cuentas.length)
                       setEditando(true)
                     }}
                   >
-                    <Pencil className="size-4" />
+                    <span className={iconoBaldosa}>
+                      <Pencil className="size-4" aria-hidden />
+                    </span>
                     Datos de mesa
                   </button>
-                  <button
-                    type="button"
-                    className={`${accion} col-span-2`}
-                    disabled={cuenta.lineas.length === 0}
-                    onClick={() => setVistaImpresa(true)}
-                  >
-                    <Printer className="size-4" />
-                    Vista impresa
-                  </button>
-                  <button
-                    type="button"
-                    className={`${accion} col-span-2`}
-                    onClick={() => setVerComandas(true)}
-                  >
-                    <ClipboardList className="size-4" />
+                  <button type="button" className={baldosa} onClick={() => setVerComandas(true)}>
+                    <span className={iconoBaldosa}>
+                      <ClipboardList className="size-4" aria-hidden />
+                    </span>
                     Comandas de la mesa
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => setConfirmando('liberar')}
-                    className={`${accion} col-span-2 border-danger/40 text-danger hover:border-danger hover:bg-danger/10`}
-                  >
-                    <DoorOpen className="size-4" />
-                    Habilitar mesa
-                  </button>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => setConfirmando('liberar')}
+                  className="mt-1 flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-danger/40 bg-danger/5 text-sm font-bold text-danger transition hover:border-danger hover:bg-danger/10 active:scale-[0.98] short:h-10"
+                >
+                  <DoorOpen className="size-4" aria-hidden />
+                  Habilitar mesa
+                </button>
               </div>
             </>
           )}

@@ -12,6 +12,7 @@ import { useActualizarCuenta, useMesaDetalle } from '../hooks'
 import { mapearCliente } from '../mapeos'
 import { usePedidos } from '../store'
 import type { ClienteRegistrado, Cuenta, MesaDetalle } from '../types'
+import { CargadorDiferido } from '@/shared/ui/Cargador'
 
 type Vista = 'datos' | 'clientes'
 
@@ -36,11 +37,7 @@ export function DatosCuentasPage() {
   const { mesa, cargandoMesas, cargandoCuentas } = useMesaDetalle(codigo ?? null)
 
   if (cargandoMesas || cargandoCuentas) {
-    return (
-      <p role="status" className="py-16 text-center text-sm text-muted">
-        Cargando cuentas...
-      </p>
-    )
+    return <CargadorDiferido label="Cargando cuentas..." className="py-24" />
   }
   if (!mesa || mesa.cuentas.length === 0) return <Navigate to="/pedidos" replace />
 
@@ -125,8 +122,8 @@ function Contenido({ mesa }: ContenidoProps) {
   }
 
   return (
-    <div className="space-y-4 sm:space-y-5 short:space-y-3">
-      <header className="space-y-3">
+    <div className="space-y-4 [--hdr:73px] [--pie:calc(env(safe-area-inset-bottom)+6.5rem)] sm:space-y-5 lg:flex lg:h-[calc(var(--alto-app,100dvh)-var(--hdr)-2rem-var(--pie))] lg:flex-col escritorio:[--pie:2rem] short:space-y-3 short:[--hdr:57px] short:[--pie:calc(env(safe-area-inset-bottom)+4.5rem)] short:lg:h-[calc(var(--alto-app,100dvh)-var(--hdr)-1rem-var(--pie))] short:escritorio:[--pie:1rem]">
+      <header className="space-y-3 lg:shrink-0">
         <div className="flex items-center gap-3">
           <Link
             to="/pedidos"
@@ -192,9 +189,9 @@ function Contenido({ mesa }: ContenidoProps) {
         ))}
       </div>
 
-      <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_380px]">
+      <div className="grid items-start gap-4 lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(0,1fr)_380px] lg:grid-rows-[minmax(0,1fr)]">
         <div
-          className={`min-w-0 space-y-4 ${vista === 'datos' ? '' : 'hidden md:block md:space-y-4'}`}
+          className={`min-w-0 space-y-4 lg:flex lg:h-full lg:min-h-0 lg:flex-col ${vista === 'datos' ? '' : 'hidden md:block lg:flex'}`}
         >
           <div className="lg:hidden">
             <SelectorCuentas cuentas={mesa.cuentas} seleccionada={numero} alElegir={elegirCuenta} />
@@ -205,7 +202,7 @@ function Contenido({ mesa }: ContenidoProps) {
               e.preventDefault()
               void modificar()
             }}
-            className="space-y-4 rounded-3xl border border-line bg-surface p-4 shadow-[0_12px_32px_rgba(1,21,38,.06)] sm:p-5"
+            className="space-y-4 rounded-3xl border border-line bg-surface p-4 shadow-[0_12px_32px_rgba(1,21,38,.06)] sm:p-5 lg:shrink-0 lg:space-y-3 lg:p-4"
           >
             {clienteCargado && (
               <p
@@ -262,7 +259,7 @@ function Contenido({ mesa }: ContenidoProps) {
                 </div>
               </div>
             </div>
-            <div className="grid gap-3 sm:grid-cols-[12rem_minmax(0,1fr)]">
+            <div className="grid gap-3 sm:grid-cols-[12rem_minmax(0,1fr)] lg:grid-cols-[9rem_minmax(0,1fr)_auto] lg:items-end">
               <div className="space-y-1.5">
                 <label htmlFor="datos-cuenta-nit" className={etiqueta}>
                   NIT / CI
@@ -289,28 +286,28 @@ function Contenido({ mesa }: ContenidoProps) {
                   autoComplete="off"
                 />
               </div>
-            </div>
-            <div className="grid gap-2 sm:flex sm:justify-end">
-              <button
-                type="button"
-                onClick={() => setVista('clientes')}
-                className={`${botonSecundario} md:hidden`}
-              >
-                <UserRoundSearch className="size-4" />
-                Buscar en la lista de clientes
-              </button>
-              <button
-                type="submit"
-                disabled={actualizar.isPending}
-                className={`${botonPrimario} w-full disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto`}
-              >
-                <Check className="size-4" />
-                {actualizar.isPending ? 'Guardando...' : 'Modificar'}
-              </button>
+              <div className="grid gap-2 sm:col-span-2 sm:flex sm:justify-end lg:col-span-1">
+                <button
+                  type="button"
+                  onClick={() => setVista('clientes')}
+                  className={`${botonSecundario} md:hidden`}
+                >
+                  <UserRoundSearch className="size-4" />
+                  Buscar en la lista de clientes
+                </button>
+                <button
+                  type="submit"
+                  disabled={actualizar.isPending}
+                  className={`${botonPrimario} w-full disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto`}
+                >
+                  <Check className="size-4" />
+                  {actualizar.isPending ? 'Guardando...' : 'Modificar'}
+                </button>
+              </div>
             </div>
           </form>
 
-          <div className="hidden lg:block">
+          <div className="hidden lg:flex lg:min-h-0 lg:flex-1 lg:flex-col">
             <TablaCuentasMesa
               cuentas={mesa.cuentas}
               seleccionada={numero}
@@ -319,7 +316,9 @@ function Contenido({ mesa }: ContenidoProps) {
           </div>
         </div>
 
-        <div className={`min-w-0 ${vista === 'clientes' ? '' : 'hidden md:block'}`}>
+        <div
+          className={`min-w-0 lg:flex lg:h-full lg:min-h-0 lg:flex-col ${vista === 'clientes' ? '' : 'hidden md:block lg:flex'}`}
+        >
           <ListadoClientes seleccionado={codigoCliente} alElegir={aplicarCliente} />
         </div>
       </div>
