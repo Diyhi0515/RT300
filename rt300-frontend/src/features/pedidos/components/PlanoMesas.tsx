@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { LayoutGrid, Map as IconoPlano, MousePointerClick, Rows3 } from 'lucide-react'
 import { LayoutGroup, MotionConfig } from 'motion/react'
 import { useSesion } from '@/features/auth'
@@ -25,8 +25,8 @@ const leerVista = (): Vista => {
 }
 
 const chip =
-  'inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-bold transition active:scale-95 hover:brightness-95'
-const activo = 'ring-2 ring-primary shadow-md shadow-primary/20'
+  'inline-flex cursor-pointer items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-bold transition active:scale-95 hover:brightness-95'
+const activo = 'outline-2 -outline-offset-2 outline-primary shadow-md shadow-primary/20'
 
 const VISTAS: { valor: Vista; etiqueta: string; icono: typeof Rows3 }[] = [
   { valor: 'tarjetas', etiqueta: 'Tarjetas', icono: Rows3 },
@@ -43,6 +43,13 @@ export function PlanoMesas() {
   const perfil = useSesion((s) => s.perfil)
   const [vista, setVista] = useState<Vista>(leerVista)
   const [filtro, setFiltro] = useState<Filtro>('todos')
+  const grupoFiltros = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    grupoFiltros.current
+      ?.querySelector('[aria-pressed="true"]')
+      ?.scrollIntoView?.({ inline: 'nearest', block: 'nearest', behavior: 'smooth' })
+  }, [filtro, seleccionada])
 
   const delArea = useMemo(() => mesas.filter((m) => m.areaId === areaId), [mesas, areaId])
   const conteo = resumenMesas(delArea).conteo
@@ -106,12 +113,12 @@ export function PlanoMesas() {
               })}
             </div>
           </div>
-          <div role="group" aria-label="Filtrar mesas" className="flex flex-wrap gap-1.5">
+          <div ref={grupoFiltros} role="group" aria-label="Filtrar mesas" className="flex flex-wrap gap-1.5 landscape:flex-nowrap landscape:-m-1 landscape:overflow-x-auto landscape:p-1landscape:[scrollbar-width:none] landscape:[&>button]:shrink-0 landscape:[&>button]:whitespace-nowrap [&::-webkit-scrollbar]:hidden">
             <button
               type="button"
               aria-pressed={filtro === 'todos'}
               onClick={() => setFiltro('todos')}
-              className={`${chip} bg-bg text-fg ring-1 ring-line ${filtro === 'todos' ? activo : ''}`}
+              className={`${chip} border-line bg-bg text-fg ${filtro === 'todos' ? activo : ''}`}
             >
               <LayoutGrid className="size-3.5" aria-hidden />
               Todos
@@ -125,7 +132,7 @@ export function PlanoMesas() {
                   type="button"
                   aria-pressed={filtro === estado}
                   onClick={() => setFiltro(estado)}
-                  className={`${chip} ${insignia} ${filtro === estado ? activo : ''}`}
+                  className={`${chip} border-transparent ${insignia} ${filtro === estado ? activo : ''}`}
                 >
                   <Icono className="size-3.5" aria-hidden />
                   {etiqueta}
@@ -137,7 +144,7 @@ export function PlanoMesas() {
               type="button"
               aria-pressed={filtro === 'seleccion'}
               onClick={() => setFiltro('seleccion')}
-              className={`${chip} bg-primary/10 text-primary ring-1 ring-primary/60 ${filtro === 'seleccion' ? activo : ''}`}
+              className={`${chip} border-primary ${filtro === 'seleccion' ? `${activo} bg-primary text-white` : 'bg-primary/10 text-primary'}`}
             >
               <MousePointerClick className="size-3.5" aria-hidden />
               Selección

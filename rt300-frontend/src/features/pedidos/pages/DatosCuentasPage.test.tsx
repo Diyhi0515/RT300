@@ -46,12 +46,12 @@ const cliente = { codigo: 662, nombre: 'EMPRESA DE PRUEBA', nruc: '1028' }
 Element.prototype.scrollIntoView = () => {}
 
 describe('DatosCuentasPage: buscar cliente por código', () => {
-  it('el botón carga el nombre y el NIT del cliente', async () => {
+  it('Enter carga el nombre y el NIT del cliente', async () => {
     const usuario = userEvent.setup()
     const { pedidos } = abrirPagina([cliente])
     await escribirCodigo(usuario, '662')
 
-    await usuario.click(screen.getByRole('button', { name: 'Buscar cliente por código' }))
+    await usuario.keyboard('{Enter}')
 
     await waitFor(() =>
       expect(screen.getByRole('textbox', { name: 'Nombre' })).toHaveValue('EMPRESA DE PRUEBA'),
@@ -79,7 +79,7 @@ describe('DatosCuentasPage: buscar cliente por código', () => {
     abrirPagina([])
     await escribirCodigo(usuario, '999999')
 
-    await usuario.click(screen.getByRole('button', { name: 'Buscar cliente por código' }))
+    await usuario.keyboard('{Enter}')
 
     await waitFor(() =>
       expect(JSON.stringify(useAvisos.getState())).toContain('Cliente no encontrado'),
