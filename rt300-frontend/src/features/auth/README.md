@@ -32,7 +32,7 @@ features/auth/
 │   └── PaginaInicioSesion.tsx    compone la pantalla (unas 50 líneas)
 └── components/
     ├── FondoInicio.tsx           fondo animado
-    ├── MarcaCabecera.tsx         "Club de Campo" y botón de tema
+    ├── MarcaCabecera.tsx         nombre del negocio (tabla `gbpmt`) y botón de tema
     ├── FormularioInicio.tsx      formulario completo
     ├── CampoUsuario.tsx          campo de usuario con botón de borrar
     ├── CampoClave.tsx            campo de contraseña con ojo

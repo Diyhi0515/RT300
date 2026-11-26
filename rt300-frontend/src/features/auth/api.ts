@@ -1,6 +1,7 @@
 import { http, revocarSesion } from '@/lib/http'
 import {
   esquemaRespuestaInicio,
+  esquemaRespuestaNegocio,
   esquemaRespuestaUsuarios,
   type DatosFormularioInicio,
 } from './esquemas'
@@ -16,3 +17,8 @@ export const listarUsuarios = async () => {
 }
 
 export const cerrarSesion = () => revocarSesion()
+
+export const obtenerNegocio = async () => {
+  const { data } = await http.get('/negocio')
+  return esquemaRespuestaNegocio.parse(data)
+}

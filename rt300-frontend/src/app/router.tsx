@@ -84,6 +84,13 @@ export const router = createBrowserRouter([
                     .ClientesAdminPage,
                 }),
               },
+              {
+                path: '/admin/ajustes',
+                lazy: async () => ({
+                  Component: (await import('@/features/admin/pages/AjustesAdminPage'))
+                    .AjustesAdminPage,
+                }),
+              },
             ],
           },
         ],

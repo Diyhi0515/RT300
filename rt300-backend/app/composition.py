@@ -26,6 +26,9 @@ from .modules.menu.almacen_imagenes import AlmacenImagenes
 from .modules.menu.cache import MenuRepoConCache
 from .modules.menu.repository import SqlMenuRepository
 from .modules.menu.service import MenuService
+from .modules.negocio.ajustes import AjustesSqlite
+from .modules.negocio.repository import SqlNegocioRepository
+from .modules.negocio.service import NegocioService
 from .modules.salon.repository import SqlSalonRepository
 from .modules.salon.service import SalonService
 
@@ -49,6 +52,11 @@ def emisor_tokens() -> EmisorTokens:
 
 def salon_service() -> SalonService:
     return SalonService(SqlSalonRepository(get_db()), _uow())
+
+
+def negocio_service() -> NegocioService:
+    cfg = current_app.config["APP_CONFIG"]
+    return NegocioService(SqlNegocioRepository(get_db()), AjustesSqlite(cfg.ajustes_db))
 
 
 def clientes_service() -> ClientesService:

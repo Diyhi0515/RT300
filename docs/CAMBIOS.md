@@ -385,6 +385,13 @@ No se portó `datos_modifica_insumo_rt300c`: está marcada «Eliminar» en el PH
 
 ---
 
+## 2026-11-26 · Nombre del negocio *(sin commit al escribir esto)*
+
+- El ingreso ya no dice "Club de Campo" fijo: `GET /api/v1/negocio` (público, solo el nombre) entrega `gbpmt.gbpmtnomb`.
+- El administrador puede cambiarlo en **Ajustes** (`GET`/`PUT /api/v1/negocio/ajustes`). Se guarda en un SQLite propio (`AJUSTES_DB`), **no** en `gbpmt`, que la comparte el resto del sistema.
+- Instalación Windows: `configurar.ps1` define ahora `AJUSTES_DB` e `IMAGENES_SUBIDAS_DIR` dentro de la carpeta de datos.
+- Respaldos: incluir el archivo de `AJUSTES_DB` (en Docker, volumen `appdata`).
+
 ## Pendientes y decisiones abiertas
 
 | # | Tema | Estado |
