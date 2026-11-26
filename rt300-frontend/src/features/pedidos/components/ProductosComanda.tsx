@@ -1,19 +1,10 @@
 import { useState, type ReactNode } from 'react'
-import {
-  ChevronDown,
-  ChevronLeft,
-  LayoutGrid,
-  ListFilter,
-  Minus,
-  Plus,
-  Search,
-  X,
-} from 'lucide-react'
-import { formatoMoneda } from '@/features/salon/formato'
+import { ChevronDown, LayoutGrid, ListFilter, Search, X } from 'lucide-react'
 import { usePlatos } from '../hooks'
 import { nombreLegible } from '../nombreLegible'
 import type { ItemComanda, Plato, SeccionMenu } from '../types'
 import { IconoSeccion } from './IconoSeccion'
+import { TarjetaProducto } from './TarjetaProducto'
 import { ModalSubsecciones } from './ModalSubsecciones'
 import { CargadorDiferido } from '@/shared/ui/Cargador'
 
@@ -28,9 +19,6 @@ interface ProductosComandaProps {
   alVolver: () => void
   lateral?: ReactNode
 }
-
-const boton =
-  'grid size-10 shrink-0 cursor-pointer place-items-center rounded-xl transition active:scale-90 short:size-9 lg:size-11'
 
 export function ProductosComanda({
   seccion,
@@ -59,15 +47,6 @@ export function ProductosComanda({
   return (
     <section aria-label={`Productos de ${seccion.nombre}`}>
       <div className="pb-3 pt-1 short:pb-2">
-        <button
-          type="button"
-          onClick={alVolver}
-          aria-label="Volver a las categorías"
-          className="mb-2 inline-flex h-9 cursor-pointer items-center gap-1 rounded-lg pr-3 text-sm font-semibold text-club-primary transition hover:underline active:scale-95 lg:text-base"
-        >
-          <ChevronLeft className="size-5" aria-hidden />
-          Categorías
-        </button>
         <div className="flex items-center gap-2.5 lg:gap-3.5">
           <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-club-pc to-club-tertiary text-white shadow-md shadow-club-pc/30 short:size-9 lg:size-12">
             <IconoSeccion nombre={seccion.nombre} className="size-5" />
@@ -168,61 +147,15 @@ export function ProductosComanda({
               No hay productos que coincidan.
             </li>
           )}
-          {visibles.map((plato, i) => {
-            const c = elegidos[plato.id]?.cantidad ?? 0
-            return (
-              <li
-                key={plato.id}
-                style={{ animationDelay: `${Math.min(i, 8) * 15}ms` }}
-                className={`flex animate-[chip-in_0.16s_ease-out_both] flex-col justify-between gap-2.5 rounded-2xl border-2 p-3 transition duration-200 short:p-2 lg:p-4 ${
-                  c > 0
-                    ? 'border-primary bg-primary/10 shadow-[0_10px_26px_rgba(43,83,184,.28)]'
-                    : 'border-club-pc/40 bg-club-pc/10 hover:border-club-pc/80'
-                }`}
-              >
-                <h3 className="line-clamp-3 text-sm font-bold leading-tight [overflow-wrap:anywhere] lg:text-base">
-                  {plato.nombre}
-                </h3>
-                <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1.5">
-                  <p className="shrink-0 text-sm font-extrabold tabular-nums text-primary lg:text-lg">
-                    {formatoMoneda(plato.precio)}
-                  </p>
-                  {c === 0 ? (
-                    <button
-                      type="button"
-                      aria-label={`Agregar ${plato.nombre}`}
-                      onClick={() => alCambiarCantidad(plato, 1)}
-                      className={`${boton} ml-auto bg-primary text-white shadow-md shadow-primary/30 hover:brightness-110`}
-                    >
-                      <Plus className="size-5" />
-                    </button>
-                  ) : (
-                    <div className="ml-auto flex shrink-0 items-center gap-1.5">
-                      <button
-                        type="button"
-                        aria-label={`Quitar ${plato.nombre}`}
-                        onClick={() => alCambiarCantidad(plato, -1)}
-                        className={`${boton} border border-line bg-surface hover:border-primary/60`}
-                      >
-                        <Minus className="size-4" />
-                      </button>
-                      <strong className="w-5 text-center text-base font-extrabold tabular-nums lg:w-7 lg:text-lg">
-                        {c}
-                      </strong>
-                      <button
-                        type="button"
-                        aria-label={`Agregar ${plato.nombre}`}
-                        onClick={() => alCambiarCantidad(plato, 1)}
-                        className={`${boton} bg-primary text-white hover:brightness-110`}
-                      >
-                        <Plus className="size-4" />
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </li>
-            )
-          })}
+          {visibles.map((plato, i) => (
+            <TarjetaProducto
+              key={plato.id}
+              plato={plato}
+              cantidad={elegidos[plato.id]?.cantidad ?? 0}
+              indice={i}
+              alCambiarCantidad={alCambiarCantidad}
+            />
+          ))}
         </ul>
         {lateral}
       </div>

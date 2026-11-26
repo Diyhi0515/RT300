@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { ArrowLeft, ChevronUp, Hash, Send, Store } from 'lucide-react'
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
 import { useSesion } from '@/features/auth'
@@ -21,6 +21,8 @@ import { useEnviarComanda, useMesaDetalle, useModoImpresion, useSecciones } from
 import { usePedidos } from '../store'
 import type { ItemComanda, MesaDetalle, Plato, SeccionMenu } from '../types'
 import { CargadorDiferido } from '@/shared/ui/Cargador'
+
+const ESPERA_BORRADOR_MS = 300
 
 export function ComandaPage() {
   const { codigo, cuenta } = useParams()
@@ -62,9 +64,18 @@ function Contenido({ mesa, numero }: ContenidoProps) {
   const [vistaPrevia, setVistaPrevia] = useState(false)
   const [edicion, setEdicion] = useState<{ id: string; tipo: TipoEdicion } | null>(null)
   const registrando = useRef(false)
+  const [enfocado, setEnfocado] = useState<{ id: string; n: number } | null>(null)
 
   useEffect(() => {
-    guardarBorrador(mesa.folio, numero, elegidos)
+    if (Object.keys(elegidos).length === 0) {
+      guardarBorrador(mesa.folio, numero, elegidos)
+      return
+    }
+    const temporizador = window.setTimeout(
+      () => guardarBorrador(mesa.folio, numero, elegidos),
+      ESPERA_BORRADOR_MS,
+    )
+    return () => window.clearTimeout(temporizador)
   }, [mesa.folio, numero, elegidos])
 
   useEffect(() => () => borrarBorrador(mesa.folio, numero), [mesa.folio, numero])
@@ -97,6 +108,7 @@ function Contenido({ mesa, numero }: ContenidoProps) {
       return
     }
     vibrar('toque')
+    setEnfocado((previo) => ({ id: plato.id, n: (previo?.n ?? 0) + 1 }))
     setElegidos((actual) => {
       const nueva = Math.min(
         MAXIMO_CANTIDAD_PRODUCTO,
@@ -122,6 +134,15 @@ function Contenido({ mesa, numero }: ContenidoProps) {
       return copia
     })
   }
+
+  const cambiarCantidadActual = useRef(cambiarCantidad)
+  useEffect(() => {
+    cambiarCantidadActual.current = cambiarCantidad
+  })
+  const alCambiarCantidad = useCallback(
+    (plato: Plato, delta: number) => cambiarCantidadActual.current(plato, delta),
+    [],
+  )
 
   const eliminarProducto = (id: string) => {
     if (registrando.current) return
@@ -219,7 +240,8 @@ function Contenido({ mesa, numero }: ContenidoProps) {
         deshabilitado={!items.length}
         alEnviar={pedirEnvio}
         alVistaPrevia={() => setVistaPrevia(true)}
-        alCambiarCantidad={cambiarCantidad}
+        alCambiarCantidad={alCambiarCantidad}
+        enfocado={enfocado}
         alEliminar={eliminarProducto}
         alVaciar={() => setConfirmandoVaciar(true)}
         alEditar={(id, tipo) => setEdicion({ id, tipo })}
@@ -325,7 +347,7 @@ function Contenido({ mesa, numero }: ContenidoProps) {
                 setSubseccion(codigo)
               }}
               alCambiarBusqueda={setBusqueda}
-              alCambiarCantidad={cambiarCantidad}
+              alCambiarCantidad={alCambiarCantidad}
               alVolver={() => setSeccionElegida(null)}
               lateral={resumenLateral}
             />
@@ -349,7 +371,8 @@ function Contenido({ mesa, numero }: ContenidoProps) {
             deshabilitado={!items.length}
             alEnviar={pedirEnvio}
             alVistaPrevia={() => setVistaPrevia(true)}
-            alCambiarCantidad={cambiarCantidad}
+            alCambiarCantidad={alCambiarCantidad}
+            enfocado={enfocado}
             alEliminar={eliminarProducto}
             alVaciar={() => setConfirmandoVaciar(true)}
             alEditar={(id, tipo) => setEdicion({ id, tipo })}

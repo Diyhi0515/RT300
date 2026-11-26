@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react'
 import { ChefHat, CirclePlus, House, Minus, NotebookPen, Plus, Trash2 } from 'lucide-react'
 import { formatoMoneda } from '@/features/salon/formato'
 import { totalExtras } from '../calculos'
@@ -16,7 +17,11 @@ interface ResumenComandaProps {
   alEliminar: (id: string) => void
   alVaciar: () => void
   alEditar: (id: string, tipo: TipoEdicion) => void
+  enfocado?: { id: string; n: number } | null
 }
+
+const DURACION_RESALTE_MS = 1200
+const MARGEN_DESPLAZAMIENTO = 24
 
 const herramienta = (activa: boolean) =>
   `inline-flex h-8 shrink-0 cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-lg border px-2.5 text-[11px] font-bold transition active:scale-95 lg:h-9 lg:text-xs ${
@@ -39,10 +44,44 @@ export function ResumenComanda({
   alEliminar,
   alVaciar,
   alEditar,
+  enfocado,
 }: ResumenComandaProps) {
+  const lista = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!enfocado) return
+    const contenedor = lista.current
+    const fila = Array.from(
+      contenedor?.querySelectorAll<HTMLElement>('[data-producto]') ?? [],
+    ).find((e) => e.dataset.producto === enfocado.id)
+    if (!contenedor || !fila) return
+    const caja = contenedor.getBoundingClientRect()
+    const celda = fila.getBoundingClientRect()
+    if (celda.top < caja.top) {
+      contenedor.scrollBy?.({
+        top: celda.top - caja.top - MARGEN_DESPLAZAMIENTO,
+        behavior: 'smooth',
+      })
+    } else if (celda.bottom > caja.bottom - MARGEN_DESPLAZAMIENTO) {
+      contenedor.scrollBy?.({
+        top: celda.bottom - caja.bottom + MARGEN_DESPLAZAMIENTO,
+        behavior: 'smooth',
+      })
+    }
+    fila.dataset.resaltado = 'si'
+    const temporizador = window.setTimeout(() => {
+      delete fila.dataset.resaltado
+    }, DURACION_RESALTE_MS)
+    return () => {
+      window.clearTimeout(temporizador)
+      delete fila.dataset.resaltado
+    }
+  }, [enfocado])
+
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div
+        ref={lista}
         className={`max-h-[27.5rem] flex min-h-0 flex-1 flex-col overflow-y-auto md:max-h-none short:max-h-none [mask-image:linear-gradient(to_bottom,black_calc(100%-18px),transparent)]`}
       >
         {items.length === 0 ? (
@@ -71,7 +110,8 @@ export function ResumenComanda({
                 return (
                   <li
                     key={plato.id}
-                    className="rounded-xl border border-line bg-bg/60 p-2.5 short:p-2"
+                    data-producto={plato.id}
+                    className="rounded-xl border border-line bg-bg/60 p-2.5 transition-colors duration-300 data-[resaltado=si]:border-primary data-[resaltado=si]:bg-primary/10 short:p-2"
                   >
                     <p className="line-clamp-2 text-sm font-bold uppercase leading-tight [overflow-wrap:anywhere] lg:text-base short:lg:text-sm">
                       {plato.nombre}

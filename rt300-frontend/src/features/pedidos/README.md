@@ -170,7 +170,12 @@ Desde 768 px de ancho la pantalla de Nueva comanda se comporta así:
 - **Encabezado fijo:** "Nueva comanda" (flecha, mesa y cuenta) queda fijo bajo la barra superior (`ComandaPage.tsx`). Su alto es la variable `--enc`, que usan los bloques que se fijan debajo de él. "Elige una categoría" ya no es fijo: se desplaza con la página.
 - **Categorías:** el panel de categorías y el resumen de la comanda tienen la misma altura, terminan a la vez justo sobre el menú de abajo y la lista de categorías tiene su propia barra vertical. Los valores salen de `--tope` (inicio) y `--pie` (menú de abajo).
 - **Productos:** el buscador queda fijo bajo el encabezado. A su derecha están los botones **Categorías** (vuelve a la lista de categorías) y **Subcategoría**, con el mismo fondo y borde que las tarjetas de producto. La lista y el resumen tienen cada uno su barra vertical. La altura de la lista descuenta la fila "Mostrando solo ..." cuando hay un filtro de subcategoría activo (`--extra`) y las reservas `--hdr` y `--fila`. Si se cambia el alto de algún bloque fijo hay que ajustar esas variables; se comprueba haciendo scroll hasta el final: el buscador debe quedar pegado justo bajo el encabezado (sin hueco con el título de la categoría) y sin tapar la primera fila de la lista. Valores de `--fila` medidos: 6.5rem en pantallas bajas, 6.75rem en tablet vertical y 8.75rem en pantallas anchas altas.
+- **Seguimiento en el resumen:** al agregar, sumar o quitar un producto en la lista, el resumen se desplaza solo hasta ese producto y lo resalta 1,2 segundos (`enfocado` en `ComandaPage.tsx`, usado por `ResumenComanda.tsx`). Si el producto ya está a la vista no se mueve nada.
 - **Resumen:** cada producto muestra Nota, Extras, Centro y el botón de eliminar en la misma fila; si no caben, los tres primeros pasan a la línea siguiente y el de eliminar queda a la derecha. En pantallas bajas el pie del resumen es más corto: "Registrar comanda" y "Vista previa" van en la misma fila.
+
+## Rendimiento de la comanda
+
+Una categoría puede tener cientos de productos (Comidas tiene unos 370). Para que sumar o quitar sea inmediato: cada tarjeta es `TarjetaProducto` (memorizada, solo se vuelve a dibujar la que cambió), `ComandaPage` pasa una función estable (`alCambiarCantidad`) para que las demás tarjetas no se enteren del cambio, el borrador de `sessionStorage` se guarda 300 ms después del último cambio y el resalte del producto en el resumen es un atributo del elemento, sin volver a dibujar la lista.
 
 ## Cortes de ancho y pantallas bajas (`lg`, `short` y `apaisado`)
 
