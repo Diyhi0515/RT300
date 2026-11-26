@@ -73,6 +73,9 @@ const dominiosNgrok = [
   '.ngrok.io',
 ]
 
+// En Docker el back no está en 127.0.0.1 del contenedor del front: docker-compose pone API_PROXY_TARGET.
+const destinoApi = process.env.API_PROXY_TARGET ?? 'http://127.0.0.1:5000'
+
 export default defineConfig({
   plugins: [
     appMode(),
@@ -120,10 +123,10 @@ export default defineConfig({
   server: {
     port: 5173,
     allowedHosts: dominiosNgrok,
-    proxy: { '/api': 'http://127.0.0.1:5000' },
+    proxy: { '/api': destinoApi },
   },
   preview: {
     allowedHosts: dominiosNgrok,
-    proxy: { '/api': 'http://127.0.0.1:5000' },
+    proxy: { '/api': destinoApi },
   },
 })

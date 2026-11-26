@@ -13,6 +13,7 @@ Documentos relacionados: [00 arquitectura](00-arquitectura-general.md) · [01 ba
 - La contraseña no se escribe en BD, `.env`, JWT, cookies, respuestas ni logs; el gateway SOAP la obtiene por el identificador interno.
 - Al cerrar sesión o expirar la credencial se elimina. Tras reiniciar el backend se exige iniciar sesión nuevamente.
 - `GATEWAY_PASSWORD` queda como compatibilidad opcional para servicios que usen una credencial técnica común; vacío usa la clave de cada sesión.
+- Las tarjetas de productos ahora conservan el campo `imagen` de la API y cargan la miniatura desde el endpoint seguro del backend.
 
 ## 2026-11-16 — Instalación nativa en Windows Server
 
@@ -170,6 +171,24 @@ Se leyeron además `README.md`, `web.config`, `inc/config.php`, `require/*` y la
 - **Subcategorías:** se reemplazó la fila de botones con scroll por un selector `Subcategoría ▾` junto al buscador, que abre la lista completa (con buscador cuando hay muchas). El filtro activo se ve como "Mostrando solo X · Quitar filtro".
 - **"Guardé la comanda y no pasó nada":** con el servicio de comandas simulado (`GATEWAY_MODE=fake`) la comanda queda registrada en `rttmp` pero no llega a cocina ni aparece en el consumo de la cuenta. Ahora el aviso lo dice ("modo de prueba") en vez de un "registrada" que parece no hacer nada. En producción (`soap`) no hay aviso.
 - Pruebas: front 125.
+
+### Imágenes de los productos (2026-11-20 y 2026-11-23)
+- **Diagnóstico:** la carpeta es la misma que usaba el sistema antiguo (`img/Restaurantes`, 163 archivos) y el nombre sale de `rtalb.rtalbnimg`, igual que en el PHP. En la base, solo 1 de 1869 platos activos tiene un nombre (`TABLA MEXICANA.jpg`, que no existe). Los 163 archivos son imágenes genéricas de una plantilla que ningún producto referencia: el sistema antiguo tampoco las mostraba.
+- **Subir desde el administrador** (`/admin/menu`, columna *Imagen*, botón *Subir imagen*): `POST /api/v1/menu/platos/{cart}/imagen` (multipart, campo `imagen`). Reglas:
+  - Solo rol `admin` (`403 SIN_PERMISO_ROL`).
+  - **Solo si `rtalbnimg` está vacía** (`409 YA_TIENE_IMAGEN` si ya tiene una que existe). Si la base trae un nombre pero el archivo falta, se repone con ese mismo nombre y no se toca la base.
+  - El nombre del archivo lo decide el servidor (`<código>.jpg`), nunca el del archivo recibido.
+  - Validación: hasta 5 MB y 40 millones de píxeles; JPG, PNG, WEBP, GIF o BMP; se decodifica con Pillow y se **recodifica** como JPEG de hasta 1600 px (descarta metadatos y contenido ajeno: un `<?php` pegado a un PNG no sobrevive). Errores: `IMAGEN_FALTA`, `IMAGEN_VACIA`, `IMAGEN_INVALIDA`, `IMAGEN_FORMATO`, `IMAGEN_MUY_GRANDE` (422) y `503` si la carpeta no se puede escribir.
+  - Se vincula con `UPDATE rtalb SET rtalbnimg = … WHERE … AND rtalbnimg está vacía` y se descarta la caché del menú para que la imagen aparezca de inmediato.
+- **Dónde se guardan:** lo subido va a un volumen propio (`IMAGENES_SUBIDAS_DIR`, `/data/subidas`, volumen `imgsubidas`); la carpeta heredada queda intacta y de solo lectura. Al mostrar, se busca primero en lo subido y luego en la heredada, sin distinguir mayúsculas. Hay que reconstruir la imagen del backend una vez (`docker compose up -d --build backend`). El sistema PHP antiguo no ve estas imágenes.
+- Verificado en vivo contra la base de Docker (se deshizo todo): garzón 403, archivo falso 422, admin 201, `rtalbnimg` quedó `01001.jpg`, la imagen se sirvió como WebP, segunda subida 409. Pruebas: backend 277, front 130.
+
+### Revisión para publicar en un servidor web (2026-11-23)
+- **Imágenes de productos:** `GET /menu/platos/{cart}/imagen` es **pública a propósito** (la usa `<img src>`, que no envía el JWT). Solo sirve imágenes de producto de las carpetas configuradas, nunca otro archivo; ahora tiene un límite por IP (`RATE_LIMIT_IMAGENES`, 1200/min) en vez de estar exenta, porque convertir una imagen cuesta CPU. Las fotos de un menú no son sensibles; si se prefiere privadas habría que pedirlas con el token y mostrarlas como blob.
+- **Subir imágenes:** exige sesión de administrador y está limitada (60/hora). Si hay un proxy delante, **debe permitir cuerpos de 6 MB** en `/api/v1/menu/platos/*/imagen` (nginx: `client_max_body_size 6m;`, su valor por defecto es 1 MB y devolvería 413; Caddy no limita). La carpeta `IMAGENES_SUBIDAS_DIR` debe ser **persistente y escribible** por el servicio (volumen en Docker; en un servidor sin Docker, una carpeta con permisos).
+- **Todo el personal tras una sola IP:** los límites de intentos son por IP. Con el servidor en internet y todos saliendo por la IP del club, 10 logins por minuto se agotan al inicio de turno. Nuevo `RATE_LIMIT_LOGIN_IP` (por defecto 10/minuto): subirlo (p. ej. 60/minuto) y `PROXY_HOPS=1` para ver la IP real del cliente. El límite por usuario (10 cada 10 min) no cambia, así que la protección contra adivinar una clave se mantiene.
+- **Sigue siendo público a propósito:** `GET /auth/usuarios` (acceso rápido) y `GET /health`. Ver las decisiones abiertas: en internet el primero conviene restringirlo.
+- Pruebas: backend 279.
 
 ### Pendiente / decisiones abiertas
 `GET /auth/usuarios` sigue público; roles reales para autorizar eliminar comanda; hash de clave fuerte (requiere tabla propia); servicio SOAP real sin probar (192.168.0.2 no es alcanzable desde esta PC).

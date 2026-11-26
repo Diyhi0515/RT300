@@ -6,6 +6,11 @@ from typing import Any
 from ...core.respuesta import Salida
 
 
+class ImagenAsignadaOut(Salida):
+    cart: str
+    imagen: str
+
+
 class SeccionOut(Salida):
     csme: int
     cssm: int

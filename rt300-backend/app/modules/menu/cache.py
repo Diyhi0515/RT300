@@ -44,6 +44,10 @@ class MenuRepoConCache:
     def centros_produccion(self, cart: str, cloc: int) -> list[dict]:
         return self._guardado("centros_produccion", cart, cloc)
 
+    def invalidar(self) -> None:
+        """Después de cambiar datos del menú (p. ej. una imagen nueva) se descarta lo guardado."""
+        self._cache.limpiar()
+
     def __getattr__(self, nombre: str):
         """Todo lo demás (ficha, precio, insumos, tipo de cambio...) va directo al repositorio."""
         return getattr(self._interno, nombre)

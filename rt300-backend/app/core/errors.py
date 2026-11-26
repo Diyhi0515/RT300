@@ -33,5 +33,9 @@ class Conflict(DomainError):
     status, code = 409, "CONFLICTO"
 
 
+class ServicioNoDisponible(DomainError):
+    status, code = 503, "SERVICIO_NO_DISPONIBLE"
+
+
 class GatewayError(DomainError):
     status, code = 502, "GATEWAY_UNAVAILABLE"

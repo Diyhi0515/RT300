@@ -1,7 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import {
   ChevronDown,
-  ChevronLeft,
   LayoutGrid,
   ListFilter,
   Minus,
@@ -32,6 +31,8 @@ interface ProductosComandaProps {
 const boton =
   'grid size-10 shrink-0 cursor-pointer place-items-center rounded-xl transition active:scale-90 short:size-9 lg:size-11'
 
+const urlImagen = (cart: string) => `/api/v1/menu/platos/${encodeURIComponent(cart)}/imagen?w=320`
+
 export function ProductosComanda({
   seccion,
   subseccion,
@@ -59,15 +60,6 @@ export function ProductosComanda({
   return (
     <section aria-label={`Productos de ${seccion.nombre}`}>
       <div className="pb-3 pt-1 short:pb-2">
-        <button
-          type="button"
-          onClick={alVolver}
-          aria-label="Volver a las categorías"
-          className="mb-2 inline-flex h-9 cursor-pointer items-center gap-1 rounded-lg pr-3 text-sm font-semibold text-club-primary transition hover:underline active:scale-95 lg:text-base"
-        >
-          <ChevronLeft className="size-5" aria-hidden />
-          Categorías
-        </button>
         <div className="flex items-center gap-2.5 lg:gap-3.5">
           <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-club-pc to-club-tertiary text-white shadow-md shadow-club-pc/30 short:size-9 lg:size-12">
             <IconoSeccion nombre={seccion.nombre} className="size-5" />
@@ -105,7 +97,7 @@ export function ProductosComanda({
           <button
             type="button"
             onClick={alVolver}
-            aria-label="Cambiar de categoría"
+            aria-label="Volver a las categorías"
             className="inline-flex h-12 shrink-0 cursor-pointer items-center gap-2 rounded-xl border-2 border-club-pc/40 bg-club-pc/10 px-3 text-sm font-bold text-fg transition hover:border-club-pc/80 active:scale-95 lg:h-14 lg:px-4 short:h-10"
           >
             <LayoutGrid className="size-4 shrink-0" aria-hidden />
@@ -180,6 +172,15 @@ export function ProductosComanda({
                     : 'border-club-pc/40 bg-club-pc/10 hover:border-club-pc/80'
                 }`}
               >
+                {plato.imagen && (
+                  <img
+                    src={urlImagen(plato.id)}
+                    alt=""
+                    loading="lazy"
+                    decoding="async"
+                    className="h-28 w-full rounded-xl bg-bg object-cover short:h-20 lg:h-32"
+                  />
+                )}
                 <h3 className="line-clamp-3 text-sm font-bold leading-tight [overflow-wrap:anywhere] lg:text-base">
                   {plato.nombre}
                 </h3>

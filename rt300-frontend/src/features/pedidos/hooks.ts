@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   actualizarCuenta,
+  subirImagenPlato,
   buscarClientes,
   compactarCuentas,
   eliminarComandas,
@@ -124,6 +125,7 @@ const aPlato = (p: {
   cart: string
   cssm?: number | null
   descripcion?: string | null
+  imagen?: string | null
   pvta: number
   moneda: string
 }): Plato => ({
@@ -132,6 +134,7 @@ const aPlato = (p: {
   precio: p.pvta,
   moneda: p.moneda,
   subseccion: p.cssm ?? undefined,
+  imagen: p.imagen?.trim() || undefined,
 })
 
 export const usePlatos = (seccion: number | null, subseccion: number) =>
@@ -294,3 +297,11 @@ export const useModoImpresion = () =>
     staleTime: Infinity,
     retry: false,
   })
+
+export const useSubirImagenPlato = () => {
+  const cliente = useQueryClient()
+  return useMutation({
+    mutationFn: ({ cart, archivo }: { cart: string; archivo: File }) => subirImagenPlato(cart, archivo),
+    onSuccess: () => cliente.invalidateQueries({ queryKey: ['menu', 'platos'] }),
+  })
+}

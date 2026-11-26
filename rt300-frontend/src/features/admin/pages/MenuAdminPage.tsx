@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { ChevronDown, Search, UtensilsCrossed } from 'lucide-react'
 import { usePlatos, useSecciones } from '@/features/pedidos/hooks'
 import { formatoMoneda } from '@/features/salon/formato'
+import { CeldaImagen } from '../components/CeldaImagen'
 import { EncabezadoSeccion } from '../components/EncabezadoSeccion'
 
 const campo =
@@ -35,7 +36,7 @@ export function MenuAdminPage() {
     <div>
       <EncabezadoSeccion
         titulo="Menú"
-        descripcion="Consulta de secciones, productos y precios. Solo lectura."
+        descripcion="Consulta de secciones, productos y precios. Puedes subir la imagen que falte."
         icono={UtensilsCrossed}
       />
 
@@ -170,10 +171,11 @@ export function MenuAdminPage() {
             )}
             {visibles.length > 0 && (
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[420px] text-left text-sm">
+                <table className="w-full min-w-[520px] text-left text-sm">
                   <caption className="sr-only">Productos de la sección</caption>
                   <thead className="border-b border-line bg-bg text-xs uppercase tracking-wide text-muted">
                     <tr>
+                      <th scope="col" className="px-4 py-3">Imagen</th>
                       <th scope="col" className="px-4 py-3">Código</th>
                       <th scope="col" className="px-4 py-3">Producto</th>
                       <th scope="col" className="px-4 py-3 text-right">Precio</th>
@@ -182,6 +184,9 @@ export function MenuAdminPage() {
                   <tbody className="divide-y divide-line">
                     {visibles.map((p) => (
                       <tr key={p.id} className="transition hover:bg-primary/5">
+                        <td className="px-4 py-2">
+                          <CeldaImagen cart={p.id} nombre={p.nombre} tieneImagen={!!p.imagen} />
+                        </td>
                         <td className="px-4 py-3 tabular-nums text-muted">{p.id}</td>
                         <td className="px-4 py-3 font-medium">{p.nombre}</td>
                         <td className="px-4 py-3 text-right font-semibold tabular-nums">

@@ -51,6 +51,11 @@ describe('contrato con el backend (respuestas reales capturadas con npm run fixt
     expect(esquemaPlatos.parse(platos).platos[0]).toMatchObject({ pvta: expect.any(Number), moneda: expect.any(String) })
   })
 
+  it('menú: conserva el nombre de imagen cuando el backend lo entrega', () => {
+    const r = esquemaPlatos.parse({ platos: [{ cart: 'A1', cssm: 0, descripcion: 'AGUA', imagen: 'agua.bmp', pvta: 8, moneda: 'Bs.' }] })
+    expect(r.platos[0].imagen).toBe('agua.bmp')
+  })
+
   it('clientes: la búsqueda y el detalle traen código, nombre y NIT', () => {
     expect(esquemaRespuestaClientes.parse(clientesBusqueda).clientes[0]).toHaveProperty('nruc')
     expect(esquemaRespuestaClientes.parse(clienteDetalle).clientes[0].codigo).toBe(17)
