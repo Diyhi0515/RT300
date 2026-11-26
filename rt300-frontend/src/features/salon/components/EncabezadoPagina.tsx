@@ -1,5 +1,4 @@
-import { ArrowLeft, type LucideIcon } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { type LucideIcon } from 'lucide-react'
 import { useSesion } from '@/features/auth'
 import { fechaLarga } from '@/features/inicio/saludo'
 
@@ -25,13 +24,6 @@ export function EncabezadoPagina({ titulo, icono: Icono }: EncabezadoPaginaProps
           {perfil ? ` · ${perfil.local}` : ''}
         </p>
       </div>
-      <Link
-        to="/inicio"
-        className="ml-auto hidden h-10 shrink-0 items-center gap-2 rounded-xl border border-line px-3 text-sm font-semibold text-muted transition hover:border-primary/50 hover:text-fg active:scale-95 md:inline-flex escritorio:hidden"
-      >
-        <ArrowLeft className="size-4" />
-        Inicio
-      </Link>
     </header>
   )
 }

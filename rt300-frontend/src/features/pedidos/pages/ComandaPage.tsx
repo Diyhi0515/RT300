@@ -67,6 +67,8 @@ function Contenido({ mesa, numero }: ContenidoProps) {
     guardarBorrador(mesa.folio, numero, elegidos)
   }, [mesa.folio, numero, elegidos])
 
+  useEffect(() => () => borrarBorrador(mesa.folio, numero), [mesa.folio, numero])
+
   const items = Object.values(elegidos).sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0))
   const itemEditado = edicion ? elegidos[edicion.id] : undefined
   const total = totalItems(items)
@@ -227,6 +229,38 @@ function Contenido({ mesa, numero }: ContenidoProps) {
 
   return (
     <div className="space-y-4 pb-28 [--enc:4.25rem] sm:space-y-5 sm:[--enc:4.75rem] md:pb-0 short:space-y-3 short:[--enc:3.5rem]">
+      {cantidad > 0 && (
+        <div className="fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+84px)] z-30 animate-[subir_0.18s_ease-out] px-3 short:bottom-[calc(env(safe-area-inset-bottom)+56px)] md:hidden max-lg:apaisado:md:block!">
+          <div className="mx-auto flex max-w-lg items-center gap-2 rounded-2xl border border-line bg-surface p-2 shadow-[0_10px_30px_rgba(1,21,38,.22)]">
+            <button
+              type="button"
+              onClick={() => setResumenAbierto(true)}
+              aria-label="Ver el resumen de la comanda"
+              className="flex min-w-0 flex-1 cursor-pointer items-center gap-3 rounded-xl px-1 text-left"
+            >
+              <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary short:size-9">
+                <ChevronUp className="size-5" aria-hidden />
+              </span>
+              <span className="min-w-0">
+                <span className="block text-[11px] text-muted">{etiquetaCantidad}</span>
+                <strong className="block text-lg font-extrabold leading-tight tabular-nums">
+                  {formatoMoneda(total)}
+                </strong>
+              </span>
+            </button>
+            <button
+              type="button"
+              disabled={envio.isPending}
+              onClick={pedirEnvio}
+              className="flex h-12 cursor-pointer items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-club-pc to-club-tertiary px-5 font-bold text-white shadow-[0_10px_24px_rgba(43,83,184,.35)] transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 short:h-10"
+            >
+              <Send className="size-[18px]" aria-hidden />
+              Registrar
+            </button>
+          </div>
+        </div>
+      )}
+
       <header className="sticky top-[73px] z-30 -mx-4 flex h-[var(--enc)] shrink-0 items-center bg-bg px-4 short:top-[57px]">
         <div className="flex w-full items-center gap-3">
           <Link
@@ -300,38 +334,6 @@ function Contenido({ mesa, numero }: ContenidoProps) {
 
         {seccionElegida === null && resumenLateral}
       </div>
-
-      {cantidad > 0 && (
-        <div className="fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+84px)] z-30 animate-[subir_0.18s_ease-out] px-3 short:bottom-[calc(env(safe-area-inset-bottom)+56px)] md:hidden max-lg:apaisado:md:block!">
-          <div className="mx-auto flex max-w-lg items-center gap-2 rounded-2xl border border-line bg-surface p-2 shadow-[0_10px_30px_rgba(1,21,38,.22)]">
-            <button
-              type="button"
-              onClick={() => setResumenAbierto(true)}
-              aria-label="Ver el resumen de la comanda"
-              className="flex min-w-0 flex-1 cursor-pointer items-center gap-3 rounded-xl px-1 text-left"
-            >
-              <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary short:size-9">
-                <ChevronUp className="size-5" aria-hidden />
-              </span>
-              <span className="min-w-0">
-                <span className="block text-[11px] text-muted">{etiquetaCantidad}</span>
-                <strong className="block text-lg font-extrabold leading-tight tabular-nums">
-                  {formatoMoneda(total)}
-                </strong>
-              </span>
-            </button>
-            <button
-              type="button"
-              disabled={envio.isPending}
-              onClick={pedirEnvio}
-              className="flex h-12 cursor-pointer items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-club-pc to-club-tertiary px-5 font-bold text-white shadow-[0_10px_24px_rgba(43,83,184,.35)] transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 short:h-10"
-            >
-              <Send className="size-[18px]" aria-hidden />
-              Registrar
-            </button>
-          </div>
-        </div>
-      )}
 
       <HojaInferior
         abierta={resumenAbierto}

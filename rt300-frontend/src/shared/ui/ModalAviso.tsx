@@ -50,31 +50,17 @@ export function ModalAviso({
   }, [open, duration, noticeId, onClose])
 
   return (
-    <Modal
-      open={open}
-      onClose={onClose}
-      title={title}
-      tone="axon"
-      capa="z-[90]"
-      className="short:max-w-2xl"
-    >
-      <div className="short:flex short:items-stretch">
-        <BandaAxon className="h-28 pb-8 short:h-auto short:basis-[40%] short:shrink-0 short:pb-0" />
-        <div
-          role="alert"
-          className="flex flex-col items-center gap-3 px-6 pb-8 text-center short:flex-1 short:justify-center short:gap-2 short:px-6 short:py-5"
-        >
+    <Modal open={open} onClose={onClose} title={title} tone="axon" capa="z-[90]">
+      <div>
+        <BandaAxon className="h-28 pb-8" />
+        <div role="alert" className="flex flex-col items-center gap-3 px-6 pb-8 text-center">
           <span
-            className={`relative z-10 -mt-10 grid size-[76px] short:mt-0 short:size-14 animate-[pop_0.16s_cubic-bezier(0.2,0.9,0.3,1)] place-items-center rounded-3xl shadow-lg ring-4 ring-surface ${t.solid}`}
+            className={`relative z-10 -mt-10 grid size-[76px] animate-[pop_0.16s_cubic-bezier(0.2,0.9,0.3,1)] place-items-center rounded-3xl shadow-lg ring-4 ring-surface ${t.solid}`}
           >
-            <Icon className="size-9 short:size-7" strokeWidth={2} aria-hidden />
+            <Icon className="size-9" strokeWidth={2} aria-hidden />
           </span>
-          <p className="text-xl font-bold tracking-tight short:text-lg">{title}</p>
-          {message && (
-            <p className="max-w-xs text-pretty text-muted short:max-w-none short:text-sm">
-              {message}
-            </p>
-          )}
+          <p className="text-xl font-bold tracking-tight">{title}</p>
+          {message && <p className="max-w-xs text-pretty text-muted">{message}</p>}
 
           {progress && (
             <div className="mt-1 w-full max-w-xs space-y-2">

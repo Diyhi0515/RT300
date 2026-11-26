@@ -20,9 +20,9 @@ export function SuperposicionCarga({
       aria-busy
       className="fixed inset-0 z-[85] grid place-items-center bg-black/55 px-6 escritorio:backdrop-blur-sm animate-[fade_0.15s_ease-out_0.15s_both]"
     >
-      <div className="w-full max-w-[17rem] overflow-hidden rounded-3xl border border-line bg-surface shadow-card short:flex short:max-w-md short:items-stretch">
-        <BandaAxon tamano="sm" className="h-16 short:h-auto short:basis-[38%] short:shrink-0" />
-        <div className="grid place-items-center px-8 pb-8 pt-7 short:flex-1 short:px-6 short:py-5">
+      <div className="w-full max-w-[17rem] overflow-hidden rounded-3xl border border-line bg-surface shadow-card">
+        <BandaAxon tamano="sm" className="h-16" />
+        <div className="grid place-items-center px-8 pb-8 pt-7">
           <Cargador tone={tone} label={label} />
         </div>
       </div>

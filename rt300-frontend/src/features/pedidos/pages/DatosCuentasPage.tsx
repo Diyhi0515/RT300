@@ -1,31 +1,30 @@
 import { useEffect, useState } from 'react'
-import { ArrowLeft, Check, Hash, Search, Store, UserRoundSearch, UserRoundPen } from 'lucide-react'
+import { ArrowLeft, Check, Hash, Store, UserRoundSearch, UserRoundPen } from 'lucide-react'
 import { Link, Navigate, useParams } from 'react-router-dom'
 import { useSesion } from '@/features/auth'
 import { vibrar } from '@/lib/vibrar'
 import { notificar } from '@/shared/avisos/almacen'
-import { buscarClientes } from '../api'
 import { ListadoClientes } from '../components/ListadoClientes'
 import { SelectorCuentas } from '../components/SelectorCuentas'
 import { TablaCuentasMesa } from '../components/TablaCuentasMesa'
 import { useActualizarCuenta, useMesaDetalle } from '../hooks'
-import { mapearCliente } from '../mapeos'
 import { usePedidos } from '../store'
 import type { ClienteRegistrado, Cuenta, MesaDetalle } from '../types'
 import { CargadorDiferido } from '@/shared/ui/Cargador'
+import { ListaDesplegable } from '@/shared/ui/ListaDesplegable'
 
 type Vista = 'datos' | 'clientes'
 
 const campo =
-  'h-12 w-full rounded-xl border border-line bg-surface px-3 text-base font-medium outline-none transition focus:border-club-pc focus:ring-2 focus:ring-club-pc/25 lg:h-11 lg:text-sm'
+  'h-12 w-full rounded-xl border border-line bg-surface px-3 text-base font-medium outline-none transition focus:border-club-pc focus:ring-2 focus:ring-club-pc/25 lg:h-11 lg:text-sm short:lg:h-9'
 
 const etiqueta = 'text-[11px] font-extrabold uppercase tracking-wide text-club-primary'
 
 const botonSecundario =
-  'inline-flex h-12 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-xl border border-line bg-surface px-3.5 text-sm font-semibold transition hover:border-club-pc/50 hover:bg-club-pc/5 active:scale-95 sm:px-4 lg:h-11'
+  'inline-flex h-12 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-club-pc to-club-tertiary px-3.5 text-sm font-bold text-white shadow-[0_8px_20px_rgba(43,83,184,.3)] transition hover:brightness-110 active:scale-95 sm:px-4 lg:h-11 short:lg:h-9'
 
 const botonPrimario =
-  'inline-flex h-12 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-club-pc to-club-tertiary px-5 text-sm font-bold text-white shadow-[0_8px_20px_rgba(43,83,184,.3)] transition hover:brightness-110 active:scale-95 lg:h-11'
+  'inline-flex h-12 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-club-pc to-club-tertiary px-5 text-sm font-bold text-white shadow-[0_8px_20px_rgba(43,83,184,.3)] transition hover:brightness-110 active:scale-95 lg:h-11 short:lg:h-9'
 
 const pestanas: { id: Vista; texto: string; icono: typeof UserRoundPen }[] = [
   { id: 'datos', texto: 'Datos de la cuenta', icono: UserRoundPen },
@@ -84,20 +83,6 @@ function Contenido({ mesa }: ContenidoProps) {
     vibrar('toque')
   }
 
-  const buscarCodigo = async () => {
-    const buscado = Number(codigoCliente.trim())
-    if (!buscado) {
-      notificar.advertencia('Escribe el código del cliente.', 'Falta el código')
-      return
-    }
-    try {
-      const [cliente] = await buscarClientes({ codigo: buscado })
-      if (cliente) aplicarCliente(mapearCliente(cliente))
-    } catch {
-      notificar.advertencia('No existe un cliente con ese código.', 'Cliente no encontrado')
-    }
-  }
-
   const modificar = async () => {
     const limpio = nombre.trim().toUpperCase()
     if (!limpio) {
@@ -132,7 +117,7 @@ function Contenido({ mesa }: ContenidoProps) {
               abrirCuenta(numero)
             }}
             aria-label="Volver a pedidos"
-            className="grid size-11 shrink-0 place-items-center rounded-xl border border-line bg-surface text-muted transition hover:border-club-pc/50 hover:text-fg active:scale-95"
+            className="grid size-11 shrink-0 place-items-center rounded-xl border border-line bg-surface text-muted transition hover:border-club-pc/50 hover:text-fg active:scale-95 short:size-9"
           >
             <ArrowLeft className="size-5" />
           </Link>
@@ -140,7 +125,9 @@ function Contenido({ mesa }: ContenidoProps) {
             <h1 className="text-xl font-bold leading-tight tracking-[-0.02em] sm:text-[28px] short:text-xl">
               Datos cuentas
             </h1>
-            <p className="text-xs text-muted sm:text-sm">Cliente, NIT y nombre de cada cuenta</p>
+            <p className="text-xs text-muted sm:text-sm short:hidden">
+              Cliente, NIT y nombre de cada cuenta
+            </p>
           </div>
           <div className="hidden flex-wrap gap-2 text-xs font-bold md:flex">
             <span className="inline-flex items-center gap-1.5 rounded-lg bg-club-pc/10 px-2.5 py-1.5 text-club-primary">
@@ -189,7 +176,7 @@ function Contenido({ mesa }: ContenidoProps) {
         ))}
       </div>
 
-      <div className="grid items-start gap-4 lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(0,1fr)_380px] lg:grid-rows-[minmax(0,1fr)]">
+      <div className="grid items-start gap-4 lg:min-h-0 lg:flex-1 lg:max-[1199px]:grid-cols-[minmax(0,1fr)_380px] lg:grid-rows-[minmax(0,1fr)] short:lg:max-[1199px]:grid-cols-[minmax(0,1fr)_300px] min-[1200px]:grid-cols-[minmax(0,1fr)_420px]">
         <div
           className={`min-w-0 space-y-4 lg:flex lg:h-full lg:min-h-0 lg:flex-col ${vista === 'datos' ? '' : 'hidden md:block lg:flex'}`}
         >
@@ -202,7 +189,7 @@ function Contenido({ mesa }: ContenidoProps) {
               e.preventDefault()
               void modificar()
             }}
-            className="space-y-4 rounded-3xl border border-line bg-surface p-4 shadow-[0_12px_32px_rgba(1,21,38,.06)] sm:p-5 lg:shrink-0 lg:space-y-3 lg:p-4"
+            className="space-y-4 rounded-3xl border border-line bg-surface p-4 shadow-[0_12px_32px_rgba(1,21,38,.06)] sm:p-5 lg:shrink-0 lg:space-y-3 lg:p-4 short:lg:p-3"
           >
             {clienteCargado && (
               <p
@@ -213,29 +200,27 @@ function Contenido({ mesa }: ContenidoProps) {
                 guardar.
               </p>
             )}
-            <div className="grid gap-3 lg:grid-cols-[8rem_minmax(0,1fr)]">
-              <label className="hidden space-y-1.5 lg:block">
-                <span className={etiqueta}>No. cuenta</span>
-                <select
-                  value={numero}
-                  onChange={(e) => {
-                    const c = mesa.cuentas.find((x) => x.numero === Number(e.target.value))
-                    if (c) elegirCuenta(c)
-                  }}
-                  className={`${campo} cursor-pointer`}
-                >
-                  {mesa.cuentas.map((c) => (
-                    <option key={c.numero} value={c.numero}>
-                      {c.numero}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <div className="space-y-1.5">
-                <label htmlFor="datos-cuenta-codigo" className={etiqueta}>
-                  Código cliente
-                </label>
-                <div className="flex gap-2">
+            <div className="space-y-4 lg:space-y-3 min-[1200px]:grid min-[1200px]:grid-cols-[5.5rem_9rem_7rem_minmax(0,1fr)_auto] min-[1200px]:items-end min-[1200px]:gap-3 min-[1200px]:space-y-0 short:lg:grid short:lg:grid-cols-[4.5rem_7rem_6rem_minmax(0,1fr)_auto] short:lg:items-end short:lg:gap-2 short:lg:space-y-0">
+              <div className="grid gap-3 lg:grid-cols-[8rem_minmax(0,1fr)] min-[1200px]:contents short:lg:contents">
+                <div className="hidden space-y-1.5 lg:block">
+                  <span className={etiqueta}>No. cuenta</span>
+                  <ListaDesplegable
+                    etiqueta="No. cuenta"
+                    valor={numero}
+                    opciones={mesa.cuentas.map((c) => ({
+                      valor: c.numero,
+                      etiqueta: String(c.numero),
+                    }))}
+                    alCambiar={(valor) => {
+                      const c = mesa.cuentas.find((x) => x.numero === Number(valor))
+                      if (c) elegirCuenta(c)
+                    }}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label htmlFor="datos-cuenta-codigo" className={etiqueta}>
+                    Código cliente
+                  </label>
                   <input
                     id="datos-cuenta-codigo"
                     value={codigoCliente}
@@ -247,62 +232,53 @@ function Contenido({ mesa }: ContenidoProps) {
                     inputMode="numeric"
                     autoComplete="off"
                   />
-                  <button
-                    type="button"
-                    onClick={() => void buscarCodigo()}
-                    aria-label="Buscar cliente por código"
-                    className={botonSecundario}
-                  >
-                    <Search className="size-4" />
-                    <span className="hidden sm:inline">Buscar</span>
-                  </button>
                 </div>
               </div>
-            </div>
-            <div className="grid gap-3 sm:grid-cols-[12rem_minmax(0,1fr)] lg:grid-cols-[9rem_minmax(0,1fr)_auto] lg:items-end">
-              <div className="space-y-1.5">
-                <label htmlFor="datos-cuenta-nit" className={etiqueta}>
-                  NIT / CI
-                </label>
-                <input
-                  id="datos-cuenta-nit"
-                  value={nit}
-                  onChange={(e) => setNit(e.target.value)}
-                  className={campo}
-                  inputMode="numeric"
-                  autoComplete="off"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <label htmlFor="datos-cuenta-nombre" className={etiqueta}>
-                  Nombre
-                </label>
-                <input
-                  id="datos-cuenta-nombre"
-                  value={nombre}
-                  maxLength={40}
-                  onChange={(e) => setNombre(e.target.value.toUpperCase())}
-                  className={campo}
-                  autoComplete="off"
-                />
-              </div>
-              <div className="grid gap-2 sm:col-span-2 sm:flex sm:justify-end lg:col-span-1">
-                <button
-                  type="button"
-                  onClick={() => setVista('clientes')}
-                  className={`${botonSecundario} md:hidden`}
-                >
-                  <UserRoundSearch className="size-4" />
-                  Buscar en la lista de clientes
-                </button>
-                <button
-                  type="submit"
-                  disabled={actualizar.isPending}
-                  className={`${botonPrimario} w-full disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto`}
-                >
-                  <Check className="size-4" />
-                  {actualizar.isPending ? 'Guardando...' : 'Modificar'}
-                </button>
+              <div className="grid gap-3 sm:grid-cols-[12rem_minmax(0,1fr)] lg:grid-cols-[9rem_minmax(0,1fr)_auto] lg:items-end min-[1200px]:contents short:lg:contents">
+                <div className="space-y-1.5">
+                  <label htmlFor="datos-cuenta-nit" className={etiqueta}>
+                    NIT / CI
+                  </label>
+                  <input
+                    id="datos-cuenta-nit"
+                    value={nit}
+                    onChange={(e) => setNit(e.target.value)}
+                    className={campo}
+                    inputMode="numeric"
+                    autoComplete="off"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label htmlFor="datos-cuenta-nombre" className={etiqueta}>
+                    Nombre
+                  </label>
+                  <input
+                    id="datos-cuenta-nombre"
+                    value={nombre}
+                    maxLength={40}
+                    onChange={(e) => setNombre(e.target.value.toUpperCase())}
+                    className={campo}
+                    autoComplete="off"
+                  />
+                </div>
+                <div className="grid gap-2 sm:col-span-2 sm:flex sm:justify-end lg:col-span-1">
+                  <button
+                    type="button"
+                    onClick={() => setVista('clientes')}
+                    className={`${botonSecundario} md:hidden`}
+                  >
+                    <UserRoundSearch className="size-4" />
+                    Buscar en la lista de clientes
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={actualizar.isPending}
+                    className={`${botonPrimario} w-full disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto`}
+                  >
+                    <Check className="size-4" />
+                    {actualizar.isPending ? 'Guardando...' : 'Modificar'}
+                  </button>
+                </div>
               </div>
             </div>
           </form>

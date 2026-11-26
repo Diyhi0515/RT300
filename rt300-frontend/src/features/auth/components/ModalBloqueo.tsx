@@ -19,37 +19,31 @@ export function ModalBloqueo({ open, usuario, restante, total, onClose }: ModalB
   const fraccion = Math.min(1, Math.max(0, restante / total))
 
   return (
-    <Modal
-      open={open}
-      onClose={onClose}
-      title="Inicio de sesión bloqueado"
-      tone="club"
-      className="short:max-w-2xl"
-    >
-      <div className="flex flex-col items-center gap-4 px-6 pb-6 pt-8 text-center short:flex-row short:items-stretch short:gap-0 short:p-0 short:text-left">
-        <div className="flex flex-col items-center gap-4 short:basis-[46%] short:items-start short:justify-center short:gap-4 short:bg-[linear-gradient(160deg,#0a1a3d_0%,#12306e_100%)] short:px-7 short:py-6">
-          <div className="grid h-16 place-items-center rounded-2xl bg-header px-8 shadow-lg shadow-club-pc/20 ring-1 ring-white/10 short:h-auto short:bg-transparent short:p-0 short:shadow-none short:ring-0">
+    <Modal open={open} onClose={onClose} title="Inicio de sesión bloqueado" tone="club">
+      <div className="flex flex-col items-center gap-4 px-6 pb-6 pt-8 text-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="grid h-16 place-items-center rounded-2xl bg-header px-8 shadow-lg shadow-club-pc/20 ring-1 ring-white/10">
             <img
               src="/logo-software.png"
               alt="AXON Software Inteligente"
               width={180}
               height={60}
-              className="h-11 w-auto short:h-9"
+              className="h-11 w-auto"
             />
           </div>
 
           <div role="alert" className="space-y-1.5">
-            <p className="text-xl font-bold tracking-tight text-club-text short:text-lg short:text-white">
+            <p className="text-xl font-bold tracking-tight text-club-text">
               Inicio de sesión bloqueado
             </p>
-            <p className="max-w-xs text-pretty text-club-variant short:max-w-none short:text-[13px] short:leading-snug short:text-white/75">
+            <p className="max-w-xs text-pretty text-club-variant">
               Superaste los {MAX_INTENTOS} intentos permitidos para {usuario}. Por seguridad podrás
               volver a intentarlo en:
             </p>
           </div>
         </div>
 
-        <div className="flex flex-col items-center gap-4 short:flex-1 short:justify-center short:gap-2.5 short:px-7 short:py-5">
+        <div className="flex flex-col items-center gap-4">
           <div className="relative grid size-40 place-items-center short:size-32">
             <span className="absolute inset-3 rounded-full bg-club-low" aria-hidden />
             <svg viewBox="0 0 140 140" className="absolute inset-0 -rotate-90" aria-hidden>

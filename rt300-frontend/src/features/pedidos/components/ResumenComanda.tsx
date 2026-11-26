@@ -184,29 +184,32 @@ export function ResumenComanda({
           </>
         )}
       </div>
-      <div className="sticky bottom-0 z-10 shrink-0 space-y-3 border-t border-line bg-surface p-4 short:space-y-2 short:p-3">
+      <div className="sticky bottom-0 z-10 shrink-0 space-y-3 border-t border-line bg-surface p-4 short:space-y-1.5 short:p-2.5">
         <div className="flex items-end justify-between">
           <span className="text-sm font-semibold text-muted">Total</span>
-          <strong className="text-2xl font-extrabold tabular-nums short:text-xl lg:text-3xl">
+          <strong className="text-2xl font-extrabold tabular-nums short:text-xl lg:text-3xl short:lg:text-xl">
             {formatoMoneda(total)}
           </strong>
         </div>
-        <button
-          type="button"
-          disabled={deshabilitado || enviando}
-          onClick={alEnviar}
-          className="flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl lg:h-14 lg:text-lg bg-gradient-to-r from-club-pc to-club-tertiary font-bold text-white shadow-[0_10px_24px_rgba(43,83,184,.35)] transition hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none short:h-10"
-        >
-          {enviando ? 'Registrando...' : 'Registrar comanda'}
-        </button>
-        <button
-          type="button"
-          disabled={deshabilitado}
-          onClick={alVistaPrevia}
-          className="flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-line bg-surface text-sm font-bold transition hover:border-primary/50 hover:bg-primary/5 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 short:h-9 lg:h-12"
-        >
-          Vista previa del pedido
-        </button>
+        <div className="space-y-3 short:flex short:gap-2 short:space-y-0">
+          <button
+            type="button"
+            disabled={deshabilitado || enviando}
+            onClick={alEnviar}
+            className="flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl lg:h-14 lg:text-lg bg-gradient-to-r from-club-pc to-club-tertiary font-bold text-white shadow-[0_10px_24px_rgba(43,83,184,.35)] transition hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none short:h-10 short:lg:h-10 short:lg:text-base short:flex-1"
+          >
+            {enviando ? 'Registrando...' : 'Registrar comanda'}
+          </button>
+          <button
+            type="button"
+            disabled={deshabilitado}
+            onClick={alVistaPrevia}
+            aria-label="Vista previa del pedido"
+            className="flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-line bg-surface text-sm font-bold transition hover:border-primary/50 hover:bg-primary/5 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 short:h-9 lg:h-12 short:lg:h-9 short:w-auto short:shrink-0 short:px-3"
+          >
+            Vista previa<span className="short:hidden"> del pedido</span>
+          </button>
+        </div>
       </div>
     </div>
   )

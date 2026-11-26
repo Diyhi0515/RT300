@@ -58,7 +58,7 @@ El front envía solo el código del producto y la cantidad. **El precio, el cent
 
 Si el producto no tiene centro de producción en el local, el servidor responde un error claro (`SIN_CENTRO_PRODUCCION`) y el aviso lo muestra.
 
-Borrador temporal: lo elegido (productos y cantidades) se guarda en `sessionStorage` por folio y cuenta (`borradorComanda.ts`), así sobrevive a recargar la pestaña. Se borra al registrar la comanda, al confirmar "Salir sin registrar" y vence a las 12 horas. Se pierde al cerrar la pestaña.
+Borrador temporal: lo elegido (productos y cantidades) se guarda en `sessionStorage` por folio y cuenta (`borradorComanda.ts`), así sobrevive a recargar la pestaña (F5). Se borra al registrar la comanda, al confirmar "Salir sin registrar" y también al salir de la pantalla de Nueva comanda por cualquier camino (botón atrás del navegador, cambiar de mesa); entrar de nuevo empieza con la comanda vacía. Además vence a las 12 horas y se pierde al cerrar la pestaña.
 
 Con el servicio de comandas en modo `fake` (desarrollo) la comanda se registra pero **no se imprime ni aparece en el consumo de la cuenta**, porque ese servicio es quien crea la comanda final.
 
@@ -113,6 +113,7 @@ npm run build
 | `components/ComandasMesaModal.test.tsx` | Listar, elegir y reimprimir o eliminar comandas con autorizador (la clave solo para eliminar) |
 | `api.test.ts` | El envío de la comanda se valida antes de salir y solo manda código y cantidad |
 | `borradorComanda.test.ts` | Borrador temporal de la comanda: guarda, recupera, borra y vence a las 12 horas |
+| `pages/ComandaPage.test.tsx` (borrador) | El borrador se guarda, sobrevive a recargar, se descarta al salir de la pantalla y se borra al registrar |
 | `lib/http.test.ts` | Renovación de sesión, 401 simultáneos, errores y logout |
 
 Las llamadas HTTP se simulan con msw (`src/test/servidor.ts`). Para renovar las fixtures con el backend encendido: `npm run fixtures`.
@@ -156,11 +157,35 @@ Bajo el selector de área hay botones de filtro: **Todos** (siempre visible y ac
 
 ## Datos de cuentas en tablet y escritorio
 
-Desde 1024 px de ancho la pantalla `/pedidos/cuentas/:codigo` ocupa todo el alto hasta los menús de abajo y la página no se desplaza: "Cuentas de la mesa" y "Listado de clientes" tienen cada uno su propia barra vertical. Por debajo de 1024 px se mantiene el desplazamiento normal de la página.
+Desde 960 px de ancho la pantalla `/pedidos/cuentas/:codigo` ocupa todo el alto hasta los menús de abajo y la página no se desplaza: "Cuentas de la mesa" y "Listado de clientes" tienen cada uno su propia barra vertical. Por debajo de 960 px se mantiene el desplazamiento normal de la página. Al elegir una cuenta en "No. cuenta" (lista desplegable propia, `shared/ui/ListaDesplegable.tsx`) la tabla de cuentas se desplaza sola hasta esa fila. En pantallas bajas (`short`) el formulario pasa a una sola fila compacta y el listado de clientes se angosta a 300 px (entre 960 y 1199 px de ancho) para dejar más filas a la tabla; desde 1200 px de ancho mide 420 px y de 960 a 1199 px sin pantalla baja, 380 px; el botón **Buscar** vive junto al buscador del listado.
 
 ## Pantallas de carga
 
 Mesas, cuentas, categorías, productos (y al cambiar de subcategoría) usan `CargadorDiferido` (`shared/ui/Cargador.tsx`): el logo de RT - AXON con su barra de avance y un texto ("Cargando mesas..."). Aparece solo si la carga pasa de 250 ms, así una respuesta rápida no hace parpadear la pantalla.
+
+## Comanda en tablet y escritorio
+
+Desde 768 px de ancho la pantalla de Nueva comanda se comporta así:
+
+- **Encabezado fijo:** "Nueva comanda" (flecha, mesa y cuenta) queda fijo bajo la barra superior (`ComandaPage.tsx`). Su alto es la variable `--enc`, que usan los bloques que se fijan debajo de él. "Elige una categoría" ya no es fijo: se desplaza con la página.
+- **Categorías:** el panel de categorías y el resumen de la comanda tienen la misma altura, terminan a la vez justo sobre el menú de abajo y la lista de categorías tiene su propia barra vertical. Los valores salen de `--tope` (inicio) y `--pie` (menú de abajo).
+- **Productos:** el buscador queda fijo bajo el encabezado. A su derecha están los botones **Categorías** (vuelve a la lista de categorías) y **Subcategoría**, con el mismo fondo y borde que las tarjetas de producto. La lista y el resumen tienen cada uno su barra vertical. La altura de la lista descuenta la fila "Mostrando solo ..." cuando hay un filtro de subcategoría activo (`--extra`) y las reservas `--hdr` y `--fila`. Si se cambia el alto de algún bloque fijo hay que ajustar esas variables; se comprueba haciendo scroll hasta el final: el buscador debe quedar pegado justo bajo el encabezado (sin hueco con el título de la categoría) y sin tapar la primera fila de la lista. Valores de `--fila` medidos: 6.5rem en pantallas bajas, 6.75rem en tablet vertical y 8.75rem en pantallas anchas altas.
+- **Resumen:** cada producto muestra Nota, Extras, Centro y el botón de eliminar en la misma fila; si no caben, los tres primeros pasan a la línea siguiente y el de eliminar queda a la derecha. En pantallas bajas el pie del resumen es más corto: "Registrar comanda" y "Vista previa" van en la misma fila.
+
+## Cortes de ancho y pantallas bajas (`lg`, `short` y `apaisado`)
+
+El corte `lg` de Tailwind está en 960 px (60rem) en vez de 1024 px (`--breakpoint-lg` en `src/styles/index.css`), igual que la variante `escritorio`. Así una tablet de 975 px de ancho (por ejemplo en horizontal) usa el diseño de dos paneles y no el de celular. `md` sigue en 768 px.
+
+`src/styles/index.css` define dos variantes de Tailwind:
+
+- `apaisado`: alto máximo de 520 px (celular en horizontal). Se usa para ocultar el resumen lateral de la comanda y otros paneles que en celular horizontal no caben (`max-lg:apaisado:...`).
+- `short`: lo anterior **más** cualquier pantalla de 768 px de ancho o más con hasta 820 px de alto (tablets en horizontal y laptops). Aplica los tamaños compactos para que a 100 % se vea lo que antes solo se veía reduciendo el zoom. En laptops de 1366x768 o 1536x864 (con la barra del navegador) el resumen de la comanda muestra de uno a tres productos completos; en pantallas más altas se usan los tamaños normales. Casi todos los `short:` del proyecto (alturas, rellenos, tamaños de letra) usan esta variante.
+
+Al ajustar un diseño para pantalla baja, usar `short:` para el tamaño y `apaisado:` solo cuando algo deba existir únicamente en celular horizontal. Cuando una clase `lg:` pisa a una `short:` hay que agregar la combinación `short:lg:`.
+
+## Avisos y modales en horizontal
+
+`ModalAviso` (avisos de éxito, error y atención), `SuperposicionCarga` ("Procesando..."), `ModalBloqueo` y `ModalInstalacion` usan el mismo diseño apilado en vertical y en horizontal (banda AXON arriba, ícono, título y mensaje). Antes se partían en dos columnas en pantallas bajas. `ModalBloqueo` solo reduce algunos tamaños (anillo, botón) en pantallas bajas.
 
 ## Pendientes
 

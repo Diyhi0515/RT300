@@ -66,30 +66,45 @@ export function ListadoClientes({ seleccionado, alElegir }: ListadoClientesProps
         )}
       </h2>
 
-      <div className="relative">
-        <Search
-          className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted"
-          aria-hidden
-        />
-        <input
-          value={texto}
-          onChange={(e) => setTexto(e.target.value.toUpperCase())}
-          aria-label="Buscar en el listado de clientes"
-          placeholder="Código, NIT / CI o nombre"
-          autoComplete="off"
-          className="h-12 w-full rounded-xl border border-line bg-surface pl-9 pr-10 text-base font-medium lg:h-11 lg:text-sm outline-none transition focus:border-club-pc focus:ring-2 focus:ring-club-pc/25"
-        />
-        {texto && (
-          <button
-            type="button"
-            onClick={() => setTexto('')}
-            aria-label="Limpiar búsqueda"
-            className="absolute right-1.5 top-1/2 grid size-8 -translate-y-1/2 cursor-pointer place-items-center rounded-lg text-muted transition hover:bg-club-pc/10 hover:text-fg active:scale-90"
-          >
-            <X className="size-4" />
-          </button>
-        )}
-      </div>
+      <form
+        role="search"
+        onSubmit={(e) => {
+          e.preventDefault()
+          setTermino(texto.trim())
+        }}
+        className="flex gap-2"
+      >
+        <div className="relative min-w-0 flex-1">
+          <Search
+            className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted"
+            aria-hidden
+          />
+          <input
+            value={texto}
+            onChange={(e) => setTexto(e.target.value.toUpperCase())}
+            aria-label="Buscar en el listado de clientes"
+            placeholder="Código, NIT / CI o nombre"
+            autoComplete="off"
+            className="h-12 w-full rounded-xl border border-line bg-surface pl-9 pr-10 text-base font-medium lg:h-11 lg:text-sm outline-none transition focus:border-club-pc focus:ring-2 focus:ring-club-pc/25"
+          />
+          {texto && (
+            <button
+              type="button"
+              onClick={() => setTexto('')}
+              aria-label="Limpiar búsqueda"
+              className="absolute right-1.5 top-1/2 grid size-8 -translate-y-1/2 cursor-pointer place-items-center rounded-lg text-muted transition hover:bg-club-pc/10 hover:text-fg active:scale-90"
+            >
+              <X className="size-4" />
+            </button>
+          )}
+        </div>
+        <button
+          type="submit"
+          className="inline-flex h-12 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-club-pc to-club-tertiary px-4 text-sm font-bold text-white shadow-[0_8px_20px_rgba(43,83,184,.3)] transition hover:brightness-110 active:scale-95 lg:h-11"
+        >
+          Buscar
+        </button>
+      </form>
 
       <div className="overflow-hidden rounded-2xl border border-line lg:flex lg:min-h-0 lg:flex-1 lg:flex-col">
         <div className="grid grid-cols-[4.5rem_minmax(0,1fr)] lg:shrink-0 gap-x-2 bg-club-pc/10 px-3 py-2 text-[10px] font-extrabold uppercase tracking-wide text-club-primary">
@@ -124,7 +139,7 @@ export function ListadoClientes({ seleccionado, alElegir }: ListadoClientesProps
                     <span className="flex min-w-0 items-center gap-2.5">
                       <span
                         aria-hidden
-                        className="grid size-9 shrink-0 place-items-center rounded-full bg-gradient-to-br from-club-pc to-club-tertiary text-[11px] font-extrabold tracking-wide text-white shadow-sm shadow-club-pc/25"
+                        className="hidden size-9 shrink-0 place-items-center rounded-full bg-gradient-to-br from-club-pc to-club-tertiary text-[11px] font-extrabold tracking-wide text-white shadow-sm shadow-club-pc/25"
                       >
                         {iniciales(c.nombre)}
                       </span>
