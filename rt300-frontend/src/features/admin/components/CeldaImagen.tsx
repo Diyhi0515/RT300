@@ -34,7 +34,7 @@ export function CeldaImagen({ cart, nombre, tieneImagen }: CeldaImagenProps) {
         src={`/api/v1/menu/platos/${encodeURIComponent(cart)}/imagen?w=160`}
         alt={`Imagen de ${nombre}`}
         loading="lazy"
-        className="size-12 rounded-lg bg-bg object-cover"
+        className="size-12 rounded-lg bg-white object-contain p-0.5"
       />
     )
   }

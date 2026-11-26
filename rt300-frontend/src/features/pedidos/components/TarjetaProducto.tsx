@@ -31,7 +31,7 @@ function TarjetaProductoBase({ plato, cantidad, indice, alCambiarCantidad }: Tar
           alt=""
           loading="lazy"
           decoding="async"
-          className="h-28 w-full rounded-xl bg-bg object-cover short:h-20 lg:h-32"
+          className="h-32 w-full rounded-xl bg-white object-contain p-1 short:h-28 lg:h-40 short:lg:h-28"
         />
       )}
       <h3 className="line-clamp-3 text-sm font-bold leading-tight [overflow-wrap:anywhere] lg:text-base">
