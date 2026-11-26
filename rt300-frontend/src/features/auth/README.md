@@ -112,7 +112,7 @@ Reglas (constantes en `almacenBloqueo.ts`):
 Comportamiento en pantalla:
 
 - Cada fallo abre el aviso "Credenciales incorrectas" (3 segundos) con una barra de 5 segmentos y el texto de intentos restantes. Los intentos 1 y 2 salen en celeste; del 3.º en adelante, en rojo.
-- Al quinto fallo se abre solo el modal de bloqueo.
+- Al quinto fallo se abre solo el modal de bloqueo. En horizontal conserva el mismo diseño apilado que en vertical (logo y título arriba, anillo de cuenta regresiva y botón "Entendido" abajo); en pantallas bajas solo reduce el tamaño del anillo y del botón.
 - Con el usuario bloqueado, el campo de contraseña se deshabilita y el botón dice "Bloqueado · mm:ss" (con el tiempo corriendo). Al pulsarlo se abre el modal con el anillo de cuenta regresiva.
 - El campo de usuario y las fichas siguen activos, así que se puede cambiar a otro usuario.
 - Al terminar el tiempo se desbloquea solo y aparece el aviso "Bloqueo finalizado".
@@ -177,7 +177,7 @@ En mockup, el modal de bloqueo muestra el botón "Reiniciar bloqueos (solo mocku
 - Responsiva:
   - móvil: una columna con carrusel táctil de usuarios;
   - tablet y escritorio: dos columnas, con el panel que suma columnas según su ancho (consultas de contenedor);
-  - pantallas bajas (`short`, hasta 520 px de alto): diseño compacto;
+  - pantallas bajas (`short`: hasta 520 px de alto, o desde 768 px de ancho con hasta 820 px de alto): diseño compacto. La variante se explica en `features/pedidos/README.md`;
   - respeta las zonas seguras de los dispositivos con muesca.
 - Cargas con el logo: modal de procesamiento durante el ingreso y pantalla de carga al cargar la lista de usuarios.
 - Textos y errores en español. Los avisos se cierran solos a los 3 segundos.

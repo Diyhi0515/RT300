@@ -35,9 +35,7 @@ const abrirPagina = () => {
 }
 
 const entrarALaCategoria = async (usuario: ReturnType<typeof userEvent.setup>) => {
-  await usuario.click(
-    await screen.findByRole('button', { name: nombreCategoria }),
-  )
+  await usuario.click(await screen.findByRole('button', { name: nombreCategoria }))
 }
 
 afterEach(() => sessionStorage.clear())
@@ -50,9 +48,7 @@ describe('ComandaPage', () => {
     abrirPagina()
 
     expect(await screen.findByText('Elige una categoría')).toBeInTheDocument()
-    expect(
-      await screen.findByRole('button', { name: nombreCategoria }),
-    ).toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: nombreCategoria })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: `Agregar ${plato.descripcion}` })).toBeNull()
   })
 
@@ -94,7 +90,7 @@ describe('ComandaPage', () => {
     expect(cuerpo).toEqual({ glos: '', items: [{ cart: plato.cart, cant: 2 }] })
   })
 
-  it('guarda lo elegido en un borrador, lo recupera al recargar y lo borra al registrar', async () => {
+  it('guarda lo elegido en un borrador, lo recupera al recargar, lo descarta al salir y lo borra al registrar', async () => {
     servidor.use(
       rutaHttp.post('*/api/v1/folios/:folio/cuentas/:cuenta/comandas', () =>
         HttpResponse.json({ ntmp: 1, comanda: '1' }),
@@ -106,7 +102,10 @@ describe('ComandaPage', () => {
     await usuario.click(await screen.findByRole('button', { name: `Agregar ${plato.descripcion}` }))
 
     await waitFor(() => expect(hayBorrador()).toBe(true))
+    const guardado = Object.entries(sessionStorage)
     primera.unmount()
+    expect(hayBorrador()).toBe(false)
+    guardado.forEach(([clave, valor]) => sessionStorage.setItem(clave, valor))
 
     abrirPagina()
     await entrarALaCategoria(usuario)
@@ -251,10 +250,12 @@ describe('ComandaPage', () => {
     await entrarALaCategoria(usuario)
     const sub = secciones.secciones.find((x) => x.csme === primeraSeccion.csme && x.cssm > 0)!
 
-    expect(screen.queryByRole('tab')).toBeNull()                                   // ya no hay una fila de botones
-    expect(screen.getAllByRole('button', { name: /categorías/i })).toHaveLength(1)   // un solo control para volver
+    expect(screen.queryByRole('tab')).toBeNull() // ya no hay una fila de botones
+    expect(screen.getAllByRole('button', { name: /categorías/i })).toHaveLength(1) // un solo control para volver
     await usuario.click(await screen.findByRole('button', { name: /subcategoría/i }))
-    await usuario.click(await screen.findByRole('button', { name: new RegExp(`^${sub.descripcion}`, 'i') }))
+    await usuario.click(
+      await screen.findByRole('button', { name: new RegExp(`^${sub.descripcion}`, 'i') }),
+    )
 
     expect(await screen.findByText(/mostrando solo/i)).toBeInTheDocument()
     await usuario.click(screen.getByRole('button', { name: /quitar filtro/i }))
@@ -264,8 +265,12 @@ describe('ComandaPage', () => {
   it('en modo de prueba avisa que la comanda no llega a cocina ni al consumo', async () => {
     const usuario = userEvent.setup()
     servidor.use(
-      rutaHttp.get('*/api/v1/health', () => HttpResponse.json({ status: 'ok', db: true, impresion: 'simulada' })),
-      rutaHttp.post('*/api/v1/folios/:folio/cuentas/:cuenta/comandas', () => HttpResponse.json({ comanda: 1, ntmp: 5 }, { status: 201 })),
+      rutaHttp.get('*/api/v1/health', () =>
+        HttpResponse.json({ status: 'ok', db: true, impresion: 'simulada' }),
+      ),
+      rutaHttp.post('*/api/v1/folios/:folio/cuentas/:cuenta/comandas', () =>
+        HttpResponse.json({ comanda: 1, ntmp: 5 }, { status: 201 }),
+      ),
     )
     abrirPagina()
     await entrarALaCategoria(usuario)
